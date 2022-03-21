@@ -7,6 +7,15 @@ const PATHING_REGEX = /sys\.path\.append\((\n|)(.*)\)/gm;
 const EXTENSTION_REGEX = /.*\.py/gm;
 
 const SOURCES = [
+    'ClassifierTemplate',
+    'UtilityFunctions',
+    'PointCloudToGrid',
+    'StateMachines',
+    'Analysis',
+    'CameraDetection',
+    'RobotLayer',
+    'AbstractionLayer',
+    'FinalCode'
 ];
 
 const imports = new Set();

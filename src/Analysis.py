@@ -5,6 +5,7 @@ import copy
 
 sys.path.append(r"/Users/quantumlyy/Documents/Development/S3R5/Robotics/Erebus-2022/src/")
 from PointCloudToGrid import *  # li
+from ClassifierTemplate import tilesDict  # li
 
 
 # Class that defines a tile node in the grid
@@ -512,8 +513,7 @@ class Analyst:
         # Converter
         self.converter = PointCloudConverter(self.tileSize, pointMultiplier=self.posMultiplier)
         # Classifier
-        from ClassifierTemplate import tilesDict as classifTemp
-        self.classifier = Classifier(classifTemp)
+        self.classifier = Classifier(tilesDict)
         # Path finder
         self.pathFinder = PathFinder(VortexNode, WallNode, TileNode, self.grid, 10, [0, 0])
         self.pathFinder.setStartVortex((1, 1))
