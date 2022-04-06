@@ -661,11 +661,11 @@ class Analyst:
             self.calculatePath = True
 
         if len(self.__bestPath):
-            # print("Dist to Vortex: ", distToVortex)
+            print("Dist to Vortex: ", distToVortex)
             if distToVortex < self.positionReachedThresh and startRawNode == self.__bestPath[self.pathIndex]:
                 self.pathIndex += 1
 
-        # print("PathLenght: ", len(self.__bestPath))
+        print("PathLenght: ", len(self.__bestPath))
         if self.pathIndex >= len(self.__bestPath):
             self.calculatePath = True
 
@@ -679,7 +679,8 @@ class Analyst:
             # print("Calculating path")
             self.__bestPath = self.pathFinder.getBestPath(self.direction)
             self.pathIndex = 0
-            if len(self.__bestPath) < 2:
+            print("update - self.calculatePath => ", self.__bestPath, (not self.__bestPath is None) and len(self.__bestPath) < 2)
+            if (not self.__bestPath is None) and len(self.__bestPath) < 2:
                 self.ended = True
             self.calculatePath = False
 
