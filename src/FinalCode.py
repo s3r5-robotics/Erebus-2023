@@ -12,9 +12,11 @@ timeStep = 16 * 2
 stMg = StateManager("init")
 r = AbstractionLayer()
 
+isOptimised = cv.useOptimized()
 
 # While the simulation is running
 while r.doLoop():
+    e1 = cv.getTickCount()
     # Update the robot
     r.update()
     print("rotation: " + str(r.rotation))
@@ -87,5 +89,13 @@ while r.doLoop():
         r.seqMg.startSequence()
         if r.seqMg.simpleSeqEvent(): r.endGame()
         r.seqMoveWheels(0, 0)
+
+    print("--------------------------------------------------------------------")
+
+    e2 = cv.getTickCount()
+
+    time = (e2 - e1)/ cv.getTickFrequency()
+    print(f"Tick time is {time}")
+    print(f"Is it optimised? {isOptimised}")
 
     print("--------------------------------------------------------------------")

@@ -254,7 +254,7 @@ class Comunicator:
 
     def sendEndOfPlay(self):
         self.doGetWordInfo = False
-        exit_mes = struct.pack('c', b'E')
+        exit_mes = bytes('E', "utf-8")
         self.emmiter.send(exit_mes)
 
 
