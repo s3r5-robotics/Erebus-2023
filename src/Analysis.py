@@ -3,7 +3,7 @@ import cv2 as cv
 import sys
 import copy
 
-sys.path.append(r"/Users/quantumlyy/Documents/Development/S3R5/Robotics/Erebus-2022/src/")
+sys.path.append(r"/Users/tevz/Documents/programing/Erebus-2022/src/")
 from PointCloudToGrid import *  # li
 from ClassifierTemplate import tilesDict  # li
 
@@ -528,6 +528,12 @@ class Analyst:
         self.prevRawNode = [0, 0]
         self.ended = False
 
+    def getBestPathSafe(self):
+        if self.__bestPath is None:
+            self.__bestPath = []
+
+        return self.__bestPath
+
     def getRawAdjacents(self, node, side):
         rawNode = self.grid.processedToRawNode(node, side)
         adjacents = []
@@ -660,13 +666,13 @@ class Analyst:
             self.blockFront
             self.calculatePath = True
 
-        if len(self.__bestPath):
+        if len(self.getBestPathSafe()):
             print("Dist to Vortex: ", distToVortex)
             if distToVortex < self.positionReachedThresh and startRawNode == self.__bestPath[self.pathIndex]:
                 self.pathIndex += 1
 
-        print("PathLenght: ", len(self.__bestPath))
-        if self.pathIndex >= len(self.__bestPath):
+        print("PathLenght: ", len(self.getBestPathSafe()))
+        if self.pathIndex >= len(self.getBestPathSafe()):
             self.calculatePath = True
 
         else:
@@ -679,15 +685,15 @@ class Analyst:
             # print("Calculating path")
             self.__bestPath = self.pathFinder.getBestPath(self.direction)
             self.pathIndex = 0
-            print("update - self.calculatePath => ", self.__bestPath, (not self.__bestPath is None) and len(self.__bestPath) < 2)
-            if (not self.__bestPath is None) and len(self.__bestPath) < 2:
+            print("update - self.calculatePath => ", self.__bestPath, (not self.__bestPath is None) and len(self.getBestPathSafe()) < 2)
+            if len(self.getBestPathSafe()) < 2:
                 self.ended = True
             self.calculatePath = False
 
     def getBestRawNodeToMove(self):
         # print("Best path: ", self.__bestPath)
         # print("Index: ", self.pathIndex)
-        if len(self.__bestPath):
+        if len(self.getBestPathSafe()):
             return self.__bestPath[self.pathIndex]
         else:
             return None

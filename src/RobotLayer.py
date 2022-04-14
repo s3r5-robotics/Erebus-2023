@@ -6,7 +6,7 @@ import numpy as np
 import struct
 import cv2 as cv
 
-sys.path.append(r"/Users/quantumlyy/Documents/Development/S3R5/Robotics/Erebus-2022/src/")
+sys.path.append(r"/Users/tevz/Documents/programing/Erebus-2022/src/")
 from UtilityFunctions import *  # li
 from CameraDetection import *  # li
 

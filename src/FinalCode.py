@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import cv2 as cv
 
-sys.path.append(r"/Users/quantumlyy/Documents/Development/S3R5/Robotics/Erebus-2022/src/")
+sys.path.append(r"/Users/tevz/Documents/programing/Erebus-2022/src/")
 from AbstractionLayer import AbstractionLayer  # li
 from StateMachines import StateManager  # li
 
