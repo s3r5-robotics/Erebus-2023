@@ -42,7 +42,7 @@ for (let source of SOURCES) {
     const END = RAW_PRE
         .replace(IMPORT_REGEX, '');
 
-    OUT += `# File: "${source}"\n`;
+    OUT += `\n# File: "${source}"\n`;
     OUT += END;
 }
 

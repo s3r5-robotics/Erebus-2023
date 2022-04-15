@@ -1,6 +1,5 @@
 from controller import Robot
 import sys
-import numpy as np
 import cv2 as cv
 
 sys.path.append(r"/Users/tevz/Documents/programing/Erebus-2022/src/")

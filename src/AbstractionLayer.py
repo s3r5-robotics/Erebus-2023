@@ -1,7 +1,6 @@
 from controller import Robot
 import sys
 import numpy as np
-import cv2 as cv
 
 sys.path.append(r"/Users/tevz/Documents/programing/Erebus-2022/src/")
 from StateMachines import *  # li
@@ -230,7 +229,6 @@ class AbstractionLayer():
 
         self.analyst.showGrid()
 
-        cv.imshow("raw detections",
-                  cv.resize(self.gridPlotter.gridPlottingArray, (600, 600), interpolation=cv.INTER_NEAREST))
-        cv.waitKey(1)
+        # cv.imshow("raw detections", cv.resize(self.gridPlotter.gridPlottingArray, (600, 600), interpolation=cv.INTER_NEAREST))
+        # cv.waitKey(1)
 

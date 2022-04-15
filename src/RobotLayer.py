@@ -1,10 +1,8 @@
-from numpy.lib.type_check import imag
 from controller import Robot
 import sys
 import math
 import numpy as np
 import struct
-import cv2 as cv
 
 sys.path.append(r"/Users/tevz/Documents/programing/Erebus-2022/src/")
 from UtilityFunctions import *  # li
