@@ -189,10 +189,9 @@ def divideLists(list1, list2):
         finalList.append(item1 / item2)
     return finalList
 
-def crop_center(img, cropx, cropy):
+def crop_center(img, cropx):
     y, x = (40, 64)
-    startx = x // 2 - (cropx // 2)
-    img[cropy:y - cropy, startx:startx + cropx]
+    img[:, cropx:x - cropx]
 
 # File: "PointCloudToGrid.py"
 
@@ -1776,9 +1775,8 @@ class RobotLayer:
         imgs = []
         for camera in (self.rightCamera, self.leftCamera):
             img = camera.getImg()
-            crop_center(img, 12, 0)
+            crop_center(img, 12)
             img = cv.resize(img, (128, 128), interpolation = cv.INTER_NEAREST)
-            cv.imshow("resized", img)
             cposes, cimgs = self.victimClasifier.getVictimImagesAndPositions(img)
             poses += cposes
             imgs += cimgs

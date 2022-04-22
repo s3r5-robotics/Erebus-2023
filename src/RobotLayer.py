@@ -368,9 +368,8 @@ class RobotLayer:
         imgs = []
         for camera in (self.rightCamera, self.leftCamera):
             img = camera.getImg()
-            crop_center(img, 12, 0)
+            crop_center(img, 12)
             img = cv.resize(img, (128, 128), interpolation = cv.INTER_NEAREST)
-            cv.imshow("resized", img)
             cposes, cimgs = self.victimClasifier.getVictimImagesAndPositions(img)
             poses += cposes
             imgs += cimgs
