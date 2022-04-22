@@ -23,9 +23,11 @@ class VictimClassifier:
         self.victimLetterListener = Listener(lowerHSV=(0, 0, 0), upperHSV=(5, 255, 100))
 
     def isClose(self, height):
+        print(f"Current height: {height}")
         return height > 45
 
     def isInCenter(self, pos):
+        print(f"Current pos1: {pos[1]}")
         return 15 < pos[1] < 70
 
     def getCloseVictims(self, victimPoses, victimImages):
@@ -50,6 +52,7 @@ class VictimClassifier:
         finalPoses = []
         finalImages = []
         for pos, img in zip(poses, images):
+            print(f"Current victim pos0: {pos[0]}")
             if 25 < pos[0] < 60:
                 finalPoses.append(pos)
                 finalImages.append(img)
@@ -63,7 +66,7 @@ class VictimClassifier:
                         self.blackListener.getFiltered(image)]
 
         binaryImage = self.getSumedFilters(binaryImages)
-        cv.imshow("binaryImage", binaryImage)
+        # cv.imshow("binaryImage", binaryImage)
 
         # Encuentra los contornos, aunque se puede confundir con el contorno de la letra
         contours, _ = cv.findContours(binaryImage, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
@@ -72,7 +75,7 @@ class VictimClassifier:
         for c0 in contours:
             x, y, w, h = cv.boundingRect(c0)
             cv.rectangle(binaryImage, (x, y), (x + w, y + h), (225, 255, 255), -1)
-        cv.imshow("thresh2", binaryImage)
+        # cv.imshow("thresh2", binaryImage)
         contours, _ = cv.findContours(binaryImage, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
         # saca las medidas y la posicion de los contornos y agrega a la lista de imagenes la parte esa de la imagen original
         # Tambien anade la posicion de cada recuadro en la imagen original
@@ -114,9 +117,9 @@ class VictimClassifier:
         letter = letter1[:,10:90]
         letter = self.cropWhite(letter)
         letter = cv.resize(letter, (100, 100), interpolation=cv.INTER_AREA)
-        cv.imshow("letra", letter)
-        cv.imshow("letra1", letter1)
-        cv.imshow("thresh", binary)
+        # cv.imshow("letra", letter)
+        # #cv.imshow("letra1", letter1)
+        # cv.imshow("thresh", binary)
         letterColor = cv.cvtColor(letter, cv.COLOR_GRAY2BGR)
         areaWidth = 20
         areaHeight = 30
@@ -197,7 +200,7 @@ class VictimClassifier:
             letter = "P"
 
         if self.isVictim(colorPointCounts["black"], colorPointCounts["white"]):
-            cv.imshow("black filter:", colorImgs["black"])
+            # cv.imshow("black filter:", colorImgs["black"])
             letter = self.classifyHSU(image)
             print("Victim:", letter)
 

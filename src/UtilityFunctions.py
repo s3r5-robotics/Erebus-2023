@@ -82,3 +82,8 @@ def divideLists(list1, list2):
     for item1, item2 in zip(list1, list2):
         finalList.append(item1 / item2)
     return finalList
+
+def crop_center(img, cropx, cropy):
+    y, x = (40, 64)
+    startx = x // 2 - (cropx // 2)
+    img[cropy:y - cropy, startx:startx + cropx]

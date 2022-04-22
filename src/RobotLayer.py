@@ -1,6 +1,6 @@
 from controller import Robot
+import cv2 as cv
 import sys
-import math
 import numpy as np
 import struct
 
@@ -21,6 +21,10 @@ class Camera:
     def getImg(self):
         imageData = self.camera.getImage()
         return np.array(np.frombuffer(imageData, np.uint8).reshape((self.height, self.width, 4)))
+
+    def getImgBuffered(self):
+        imageData = self.camera.getImage()
+        return np.frombuffer(imageData, np.uint8).reshape((self.height, self.width, 4))
 
 
 # Tracks global rotation
@@ -363,7 +367,11 @@ class RobotLayer:
         poses = []
         imgs = []
         for camera in (self.rightCamera, self.leftCamera):
-            cposes, cimgs = self.victimClasifier.getVictimImagesAndPositions(camera.getImg())
+            img = camera.getImg()
+            crop_center(img, 12, 0)
+            img = cv.resize(img, (128, 128), interpolation = cv.INTER_NEAREST)
+            cv.imshow("resized", img)
+            cposes, cimgs = self.victimClasifier.getVictimImagesAndPositions(img)
             poses += cposes
             imgs += cimgs
         print("Victim Poses: ",poses)

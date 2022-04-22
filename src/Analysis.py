@@ -728,5 +728,6 @@ class Analyst:
         return self.grid.grid
 
     def showGrid(self):
-        cv.imshow("Analyst grid",
-            cv.resize(self.grid.getNumpyPrintableArray(), (400, 400), interpolation=cv.INTER_NEAREST))
+        None
+        # cv.imshow("Analyst grid",
+        #    cv.resize(self.grid.getNumpyPrintableArray(), (400, 400), interpolation=cv.INTER_NEAREST))
