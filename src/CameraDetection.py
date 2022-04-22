@@ -1,3 +1,4 @@
+# noinspection PyInterpreter
 import cv2 as cv
 import numpy as np
 
@@ -6,7 +7,7 @@ class Listener:
     def __init__(self, lowerHSV, upperHSV):
         self.lower = np.array(lowerHSV)
         self.upper = np.array(upperHSV)
-    
+
     def getFiltered(self, img):
         hsv_image = cv.cvtColor(img, cv.COLOR_BGR2HSV)
         mask = cv.inRange(hsv_image, self.lower, self.upper)
@@ -23,7 +24,7 @@ class VictimClassifier:
 
     def isClose(self, height):
         return height > 45
-    
+
     def isInCenter(self, pos):
         return 15 < pos[1] < 70
 
@@ -56,14 +57,14 @@ class VictimClassifier:
         return finalPoses, finalImages
 
     def getVictimImagesAndPositions(self, image):
-        binaryImages = [self.redListener.getFiltered(image), 
-                        self.yellowListener.getFiltered(image), 
-                        self.whiteListener.getFiltered(image), 
+        binaryImages = [self.redListener.getFiltered(image),
+                        self.yellowListener.getFiltered(image),
+                        self.whiteListener.getFiltered(image),
                         self.blackListener.getFiltered(image)]
 
         binaryImage = self.getSumedFilters(binaryImages)
-        #cv.imshow("binaryImage", binaryImage)
-        
+        cv.imshow("binaryImage", binaryImage)
+
         # Encuentra los contornos, aunque se puede confundir con el contorno de la letra
         contours, _ = cv.findContours(binaryImage, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
         # Pra evitar la confusion dibuja rectangulos blancos donde estan los contornos en la imagen y despues vuelve a
@@ -71,7 +72,7 @@ class VictimClassifier:
         for c0 in contours:
             x, y, w, h = cv.boundingRect(c0)
             cv.rectangle(binaryImage, (x, y), (x + w, y + h), (225, 255, 255), -1)
-        #cv.imshow("thresh2", binaryImage)
+        cv.imshow("thresh2", binaryImage)
         contours, _ = cv.findContours(binaryImage, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
         # saca las medidas y la posicion de los contornos y agrega a la lista de imagenes la parte esa de la imagen original
         # Tambien anade la posicion de cada recuadro en la imagen original
@@ -81,9 +82,9 @@ class VictimClassifier:
             x, y, w, h = cv.boundingRect(c)
             finalImages.append(image[y:y + h, x:x + w])
             finalPoses.append((y, x))
-        
+
         return self.filterVictims(finalPoses, finalImages)
-    
+
     def cropWhite(self, binaryImg):
         white = 255
         #print(conts)
@@ -98,7 +99,7 @@ class VictimClassifier:
                     maxY = max(maxY, yIndex)
                     minX = min(minX, xIndex)
                     minY = min(minY, yIndex)
- 
+
         return binaryImg[minY:maxY, minX:maxX]
 
     def classifyHSU(self, img):
@@ -151,23 +152,23 @@ class VictimClassifier:
             if counts == letters[letterKey]:
                 finalLetter = letterKey
                 break
-        
+
         #print(counts)
         #print(finalLetter)
         return finalLetter
 
     def isPoison(self, blackPoints, whitePoints):
         return blackPoints < 600 and whitePoints > 700 and whitePoints < 4000
-    
+
     def isVictim(self, blackPoints, whitePoints):
         return whitePoints > 5000 and 2000 > blackPoints > 100
-    
+
     def isCorrosive(self, blackPoints, whitePoints):
         return 700 < whitePoints < 2500 and 1000 < blackPoints < 2500
-    
+
     def isFlammable(self, redPoints, whitePoints):
         return redPoints and whitePoints
-    
+
     def isOrganicPeroxide(self, redPoints, yellowPoints):
         return redPoints and yellowPoints
 
@@ -176,7 +177,7 @@ class VictimClassifier:
         image = cv.resize(img, (100, 100), interpolation=cv.INTER_AREA)
         colorImgs = {
         "red" : self.redListener.getFiltered(image),
-        "yellow" : self.yellowListener.getFiltered(image), 
+        "yellow" : self.yellowListener.getFiltered(image),
         "white" : self.whiteListener.getFiltered(image),
         "black" : self.blackListener.getFiltered(image)}
 
@@ -187,28 +188,28 @@ class VictimClassifier:
             all_points = np.where(img == 255)
             all_points = all_points[0]
             count = len(all_points)
-            
+
             colorPointCounts[key] = count
-        
+
         print(colorPointCounts)
         if self.isPoison(colorPointCounts["black"], colorPointCounts["white"]):
             print("Poison!")
             letter = "P"
-        
+
         if self.isVictim(colorPointCounts["black"], colorPointCounts["white"]):
             cv.imshow("black filter:", colorImgs["black"])
             letter = self.classifyHSU(image)
             print("Victim:", letter)
-            
-        
+
+
         if self.isCorrosive(colorPointCounts["black"], colorPointCounts["white"]):
             print("Corrosive!")
             letter = "C"
-        
+
         if self.isOrganicPeroxide(colorPointCounts["red"], colorPointCounts["yellow"]):
             print("organic peroxide!")
             letter = "O"
-        
+
         if self.isFlammable(colorPointCounts["red"], colorPointCounts["white"]):
             print("Flammable!")
             letter = "F"
