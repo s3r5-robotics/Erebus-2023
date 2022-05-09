@@ -2,7 +2,7 @@ from controller import Robot
 import sys
 import numpy as np
 
-sys.path.append(r"C:\\Users\\LER\\Documents\\Programming\\CoSpace-2022-new\\Erebus-2022\\src\\")
+sys.path.append(r"/Users/tevz/Documents/programing/Erebus-2022/src/")
 from StateMachines import *  # li
 from RobotLayer import *  # li
 from Analysis import *  # li
@@ -98,7 +98,7 @@ class AbstractionLayer():
             self.robot.positionOffsets = [self.robot.positionOffsets[0] % self.tileSize,
                                           self.robot.positionOffsets[1] % self.tileSize]
 
-            print("positionOffsets: ", self.robot.positionOffsets)
+            #print("positionOffsets: ", self.robot.positionOffsets)
         if self.seqMg.simpleSeqEvent(): self.analyst.registerStart()
         self.seqDelaySec(0.5)
 
@@ -164,9 +164,9 @@ class AbstractionLayer():
     def update(self):
         self.robot.update()
 
-        print("Time:", self.robot.time)
-        print("time without moving: ", self.timeWithoutMoving)
-        print("time left:", self.timeLeft)
+        #print("Time:", self.robot.time)
+        #print("time without moving: ", self.timeWithoutMoving)
+        #print("time left:", self.timeLeft)
         diff = [self.position[0] - self.prevPosition[0], self.position[1] - self.prevPosition[1]]
         if self.robot.getWheelDirection() < 0.1:
             self.timeWithoutMoving = 0
@@ -180,7 +180,7 @@ class AbstractionLayer():
             self.timeWithoutMoving = 0
 
         if self.doWallMapping:
-            print("Doing wall mapping")
+            #print("Doing wall mapping")
 
             if self.timeWithoutMoving > 1:
                 self.analyst.stoppedMoving = True
@@ -199,7 +199,7 @@ class AbstractionLayer():
             self.analyst.loadPointCloud(pointCloud)
 
         colorPos, self.actualTileType = self.robot.getColorDetection()
-        print("Tile type: ", self.actualTileType)
+        #print("Tile type: ", self.actualTileType)
         self.analyst.loadColorDetection(colorPos, self.actualTileType)
         trapsAtSides = self.robot.trapsAtSides()
         for trap in trapsAtSides:

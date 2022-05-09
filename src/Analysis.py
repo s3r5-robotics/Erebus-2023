@@ -3,7 +3,7 @@ import cv2 as cv
 import sys
 import copy
 
-sys.path.append(r"C:\\Users\\LER\\Documents\\Programming\\CoSpace-2022-new\\Erebus-2022\\src\\")
+sys.path.append(r"/Users/tevz/Documents/programing/Erebus-2022/src/")
 from PointCloudToGrid import *  # li
 from ClassifierTemplate import tilesDict  # li
 
@@ -244,7 +244,7 @@ class Grid:
                     if node.tileType == "start":
                         printableArray[x][y] = 100
                     elif node.tileType == "hole":
-                        # print("NEW HOLE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                        # #print("NEW HOLE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                         printableArray[x][y] = 255
                     elif node.tileType == "checkpoint":
                         printableArray[x][y] = 60
@@ -458,8 +458,8 @@ class PathFinder:
             self.prevVortex = self.startVortex
 
         self.startVortex = startRawVortexPos
-        if not self.isTraversable(startRawVortexPos):
-            print("INITIAL VORTEX NOT TRAVERSABLE")
+        #if not self.isTraversable(startRawVortexPos):
+            #print("INITIAL VORTEX NOT TRAVERSABLE")
 
     def setGrid(self, grid):
         self.grid = grid
@@ -482,8 +482,8 @@ class PathFinder:
                 bestNode = possibleNodes[1]
             for posNode in possibleNodes:
                 diff = substractLists(self.startVortex, posNode[:2])
-                # print("Diff:", diff)
-                # print("Multiplied orientation: ", multiplyLists(orientation, [-2, -2]))
+                # #print("Diff:", diff)
+                # #print("Multiplied orientation: ", multiplyLists(orientation, [-2, -2]))
                 if posNode[2] > 1:
                     break
 
@@ -494,10 +494,10 @@ class PathFinder:
             bestNode = self.startNode
 
         bestPath = self.aStar(bfsStart, bestNode)
-        print("BFS NODES: ", possibleNodes)
-        print("Best Node:", bestNode)
-        print("AStar PATH: ", bestPath)
-        print("Start Vortex: ", self.startVortex)
+        #print("BFS NODES: ", possibleNodes)
+        #print("Best Node:", bestNode)
+        #print("AStar PATH: ", bestPath)
+        #print("Start Vortex: ", self.startVortex)
         return bestPath
 
 
@@ -544,10 +544,10 @@ class Analyst:
     def loadPointCloud(self, pointCloud):
         self.converter.loadPointCloud(pointCloud)
         tilesWithPoints = self.converter.getTilesWithPoints()
-        # print("tilesWithPoints: ", tilesWithPoints)
+        # #print("tilesWithPoints: ", tilesWithPoints)
         for item in tilesWithPoints:
             percentages = self.classifier.getCalsificationPercentages(item["posInTile"])
-            # print("percentages: ", percentages)
+            # #print("percentages: ", percentages)
             for key, value in percentages.items():
                 wallType, orientation = key
                 if wallType == "straight":
@@ -561,8 +561,8 @@ class Analyst:
 
                 elif wallType == "curved":
                     if value > 0:
-                        # print("Robot tile", self.tile)
-                        # print("Curved", orientation, "in sight at", item["tile"])
+                        # #print("Robot tile", self.tile)
+                        # #print("Curved", orientation, "in sight at", item["tile"])
                         if percentages[("curvedwall", orientation)] > 6:
                             walls = orientation.split("-")
                             for wall in walls:
@@ -649,7 +649,7 @@ class Analyst:
         self.tile = self.getTile(position)
         startRawNode = self.grid.processedToRawNode(self.tile, quadrant)
         self.startRawNode = startRawNode
-        # print("startRawNode: ", startRawNode)
+        # #print("startRawNode: ", startRawNode)
         self.pathFinder.setStartVortex(startRawNode)
         self.pathFinder.setGrid(self.grid)
 
@@ -667,11 +667,11 @@ class Analyst:
             self.calculatePath = True
 
         if len(self.getBestPathSafe()):
-            print("Dist to Vortex: ", distToVortex)
+            #print("Dist to Vortex: ", distToVortex)
             if distToVortex < self.positionReachedThresh and startRawNode == self.__bestPath[self.pathIndex]:
                 self.pathIndex += 1
 
-        print("PathLenght: ", len(self.getBestPathSafe()))
+        #print("PathLenght: ", len(self.getBestPathSafe()))
         if self.pathIndex >= len(self.getBestPathSafe()):
             self.calculatePath = True
 
@@ -682,17 +682,17 @@ class Analyst:
                     self.calculatePath = True
 
         if self.calculatePath:
-            # print("Calculating path")
+            # #print("Calculating path")
             self.__bestPath = self.pathFinder.getBestPath(self.direction)
             self.pathIndex = 0
-            print("update - self.calculatePath => ", self.__bestPath, (not self.__bestPath is None) and len(self.getBestPathSafe()) < 2)
+            #print("update - self.calculatePath => ", self.__bestPath, (not self.__bestPath is None) and len(self.getBestPathSafe()) < 2)
             if len(self.getBestPathSafe()) < 2:
                 self.ended = True
             self.calculatePath = False
 
     def getBestRawNodeToMove(self):
-        # print("Best path: ", self.__bestPath)
-        # print("Index: ", self.pathIndex)
+        # #print("Best path: ", self.__bestPath)
+        # #print("Index: ", self.pathIndex)
         if len(self.getBestPathSafe()):
             return self.__bestPath[self.pathIndex]
         else:
@@ -700,7 +700,7 @@ class Analyst:
 
     def getBestPosToMove(self):
         bestRawNode = self.getBestRawNodeToMove()
-        # print("BEST PATH: ", bestRawNode)
+        # #print("BEST PATH: ", bestRawNode)
         if bestRawNode is None:
             return None
         node, quadrant = self.grid.rawToProcessedNode(bestRawNode)
@@ -719,7 +719,7 @@ class Analyst:
             nodePos = self.getTilePos(node)
 
             vortexPos = self.getVortexPosInTile(quadrant)
-            # print("Vortex pos: ", vortexPos)
+            # #print("Vortex pos: ", vortexPos)
             # return
             bestPoses.append([nodePos[0] + vortexPos[0], nodePos[1] + vortexPos[1]])
         return bestPoses

@@ -1,6 +1,6 @@
 import sys
 
-sys.path.append(r"C:\\Users\\LER\\Documents\\Programming\\CoSpace-2022-new\\Erebus-2022\\src\\")
+sys.path.append(r"/Users/tevz/Documents/programing/Erebus-2022/src/")
 from UtilityFunctions import *  # li
 
 
@@ -15,7 +15,7 @@ class PointCloudConverterPoint:
     def __eq__(self, other):
         return self.position == other.position
 
-    # Defines what to print if I ask to print it
+    # Defines what to #print if I ask to #print it
     def __repr__(self):
         return str(self.position + [self.count])
     def __str__(self):
@@ -61,7 +61,7 @@ class PointCloudQueManager:
                         totalItem[2] += item[2]
                 if not isInFinal:
                     totalPointCloud.append(item)
-        #print("total point cloud: ", totalPointCloud)
+        ##print("total point cloud: ", totalPointCloud)
         return totalPointCloud
 
     # Adds a new point cloud to the que and removes the last element
@@ -99,11 +99,11 @@ class PointCloudDivider:
     # Returns a list with dictionarys containing the tile number and the position inside of said tile
     def getTiles(self, totalPointCloud):
         tiles = []
-        #print("Total Point Cloud: ", totalPointCloud)
+        ##print("Total Point Cloud: ", totalPointCloud)
         for item in totalPointCloud:
             inTiles = False
             if item[2] >= self.pointPermanenceThresh:
-                #print(item[:2])
+                ##print(item[:2])
                 itemTile = self.getTile(item[:2])
                 itemPosInTile = self.getPosInTile(item[:2])
                 for tile in tiles:
@@ -113,7 +113,7 @@ class PointCloudDivider:
 
                 if not inTiles:
                     tiles.append({"tile":itemTile, "posInTile":[itemPosInTile]})
-        #print("Tiles: ", tiles)
+        ##print("Tiles: ", tiles)
         return tiles
 
 class PointCloudConverter:

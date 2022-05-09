@@ -19,15 +19,15 @@ class VictimClassifier:
         self.redListener = Listener(lowerHSV=(73, 157, 127), upperHSV=(179, 255, 255))
         self.yellowListener = Listener(lowerHSV=(0, 157, 82), upperHSV=(40, 255, 255))
         self.whiteListener = Listener(lowerHSV=(0, 0, 200), upperHSV=(0, 255, 255))
-        self.blackListener = Listener(lowerHSV=(0, 0, 0), upperHSV=(0, 255, 10))
-        self.victimLetterListener = Listener(lowerHSV=(0, 0, 0), upperHSV=(5, 255, 100))
+        self.blackListener = Listener(lowerHSV=(0, 0, 0), upperHSV=(0, 255, 90))
+        self.victimLetterListener = Listener(lowerHSV=(0, 0, 0), upperHSV=(5, 255, 70))
 
     def isClose(self, height):
-        print(f"Current height: {height}")
+        #print(f"Current height: {height}")
         return height > 45
 
     def isInCenter(self, pos):
-        print(f"Current pos1: {pos[1]}")
+        #print(f"Current pos1: {pos[1]}")
         return 15 < pos[1] < 70
 
     def getCloseVictims(self, victimPoses, victimImages):
@@ -52,7 +52,7 @@ class VictimClassifier:
         finalPoses = []
         finalImages = []
         for pos, img in zip(poses, images):
-            print(f"Current victim pos0: {pos[0]}")
+            #print(f"Current victim pos0: {pos[0]}")
             if 25 < pos[0] < 60:
                 finalPoses.append(pos)
                 finalImages.append(img)
@@ -66,7 +66,7 @@ class VictimClassifier:
                         self.blackListener.getFiltered(image)]
 
         binaryImage = self.getSumedFilters(binaryImages)
-        # cv.imshow("binaryImage", binaryImage)
+        cv.imshow("binaryImage", binaryImage)
 
         # Encuentra los contornos, aunque se puede confundir con el contorno de la letra
         contours, _ = cv.findContours(binaryImage, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
@@ -90,7 +90,7 @@ class VictimClassifier:
 
     def cropWhite(self, binaryImg):
         white = 255
-        #print(conts)
+        ##print(conts)
         maxX = 0
         maxY = 0
         minX = binaryImg.shape[0]
@@ -107,15 +107,22 @@ class VictimClassifier:
 
     def classifyHSU(self, img):
         white = 255
+        print("Hello!!!!!")
 
         img =  cv.resize(img, (100, 100), interpolation=cv.INTER_AREA)
         #conts, h = cv.findContours(thresh1, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+        #print(str(img))
         binary = self.victimLetterListener.getFiltered(img)
-
+        print("Binary image: ")
+        print(str(binary))
         letter1 = self.cropWhite(binary)
+        #print(str(letter1))
         letter1 = cv.resize(letter1, (100, 100), interpolation=cv.INTER_AREA)
+        #print(str(letter1))
         letter = letter1[:,10:90]
+        #print(str(letter))
         letter = self.cropWhite(letter)
+        #print(str(letter))
         letter = cv.resize(letter, (100, 100), interpolation=cv.INTER_AREA)
         # cv.imshow("letra", letter)
         # #cv.imshow("letra1", letter1)
@@ -156,8 +163,11 @@ class VictimClassifier:
                 finalLetter = letterKey
                 break
 
-        #print(counts)
-        #print(finalLetter)
+        #print("Counts: " + counts)
+        print("Hello!!!!!: " + finalLetter)
+
+        ##print(counts)
+        ##print(finalLetter)
         return finalLetter
 
     def isPoison(self, blackPoints, whitePoints):
@@ -176,8 +186,10 @@ class VictimClassifier:
         return redPoints and yellowPoints
 
     def classifyVictim(self, img):
+        #print("in classify victim")
         letter = "N"
         image = cv.resize(img, (100, 100), interpolation=cv.INTER_AREA)
+        print(str(image))
         colorImgs = {
         "red" : self.redListener.getFiltered(image),
         "yellow" : self.yellowListener.getFiltered(image),
@@ -186,7 +198,7 @@ class VictimClassifier:
 
         colorPointCounts = {}
         for key, img in colorImgs.items():
-            print("Shpae idisjfdj:", img.shape)
+            ##print("Shpae idisjfdj:", img.shape)
             sought = 255
             all_points = np.where(img == 255)
             all_points = all_points[0]
@@ -194,9 +206,11 @@ class VictimClassifier:
 
             colorPointCounts[key] = count
 
-        print(colorPointCounts)
+        print("Black: " + str(colorPointCounts["black"]) + " White: " + str(colorPointCounts["white"]))
+
+        #print(colorPointCounts)
         if self.isPoison(colorPointCounts["black"], colorPointCounts["white"]):
-            print("Poison!")
+            #print("Poison!")
             letter = "P"
 
         if self.isVictim(colorPointCounts["black"], colorPointCounts["white"]):
@@ -206,15 +220,17 @@ class VictimClassifier:
 
 
         if self.isCorrosive(colorPointCounts["black"], colorPointCounts["white"]):
-            print("Corrosive!")
+            #print("Corrosive!")
             letter = "C"
 
         if self.isOrganicPeroxide(colorPointCounts["red"], colorPointCounts["yellow"]):
-            print("organic peroxide!")
+            #print("organic peroxide!")
             letter = "O"
 
         if self.isFlammable(colorPointCounts["red"], colorPointCounts["white"]):
-            print("Flammable!")
+            #print("Flammable!")
             letter = "F"
+
+        print("Detected: ", colorPointCounts)
 
         return letter

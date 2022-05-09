@@ -22,9 +22,9 @@ class SequenceManager:
     # Resets the sequence and makes it start from the first event
     def resetSequence(self):
         self.linePointer = 1
-        print("----------------")
-        print("reseting sequence")
-        print("----------------")
+        #print("----------------")
+        #print("reseting sequence")
+        #print("----------------")
 
     def seqResetSequence(self):
         if self.check():

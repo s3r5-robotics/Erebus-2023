@@ -211,7 +211,7 @@ class PointCloudConverterPoint:
     def __eq__(self, other):
         return self.position == other.position
 
-    # Defines what to print if I ask to print it
+    # Defines what to #print if I ask to #print it
     def __repr__(self):
         return str(self.position + [self.count])
     def __str__(self):
@@ -257,7 +257,7 @@ class PointCloudQueManager:
                         totalItem[2] += item[2]
                 if not isInFinal:
                     totalPointCloud.append(item)
-        #print("total point cloud: ", totalPointCloud)
+        ##print("total point cloud: ", totalPointCloud)
         return totalPointCloud
 
     # Adds a new point cloud to the que and removes the last element
@@ -295,11 +295,11 @@ class PointCloudDivider:
     # Returns a list with dictionarys containing the tile number and the position inside of said tile
     def getTiles(self, totalPointCloud):
         tiles = []
-        #print("Total Point Cloud: ", totalPointCloud)
+        ##print("Total Point Cloud: ", totalPointCloud)
         for item in totalPointCloud:
             inTiles = False
             if item[2] >= self.pointPermanenceThresh:
-                #print(item[:2])
+                ##print(item[:2])
                 itemTile = self.getTile(item[:2])
                 itemPosInTile = self.getPosInTile(item[:2])
                 for tile in tiles:
@@ -309,7 +309,7 @@ class PointCloudDivider:
 
                 if not inTiles:
                     tiles.append({"tile":itemTile, "posInTile":[itemPosInTile]})
-        #print("Tiles: ", tiles)
+        ##print("Tiles: ", tiles)
         return tiles
 
 class PointCloudConverter:
@@ -379,9 +379,9 @@ class SequenceManager:
     # Resets the sequence and makes it start from the first event
     def resetSequence(self):
         self.linePointer = 1
-        print("----------------")
-        print("reseting sequence")
-        print("----------------")
+        #print("----------------")
+        #print("reseting sequence")
+        #print("----------------")
 
     def seqResetSequence(self):
         if self.check():
@@ -694,7 +694,7 @@ class Grid:
                     if node.tileType == "start":
                         printableArray[x][y] = 100
                     elif node.tileType == "hole":
-                        # print("NEW HOLE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                        # #print("NEW HOLE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                         printableArray[x][y] = 255
                     elif node.tileType == "checkpoint":
                         printableArray[x][y] = 60
@@ -908,8 +908,8 @@ class PathFinder:
             self.prevVortex = self.startVortex
 
         self.startVortex = startRawVortexPos
-        if not self.isTraversable(startRawVortexPos):
-            print("INITIAL VORTEX NOT TRAVERSABLE")
+        #if not self.isTraversable(startRawVortexPos):
+            #print("INITIAL VORTEX NOT TRAVERSABLE")
 
     def setGrid(self, grid):
         self.grid = grid
@@ -932,8 +932,8 @@ class PathFinder:
                 bestNode = possibleNodes[1]
             for posNode in possibleNodes:
                 diff = substractLists(self.startVortex, posNode[:2])
-                # print("Diff:", diff)
-                # print("Multiplied orientation: ", multiplyLists(orientation, [-2, -2]))
+                # #print("Diff:", diff)
+                # #print("Multiplied orientation: ", multiplyLists(orientation, [-2, -2]))
                 if posNode[2] > 1:
                     break
 
@@ -944,10 +944,10 @@ class PathFinder:
             bestNode = self.startNode
 
         bestPath = self.aStar(bfsStart, bestNode)
-        print("BFS NODES: ", possibleNodes)
-        print("Best Node:", bestNode)
-        print("AStar PATH: ", bestPath)
-        print("Start Vortex: ", self.startVortex)
+        #print("BFS NODES: ", possibleNodes)
+        #print("Best Node:", bestNode)
+        #print("AStar PATH: ", bestPath)
+        #print("Start Vortex: ", self.startVortex)
         return bestPath
 
 
@@ -994,10 +994,10 @@ class Analyst:
     def loadPointCloud(self, pointCloud):
         self.converter.loadPointCloud(pointCloud)
         tilesWithPoints = self.converter.getTilesWithPoints()
-        # print("tilesWithPoints: ", tilesWithPoints)
+        # #print("tilesWithPoints: ", tilesWithPoints)
         for item in tilesWithPoints:
             percentages = self.classifier.getCalsificationPercentages(item["posInTile"])
-            # print("percentages: ", percentages)
+            # #print("percentages: ", percentages)
             for key, value in percentages.items():
                 wallType, orientation = key
                 if wallType == "straight":
@@ -1011,8 +1011,8 @@ class Analyst:
 
                 elif wallType == "curved":
                     if value > 0:
-                        # print("Robot tile", self.tile)
-                        # print("Curved", orientation, "in sight at", item["tile"])
+                        # #print("Robot tile", self.tile)
+                        # #print("Curved", orientation, "in sight at", item["tile"])
                         if percentages[("curvedwall", orientation)] > 6:
                             walls = orientation.split("-")
                             for wall in walls:
@@ -1099,7 +1099,7 @@ class Analyst:
         self.tile = self.getTile(position)
         startRawNode = self.grid.processedToRawNode(self.tile, quadrant)
         self.startRawNode = startRawNode
-        # print("startRawNode: ", startRawNode)
+        # #print("startRawNode: ", startRawNode)
         self.pathFinder.setStartVortex(startRawNode)
         self.pathFinder.setGrid(self.grid)
 
@@ -1117,11 +1117,11 @@ class Analyst:
             self.calculatePath = True
 
         if len(self.getBestPathSafe()):
-            print("Dist to Vortex: ", distToVortex)
+            #print("Dist to Vortex: ", distToVortex)
             if distToVortex < self.positionReachedThresh and startRawNode == self.__bestPath[self.pathIndex]:
                 self.pathIndex += 1
 
-        print("PathLenght: ", len(self.getBestPathSafe()))
+        #print("PathLenght: ", len(self.getBestPathSafe()))
         if self.pathIndex >= len(self.getBestPathSafe()):
             self.calculatePath = True
 
@@ -1132,17 +1132,17 @@ class Analyst:
                     self.calculatePath = True
 
         if self.calculatePath:
-            # print("Calculating path")
+            # #print("Calculating path")
             self.__bestPath = self.pathFinder.getBestPath(self.direction)
             self.pathIndex = 0
-            print("update - self.calculatePath => ", self.__bestPath, (not self.__bestPath is None) and len(self.getBestPathSafe()) < 2)
+            #print("update - self.calculatePath => ", self.__bestPath, (not self.__bestPath is None) and len(self.getBestPathSafe()) < 2)
             if len(self.getBestPathSafe()) < 2:
                 self.ended = True
             self.calculatePath = False
 
     def getBestRawNodeToMove(self):
-        # print("Best path: ", self.__bestPath)
-        # print("Index: ", self.pathIndex)
+        # #print("Best path: ", self.__bestPath)
+        # #print("Index: ", self.pathIndex)
         if len(self.getBestPathSafe()):
             return self.__bestPath[self.pathIndex]
         else:
@@ -1150,7 +1150,7 @@ class Analyst:
 
     def getBestPosToMove(self):
         bestRawNode = self.getBestRawNodeToMove()
-        # print("BEST PATH: ", bestRawNode)
+        # #print("BEST PATH: ", bestRawNode)
         if bestRawNode is None:
             return None
         node, quadrant = self.grid.rawToProcessedNode(bestRawNode)
@@ -1169,7 +1169,7 @@ class Analyst:
             nodePos = self.getTilePos(node)
 
             vortexPos = self.getVortexPosInTile(quadrant)
-            # print("Vortex pos: ", vortexPos)
+            # #print("Vortex pos: ", vortexPos)
             # return
             bestPoses.append([nodePos[0] + vortexPos[0], nodePos[1] + vortexPos[1]])
         return bestPoses
@@ -1204,15 +1204,15 @@ class VictimClassifier:
         self.redListener = Listener(lowerHSV=(73, 157, 127), upperHSV=(179, 255, 255))
         self.yellowListener = Listener(lowerHSV=(0, 157, 82), upperHSV=(40, 255, 255))
         self.whiteListener = Listener(lowerHSV=(0, 0, 200), upperHSV=(0, 255, 255))
-        self.blackListener = Listener(lowerHSV=(0, 0, 0), upperHSV=(0, 255, 10))
+        self.blackListener = Listener(lowerHSV=(0, 0, 0), upperHSV=(0, 255, 120))
         self.victimLetterListener = Listener(lowerHSV=(0, 0, 0), upperHSV=(5, 255, 100))
 
     def isClose(self, height):
-        print(f"Current height: {height}")
+        #print(f"Current height: {height}")
         return height > 45
 
     def isInCenter(self, pos):
-        print(f"Current pos1: {pos[1]}")
+        #print(f"Current pos1: {pos[1]}")
         return 15 < pos[1] < 70
 
     def getCloseVictims(self, victimPoses, victimImages):
@@ -1237,7 +1237,7 @@ class VictimClassifier:
         finalPoses = []
         finalImages = []
         for pos, img in zip(poses, images):
-            print(f"Current victim pos0: {pos[0]}")
+            #print(f"Current victim pos0: {pos[0]}")
             if 25 < pos[0] < 60:
                 finalPoses.append(pos)
                 finalImages.append(img)
@@ -1251,7 +1251,7 @@ class VictimClassifier:
                         self.blackListener.getFiltered(image)]
 
         binaryImage = self.getSumedFilters(binaryImages)
-        # cv.imshow("binaryImage", binaryImage)
+        cv.imshow("binaryImage", binaryImage)
 
         # Encuentra los contornos, aunque se puede confundir con el contorno de la letra
         contours, _ = cv.findContours(binaryImage, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
@@ -1275,7 +1275,7 @@ class VictimClassifier:
 
     def cropWhite(self, binaryImg):
         white = 255
-        #print(conts)
+        ##print(conts)
         maxX = 0
         maxY = 0
         minX = binaryImg.shape[0]
@@ -1292,6 +1292,7 @@ class VictimClassifier:
 
     def classifyHSU(self, img):
         white = 255
+        print("Hello!!!!!")
 
         img =  cv.resize(img, (100, 100), interpolation=cv.INTER_AREA)
         #conts, h = cv.findContours(thresh1, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
@@ -1341,8 +1342,11 @@ class VictimClassifier:
                 finalLetter = letterKey
                 break
 
-        #print(counts)
-        #print(finalLetter)
+        #print("Counts: " + counts)
+        print("Hello!!!!!: " + finalLetter)
+
+        ##print(counts)
+        ##print(finalLetter)
         return finalLetter
 
     def isPoison(self, blackPoints, whitePoints):
@@ -1361,7 +1365,10 @@ class VictimClassifier:
         return redPoints and yellowPoints
 
     def classifyVictim(self, img):
+        #print("in classify victim")
         letter = "N"
+        img
+        print(str(img))
         image = cv.resize(img, (100, 100), interpolation=cv.INTER_AREA)
         colorImgs = {
         "red" : self.redListener.getFiltered(image),
@@ -1371,7 +1378,7 @@ class VictimClassifier:
 
         colorPointCounts = {}
         for key, img in colorImgs.items():
-            print("Shpae idisjfdj:", img.shape)
+            ##print("Shpae idisjfdj:", img.shape)
             sought = 255
             all_points = np.where(img == 255)
             all_points = all_points[0]
@@ -1379,9 +1386,11 @@ class VictimClassifier:
 
             colorPointCounts[key] = count
 
-        print(colorPointCounts)
+        print("Black: " + str(colorPointCounts["black"]) + " White: " + str(colorPointCounts["white"]))
+
+        #print(colorPointCounts)
         if self.isPoison(colorPointCounts["black"], colorPointCounts["white"]):
-            print("Poison!")
+            #print("Poison!")
             letter = "P"
 
         if self.isVictim(colorPointCounts["black"], colorPointCounts["white"]):
@@ -1391,16 +1400,18 @@ class VictimClassifier:
 
 
         if self.isCorrosive(colorPointCounts["black"], colorPointCounts["white"]):
-            print("Corrosive!")
+            #print("Corrosive!")
             letter = "C"
 
         if self.isOrganicPeroxide(colorPointCounts["red"], colorPointCounts["yellow"]):
-            print("organic peroxide!")
+            #print("organic peroxide!")
             letter = "O"
 
         if self.isFlammable(colorPointCounts["red"], colorPointCounts["white"]):
-            print("Flammable!")
+            #print("Flammable!")
             letter = "F"
+
+        print("Detected: ", colorPointCounts)
 
         return letter
 
@@ -1446,7 +1457,7 @@ class Gyroscope:
 
     # Do on every timestep
     def update(self, time):
-        #print("Gyro Vals: " + str(self.sensor.getValues()))
+        ##print("Gyro Vals: " + str(self.sensor.getValues()))
         timeElapsed = time - self.oldTime  # Time passed in time step
         radsInTimestep = (self.sensor.getValues())[self.index] * timeElapsed
         self.lastRads = radsInTimestep
@@ -1502,7 +1513,7 @@ class Gps:
         if self.__prevPosition != self.position:
             posDiff = ((self.position[0] - self.__prevPosition[0]), (self.position[1] - self.__prevPosition[1]))
             accuracy = getDistance(posDiff)
-            #print("accuracy: " + str(accuracy))
+            ##print("accuracy: " + str(accuracy))
             if accuracy > 0.001:
                 degs = getDegsFromCoords(posDiff)
                 return normalizeDegs(degs)
@@ -1531,7 +1542,7 @@ class Lidar():
     def getPointCloud(self, layers=range(3)):
         #(degsToRads(359 - radsToDegs(self.rotation)))
         #rangeImage = self.device.getRangeImageArray()
-        #print("Lidar vFov: ", self.verticalFov/ self.verticalRes)
+        ##print("Lidar vFov: ", self.verticalFov/ self.verticalRes)
         pointCloud = []
 
         for layer in layers:
@@ -1591,11 +1602,11 @@ class ColourSensor:
 
     def __update(self):
         colour = self.sensor.getImage()
-        print("Colourimg:", colour)
+        #print("Colourimg:", colour)
         self.r = self.sensor.imageGetRed(colour, 1, 0, 0)
         self.g = self.sensor.imageGetGreen(colour, 1, 0, 0)
         self.b = self.sensor.imageGetBlue(colour, 1, 0, 0)
-        print("Colour:", self.r, self.g, self.b)
+        #print("Colour:", self.r, self.g, self.b)
 
     def __isTrap(self):
         return (35 < self.r < 45 and 35 < self.g < 45)
@@ -1631,8 +1642,8 @@ class ColourSensor:
         elif self.__isRed():
             tileType = "connection1-3"
 
-        #print("Color: " + tileType)
-        #print("r: " + str(self.r) + "g: " + str(self.g) + "b: " +  str(self.b))
+        ##print("Color: " + tileType)
+        ##print("r: " + str(self.r) + "g: " + str(self.g) + "b: " +  str(self.b))
         return tileType
 
 
@@ -1667,11 +1678,11 @@ class Comunicator:
         self.emmiter.send(exit_mes)
 
 
-        print("Ended!!!!!")
+        #print("Ended!!!!!")
 
     def sendMap(self, npArray):
          ## Get shape
-        print(npArray)
+        #print(npArray)
         s = npArray.shape
         ## Get shape as bytes
         s_bytes = struct.pack('2i',*s)
@@ -1708,15 +1719,15 @@ class Comunicator:
                         self.receiver.nextPacket() # Discard the current data packet
             """
 
-            #print("Remaining time:", self.remainingTime)
+            ##print("Remaining time:", self.remainingTime)
             self.lackOfProgress = False
             if self.receiver.getQueueLength() > 0: # If receiver queue is not empty
                 receivedData = self.receiver.getData()
-                print(receivedData)
+                #print(receivedData)
                 if len(receivedData) < 2:
                     tup = struct.unpack('c', receivedData) # Parse data into character
                     if tup[0].decode("utf-8") == 'L': # 'L' means lack of progress occurred
-                        print("Detected Lack of Progress!")
+                        #print("Detected Lack of Progress!")
                         self.lackOfProgress = True
                     self.receiver.nextPacket() # Discard the current data packetelse:
         else:
@@ -1734,7 +1745,7 @@ class DistanceSensor:
 
     def isFar(self):
         distance = self.sensor.getValue()
-        #print("Sensor distance:", distance)
+        ##print("Sensor distance:", distance)
         return distance > self.threshold
 
     def setPosition(self, robotPosition, robotRotation):
@@ -1780,9 +1791,9 @@ class RobotLayer:
             cposes, cimgs = self.victimClasifier.getVictimImagesAndPositions(img)
             poses += cposes
             imgs += cimgs
-        print("Victim Poses: ",poses)
-        for img in imgs:
-            print("Victim shape:", img.shape)
+        #print("Victim Poses: ",poses)
+        #for img in imgs:
+            #print("Victim shape:", img.shape)
         closeVictims = self.victimClasifier.getCloseVictims(poses, imgs)
         finalVictims = []
         for closeVictim in closeVictims:
@@ -1796,7 +1807,7 @@ class RobotLayer:
         self.comunicator.sendMap(array)
 
     def sendEnd(self):
-        print("End sended")
+        #print("End sended")
         self.comunicator.sendEndOfPlay()
 
 
@@ -1836,7 +1847,7 @@ class RobotLayer:
     def rotateToDegs(self, degs, orientation="closest", maxSpeed=0.5):
         accuracy = 2
         if self.rotateToDegsFirstTime:
-            #print("STARTED ROTATION")
+            ##print("STARTED ROTATION")
             self.rotateToDegsFirstTime = False
         self.seqRotateToDegsInitialRot = self.rotation
         self.seqRotateToDegsinitialDiff = round(self.seqRotateToDegsInitialRot - degs)
@@ -1872,15 +1883,15 @@ class RobotLayer:
                     self.moveWheels(speedFract * -0.5, speedFract)
                 elif direction == "left":
                     self.moveWheels(speedFract, speedFract * -0.5)
-            #print("speed fract: " +  str(speedFract))
-            #print("target angle: " +  str(degs))
-            #print("moveDiff: " + str(moveDiff))
-            #print("diff: " + str(diff))
-            #print("orientation: " + str(orientation))
-            #print("direction: " + str(direction))
-            #print("initialDiff: " + str(self.seqRotateToDegsinitialDiff))
+            ##print("speed fract: " +  str(speedFract))
+            ##print("target angle: " +  str(degs))
+            ##print("moveDiff: " + str(moveDiff))
+            ##print("diff: " + str(diff))
+            ##print("orientation: " + str(orientation))
+            ##print("direction: " + str(direction))
+            ##print("initialDiff: " + str(self.seqRotateToDegsinitialDiff))
 
-        #print("ROT IS FALSE")
+        ##print("ROT IS FALSE")
         return False
 
     def rotateSmoothlyToDegs(self, degs, orientation="closest", maxSpeed=0.5):
@@ -1911,15 +1922,15 @@ class RobotLayer:
                 self.moveWheels(speedFract * -0.5, speedFract)
             elif direction == "left":
                 self.moveWheels(speedFract, speedFract * -0.5)
-            #print("speed fract: " +  str(speedFract))
-            #print("target angle: " +  str(degs))
-            #print("moveDiff: " + str(moveDiff))
-            #print("diff: " + str(diff))
-            #print("orientation: " + str(orientation))
-            #print("direction: " + str(direction))
-            #print("initialDiff: " + str(seqRotateToDegsinitialDiff))
+            ##print("speed fract: " +  str(speedFract))
+            ##print("target angle: " +  str(degs))
+            ##print("moveDiff: " + str(moveDiff))
+            ##print("diff: " + str(diff))
+            ##print("orientation: " + str(orientation))
+            ##print("direction: " + str(direction))
+            ##print("initialDiff: " + str(seqRotateToDegsinitialDiff))
 
-        #print("ROT IS FALSE")
+        ##print("ROT IS FALSE")
         return False
 
     def moveToCoords(self, targetPos):
@@ -1927,25 +1938,25 @@ class RobotLayer:
         descelerationStart = 0.5 * 0.12
         diffX = targetPos[0] - self.globalPosition[0]
         diffY = targetPos[1] - self.globalPosition[1]
-        #print("Target Pos: ", targetPos)
-        #print("Used global Pos: ", self.globalPosition)
-        #print("diff in pos: " + str(diffX) + " , " + str(diffY))
+        ##print("Target Pos: ", targetPos)
+        ##print("Used global Pos: ", self.globalPosition)
+        ##print("diff in pos: " + str(diffX) + " , " + str(diffY))
         dist = getDistance((diffX, diffY))
-        #print("Dist: "+ str(dist))
+        ##print("Dist: "+ str(dist))
         if errorMargin * -1 < dist < errorMargin:
             #self.robot.move(0,0)
-            #print("FinisehedMove")
+            ##print("FinisehedMove")
             return True
         else:
 
             ang = getDegsFromCoords((diffX, diffY))
             ang = normalizeDegs(ang)
-            #print("traget ang: " + str(ang))
+            ##print("traget ang: " + str(ang))
             ratio = min(mapVals(dist, 0, descelerationStart, 0.1, 1), 1)
             ratio = max(ratio, 0.8)
             if self.rotateToDegs(ang):
                 self.moveWheels(ratio, ratio)
-                #print("Moving")
+                ##print("Moving")
         return False
 
     # Gets a point cloud with all the detections from lidar and distance sensorss
@@ -2006,9 +2017,9 @@ class RobotLayer:
         # Gets global rotation
         if self.__useGyroForRotation:
             self.rotation = self.gyroscope.getDegrees()
-            print("USING GYRO")
+            #print("USING GYRO")
         else:
-            print("USING GPS")
+            #print("USING GPS")
             val = self.gps.getRotation()
             if val is not None:
                 self.rotation = val
@@ -2025,7 +2036,7 @@ class RobotLayer:
         self.comunicator.update()
 
         #victims = self.camera.getVictims()
-        #print("Victims: ", victims)
+        ##print("Victims: ", victims)
 
 
 # File: "AbstractionLayer.py"
@@ -2129,7 +2140,7 @@ class AbstractionLayer():
             self.robot.positionOffsets = [self.robot.positionOffsets[0] % self.tileSize,
                                           self.robot.positionOffsets[1] % self.tileSize]
 
-            print("positionOffsets: ", self.robot.positionOffsets)
+            #print("positionOffsets: ", self.robot.positionOffsets)
         if self.seqMg.simpleSeqEvent(): self.analyst.registerStart()
         self.seqDelaySec(0.5)
 
@@ -2195,9 +2206,9 @@ class AbstractionLayer():
     def update(self):
         self.robot.update()
 
-        print("Time:", self.robot.time)
-        print("time without moving: ", self.timeWithoutMoving)
-        print("time left:", self.timeLeft)
+        #print("Time:", self.robot.time)
+        #print("time without moving: ", self.timeWithoutMoving)
+        #print("time left:", self.timeLeft)
         diff = [self.position[0] - self.prevPosition[0], self.position[1] - self.prevPosition[1]]
         if self.robot.getWheelDirection() < 0.1:
             self.timeWithoutMoving = 0
@@ -2211,7 +2222,7 @@ class AbstractionLayer():
             self.timeWithoutMoving = 0
 
         if self.doWallMapping:
-            print("Doing wall mapping")
+            #print("Doing wall mapping")
 
             if self.timeWithoutMoving > 1:
                 self.analyst.stoppedMoving = True
@@ -2230,7 +2241,7 @@ class AbstractionLayer():
             self.analyst.loadPointCloud(pointCloud)
 
         colorPos, self.actualTileType = self.robot.getColorDetection()
-        print("Tile type: ", self.actualTileType)
+        #print("Tile type: ", self.actualTileType)
         self.analyst.loadColorDetection(colorPos, self.actualTileType)
         trapsAtSides = self.robot.trapsAtSides()
         for trap in trapsAtSides:
@@ -2282,12 +2293,12 @@ isOptimised = cv.useOptimized()
 
 # While the simulation is running
 while r.doLoop():
-    e1 = cv.getTickCount()
+    #e1 = cv.getTickCount()
     # Update the robot
     r.update()
-    print("rotation: " + str(r.rotation))
-    print("position: " + str(r.position))
-    print("State:", stMg.state)
+    #print("rotation: " + str(r.rotation))
+    #print("position: " + str(r.position))
+    #print("State:", stMg.state)
 
 
     if not stMg.checkState("init"):
@@ -2340,7 +2351,7 @@ while r.doLoop():
         stMg.changeState("followBest")
 
     if stMg.checkState("victim"):
-        print("Victim mode!!")
+        #print("Victim mode!!")
         r.seqMg.startSequence()
         r.seqMoveWheels(0, 0)
         r.seqPrint("stopping")
@@ -2356,12 +2367,12 @@ while r.doLoop():
         if r.seqMg.simpleSeqEvent(): r.endGame()
         r.seqMoveWheels(0, 0)
 
-    print("--------------------------------------------------------------------")
+    #print("--------------------------------------------------------------------")
 
-    e2 = cv.getTickCount()
+    #e2 = cv.getTickCount()
 
-    time = (e2 - e1)/ cv.getTickFrequency()
-    print(f"Tick time is {time}")
-    print(f"Is it optimised? {isOptimised}")
+    #time = (e2 - e1)/ cv.getTickFrequency()
+    #print(f"Tick time is {time}")
+    #print(f"Is it optimised? {isOptimised}")
 
-    print("--------------------------------------------------------------------")
+    #print("--------------------------------------------------------------------")

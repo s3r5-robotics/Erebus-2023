@@ -2,7 +2,7 @@ from controller import Robot
 import sys
 import cv2 as cv
 
-sys.path.append(r"C:\\Users\\LER\\Documents\\Programming\\CoSpace-2022-new\\Erebus-2022\\src\\")
+sys.path.append(r"/Users/tevz/Documents/programing/Erebus-2022/src/")
 from AbstractionLayer import AbstractionLayer  # li
 from StateMachines import StateManager  # li
 
@@ -15,12 +15,12 @@ isOptimised = cv.useOptimized()
 
 # While the simulation is running
 while r.doLoop():
-    e1 = cv.getTickCount()
+    #e1 = cv.getTickCount()
     # Update the robot
     r.update()
-    print("rotation: " + str(r.rotation))
-    print("position: " + str(r.position))
-    print("State:", stMg.state)
+    #print("rotation: " + str(r.rotation))
+    #print("position: " + str(r.position))
+    #print("State:", stMg.state)
 
 
     if not stMg.checkState("init"):
@@ -73,7 +73,7 @@ while r.doLoop():
         stMg.changeState("followBest")
 
     if stMg.checkState("victim"):
-        print("Victim mode!!")
+        #print("Victim mode!!")
         r.seqMg.startSequence()
         r.seqMoveWheels(0, 0)
         r.seqPrint("stopping")
@@ -89,12 +89,12 @@ while r.doLoop():
         if r.seqMg.simpleSeqEvent(): r.endGame()
         r.seqMoveWheels(0, 0)
 
-    print("--------------------------------------------------------------------")
+    #print("--------------------------------------------------------------------")
 
-    e2 = cv.getTickCount()
+    #e2 = cv.getTickCount()
 
-    time = (e2 - e1)/ cv.getTickFrequency()
-    print(f"Tick time is {time}")
-    print(f"Is it optimised? {isOptimised}")
+    #time = (e2 - e1)/ cv.getTickFrequency()
+    #print(f"Tick time is {time}")
+    #print(f"Is it optimised? {isOptimised}")
 
-    print("--------------------------------------------------------------------")
+    #print("--------------------------------------------------------------------")
