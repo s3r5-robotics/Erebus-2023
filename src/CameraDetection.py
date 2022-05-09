@@ -66,7 +66,7 @@ class VictimClassifier:
                         self.blackListener.getFiltered(image)]
 
         binaryImage = self.getSumedFilters(binaryImages)
-        cv.imshow("binaryImage", binaryImage)
+        #cv.imshow("binaryImage", binaryImage)
 
         # Encuentra los contornos, aunque se puede confundir con el contorno de la letra
         contours, _ = cv.findContours(binaryImage, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
@@ -117,6 +117,14 @@ class VictimClassifier:
         print(str(binary))
         letter1 = self.cropWhite(binary)
         #print(str(letter1))
+
+        x, y = letter1.shape
+
+
+        if(x < 1):
+            return "N"
+
+
         letter1 = cv.resize(letter1, (100, 100), interpolation=cv.INTER_AREA)
         #print(str(letter1))
         letter = letter1[:,10:90]
@@ -196,6 +204,8 @@ class VictimClassifier:
         "white" : self.whiteListener.getFiltered(image),
         "black" : self.blackListener.getFiltered(image)}
 
+        cv.imshow("black filter:", image)
+
         colorPointCounts = {}
         for key, img in colorImgs.items():
             ##print("Shpae idisjfdj:", img.shape)
@@ -214,9 +224,9 @@ class VictimClassifier:
             letter = "P"
 
         if self.isVictim(colorPointCounts["black"], colorPointCounts["white"]):
-            # cv.imshow("black filter:", colorImgs["black"])
+            #cv.imshow("black filter:", image)
             letter = self.classifyHSU(image)
-            print("Victim:", letter)
+            #print("Victim:", letter)
 
 
         if self.isCorrosive(colorPointCounts["black"], colorPointCounts["white"]):
@@ -232,5 +242,6 @@ class VictimClassifier:
             letter = "F"
 
         print("Detected: ", colorPointCounts)
+        print("Victim: ", letter)
 
         return letter

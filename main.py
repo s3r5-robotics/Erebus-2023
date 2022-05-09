@@ -1251,7 +1251,7 @@ class VictimClassifier:
                         self.blackListener.getFiltered(image)]
 
         binaryImage = self.getSumedFilters(binaryImages)
-        cv.imshow("binaryImage", binaryImage)
+        #cv.imshow("binaryImage", binaryImage)
 
         # Encuentra los contornos, aunque se puede confundir con el contorno de la letra
         contours, _ = cv.findContours(binaryImage, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)

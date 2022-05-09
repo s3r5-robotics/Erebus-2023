@@ -2,7 +2,7 @@ from controller import Robot
 import sys
 import cv2 as cv
 
-sys.path.append(r"/Users/tevz/Documents/programing/Erebus-2022/src/")
+sys.path.append(r"C:\\Users\\LER\\Documents\\Programming\\CoSpace-2022-new\\Erebus-2022\\src\\")
 from AbstractionLayer import AbstractionLayer  # li
 from StateMachines import StateManager  # li
 
