@@ -3,7 +3,7 @@ import cv2 as cv
 import sys
 import copy
 
-sys.path.append(r"C:\\Users\\LER\\Documents\\Programming\\CoSpace-2022-new\\Erebus-2022\\src\\")
+sys.path.append(r"C:\\Users\\Erebus\\Documents\\Erebus-2022\\src\\")
 from PointCloudToGrid import *  # li
 from ClassifierTemplate import tilesDict  # li
 

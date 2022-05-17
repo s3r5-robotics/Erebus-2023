@@ -68,17 +68,12 @@ class VictimClassifier:
         binaryImage = self.getSumedFilters(binaryImages)
         #cv.imshow("binaryImage", binaryImage)
 
-        # Encuentra los contornos, aunque se puede confundir con el contorno de la letra
         contours, _ = cv.findContours(binaryImage, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-        # Pra evitar la confusion dibuja rectangulos blancos donde estan los contornos en la imagen y despues vuelve a
-        # sacar los contornos para obtener solo los del rectangulo, no los de las letras.
         for c0 in contours:
             x, y, w, h = cv.boundingRect(c0)
             cv.rectangle(binaryImage, (x, y), (x + w, y + h), (225, 255, 255), -1)
         # cv.imshow("thresh2", binaryImage)
         contours, _ = cv.findContours(binaryImage, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-        # saca las medidas y la posicion de los contornos y agrega a la lista de imagenes la parte esa de la imagen original
-        # Tambien anade la posicion de cada recuadro en la imagen original
         finalPoses = []
         finalImages = []
         for c in contours:
