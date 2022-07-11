@@ -1204,8 +1204,8 @@ class VictimClassifier:
         self.redListener = Listener(lowerHSV=(73, 157, 127), upperHSV=(179, 255, 255))
         self.yellowListener = Listener(lowerHSV=(0, 157, 82), upperHSV=(40, 255, 255))
         self.whiteListener = Listener(lowerHSV=(0, 0, 200), upperHSV=(0, 255, 255))
-        self.blackListener = Listener(lowerHSV=(0, 0, 0), upperHSV=(0, 255, 120))
-        self.victimLetterListener = Listener(lowerHSV=(0, 0, 0), upperHSV=(5, 255, 100))
+        self.blackListener = Listener(lowerHSV=(0, 0, 0), upperHSV=(0, 255, 90))
+        self.victimLetterListener = Listener(lowerHSV=(0, 0, 0), upperHSV=(5, 255, 70))
 
     def isClose(self, height):
         #print(f"Current height: {height}")
@@ -1253,17 +1253,12 @@ class VictimClassifier:
         binaryImage = self.getSumedFilters(binaryImages)
         #cv.imshow("binaryImage", binaryImage)
 
-        # Encuentra los contornos, aunque se puede confundir con el contorno de la letra
         contours, _ = cv.findContours(binaryImage, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-        # Pra evitar la confusion dibuja rectangulos blancos donde estan los contornos en la imagen y despues vuelve a
-        # sacar los contornos para obtener solo los del rectangulo, no los de las letras.
         for c0 in contours:
             x, y, w, h = cv.boundingRect(c0)
             cv.rectangle(binaryImage, (x, y), (x + w, y + h), (225, 255, 255), -1)
         # cv.imshow("thresh2", binaryImage)
         contours, _ = cv.findContours(binaryImage, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-        # saca las medidas y la posicion de los contornos y agrega a la lista de imagenes la parte esa de la imagen original
-        # Tambien anade la posicion de cada recuadro en la imagen original
         finalPoses = []
         finalImages = []
         for c in contours:
@@ -1296,12 +1291,26 @@ class VictimClassifier:
 
         img =  cv.resize(img, (100, 100), interpolation=cv.INTER_AREA)
         #conts, h = cv.findContours(thresh1, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+        #print(str(img))
         binary = self.victimLetterListener.getFiltered(img)
-
+        print("Binary image: ")
+        print(str(binary))
         letter1 = self.cropWhite(binary)
+        #print(str(letter1))
+
+        x, y = letter1.shape
+
+
+        if(x < 1):
+            return "N"
+
+
         letter1 = cv.resize(letter1, (100, 100), interpolation=cv.INTER_AREA)
+        #print(str(letter1))
         letter = letter1[:,10:90]
+        #print(str(letter))
         letter = self.cropWhite(letter)
+        #print(str(letter))
         letter = cv.resize(letter, (100, 100), interpolation=cv.INTER_AREA)
         # cv.imshow("letra", letter)
         # #cv.imshow("letra1", letter1)
@@ -1367,14 +1376,15 @@ class VictimClassifier:
     def classifyVictim(self, img):
         #print("in classify victim")
         letter = "N"
-        img
-        print(str(img))
         image = cv.resize(img, (100, 100), interpolation=cv.INTER_AREA)
+        print(str(image))
         colorImgs = {
         "red" : self.redListener.getFiltered(image),
         "yellow" : self.yellowListener.getFiltered(image),
         "white" : self.whiteListener.getFiltered(image),
         "black" : self.blackListener.getFiltered(image)}
+
+        cv.imshow("black filter:", image)
 
         colorPointCounts = {}
         for key, img in colorImgs.items():
@@ -1394,9 +1404,9 @@ class VictimClassifier:
             letter = "P"
 
         if self.isVictim(colorPointCounts["black"], colorPointCounts["white"]):
-            # cv.imshow("black filter:", colorImgs["black"])
+            #cv.imshow("black filter:", image)
             letter = self.classifyHSU(image)
-            print("Victim:", letter)
+            #print("Victim:", letter)
 
 
         if self.isCorrosive(colorPointCounts["black"], colorPointCounts["white"]):
@@ -1412,6 +1422,7 @@ class VictimClassifier:
             letter = "F"
 
         print("Detected: ", colorPointCounts)
+        print("Victim: ", letter)
 
         return letter
 
