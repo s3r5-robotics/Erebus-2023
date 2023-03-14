@@ -2,7 +2,7 @@ from controller import Robot
 import sys
 import numpy as np
 
-sys.path.append(r"C:\\Users\\Erebus\\Documents\\Erebus-2022\\src\\")
+sys.path.append(r"C:\\Programming\\RoboCup_Erebus\\Erebus-2023\\src\\")
 from StateMachines import *  # li
 from RobotLayer import *  # li
 from Analysis import *  # li

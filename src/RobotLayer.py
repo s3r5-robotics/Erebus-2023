@@ -4,7 +4,7 @@ import sys
 import numpy as np
 import struct
 
-sys.path.append(r"C:\\Users\\Erebus\\Documents\\Erebus-2022\\src\\")
+sys.path.append(r"C:\\Programming\\RoboCup_Erebus\\Erebus-2023\\src\\")
 from UtilityFunctions import *  # li
 from CameraDetection import *  # li
 
