@@ -18,6 +18,7 @@ class PointCloudConverterPoint:
     # Defines what to #print if I ask to #print it
     def __repr__(self):
         return str(self.position + [self.count])
+
     def __str__(self):
         return str([self.position + [self.count]])
 
@@ -25,9 +26,9 @@ class PointCloudConverterPoint:
 # Converts a point cloud in to tiles with positions
 class PointCloudQueManager:
 
-    def __init__(self, queSize, pointMultiplier, queStep = 1):
-        self.queSize = queSize # Defines the size of the point cloud que
-        self.que = [] # A que of point clouds
+    def __init__(self, queSize, pointMultiplier, queStep=1):
+        self.queSize = queSize  # Defines the size of the point cloud que
+        self.que = []  # A que of point clouds
         self.queStep = queStep
         self.queActualStep = 0
         self.pointMultiplier = pointMultiplier
@@ -74,18 +75,15 @@ class PointCloudQueManager:
             self.queActualStep += 1
 
 
-
 class PointCloudDivider:
     def __init__(self, tileSize, pointMultiplier, pointPermanenceThresh):
         # Defines the size of a tie in the scale of the original coordinates
         self.tileSize = tileSize
-         # Defines the number to multiply the coordinates to convert them in to ints
+        # Defines the number to multiply the coordinates to convert them in to ints
         self.pointMultiplier = pointMultiplier
         # Defines the number of times a point has to repeat to be considered definitive
         self.pointPermanenceThresh = pointPermanenceThresh
         self.realTileSize = self.tileSize * self.pointMultiplier
-
-
 
     def getTile(self, position):
         return (int(position[0] // self.realTileSize), int(position[1] // self.realTileSize))
@@ -112,9 +110,10 @@ class PointCloudDivider:
                         tile["posInTile"].append(itemPosInTile)
 
                 if not inTiles:
-                    tiles.append({"tile":itemTile, "posInTile":[itemPosInTile]})
+                    tiles.append({"tile": itemTile, "posInTile": [itemPosInTile]})
         ##print("Tiles: ", tiles)
         return tiles
+
 
 class PointCloudConverter:
 
@@ -123,10 +122,8 @@ class PointCloudConverter:
         self.divider = PointCloudDivider(tileSize, pointMultiplier, pointPermanenceThresh=30)
         self.totalPointCloud = []
 
-
     def loadPointCloud(self, pointCloud):
         self.queManager.update(pointCloud)
-
 
     def getTilesWithPoints(self):
         self.totalPointCloud = self.queManager.getTotalPointCloud()

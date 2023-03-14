@@ -1,7 +1,7 @@
-import numpy as np
-import cv2 as cv
-import sys
 import copy
+import sys
+
+import numpy as np
 
 sys.path.append(r"C:\\Programming\\RoboCup_Erebus\\Erebus-2023\\src\\")
 from PointCloudToGrid import *  # li
@@ -365,7 +365,7 @@ class PathFinder:
             for newPosition in ((0, 1), (0, -1), (-1, 0), (1, 0)):  # Adjacent squares
                 # Get node position
                 nodePosition = (
-                currentNode.position[0] + (newPosition[0] * 2), currentNode.position[1] + (newPosition[1] * 2))
+                    currentNode.position[0] + (newPosition[0] * 2), currentNode.position[1] + (newPosition[1] * 2))
                 # Make sure walkable terrain
                 if not self.isTraversable(nodePosition):
                     continue
@@ -458,8 +458,8 @@ class PathFinder:
             self.prevVortex = self.startVortex
 
         self.startVortex = startRawVortexPos
-        #if not self.isTraversable(startRawVortexPos):
-            #print("INITIAL VORTEX NOT TRAVERSABLE")
+        # if not self.isTraversable(startRawVortexPos):
+        # print("INITIAL VORTEX NOT TRAVERSABLE")
 
     def setGrid(self, grid):
         self.grid = grid
@@ -494,10 +494,10 @@ class PathFinder:
             bestNode = self.startNode
 
         bestPath = self.aStar(bfsStart, bestNode)
-        #print("BFS NODES: ", possibleNodes)
-        #print("Best Node:", bestNode)
-        #print("AStar PATH: ", bestPath)
-        #print("Start Vortex: ", self.startVortex)
+        # print("BFS NODES: ", possibleNodes)
+        # print("Best Node:", bestNode)
+        # print("AStar PATH: ", bestPath)
+        # print("Start Vortex: ", self.startVortex)
         return bestPath
 
 
@@ -667,11 +667,11 @@ class Analyst:
             self.calculatePath = True
 
         if len(self.getBestPathSafe()):
-            #print("Dist to Vortex: ", distToVortex)
+            # print("Dist to Vortex: ", distToVortex)
             if distToVortex < self.positionReachedThresh and startRawNode == self.__bestPath[self.pathIndex]:
                 self.pathIndex += 1
 
-        #print("PathLenght: ", len(self.getBestPathSafe()))
+        # print("PathLenght: ", len(self.getBestPathSafe()))
         if self.pathIndex >= len(self.getBestPathSafe()):
             self.calculatePath = True
 
@@ -685,7 +685,7 @@ class Analyst:
             # #print("Calculating path")
             self.__bestPath = self.pathFinder.getBestPath(self.direction)
             self.pathIndex = 0
-            #print("update - self.calculatePath => ", self.__bestPath, (not self.__bestPath is None) and len(self.getBestPathSafe()) < 2)
+            # print("update - self.calculatePath => ", self.__bestPath, (not self.__bestPath is None) and len(self.getBestPathSafe()) < 2)
             if len(self.getBestPathSafe()) < 2:
                 self.ended = True
             self.calculatePath = False

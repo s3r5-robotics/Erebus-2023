@@ -1,11 +1,10 @@
-from controller import Robot
 import sys
+
 import cv2 as cv
 
 sys.path.append(r"C:\\Programming\\RoboCup_Erebus\\Erebus-2023\\src\\")
 from AbstractionLayer import AbstractionLayer  # li
 from StateMachines import StateManager  # li
-
 
 timeStep = 16 * 2
 stMg = StateManager("init")
@@ -15,13 +14,12 @@ isOptimised = cv.useOptimized()
 
 # While the simulation is running
 while r.doLoop():
-    #e1 = cv.getTickCount()
+    # e1 = cv.getTickCount()
     # Update the robot
     r.update()
-    #print("rotation: " + str(r.rotation))
-    #print("position: " + str(r.position))
-    #print("State:", stMg.state)
-
+    # print("rotation: " + str(r.rotation))
+    # print("position: " + str(r.position))
+    # print("State:", stMg.state)
 
     if not stMg.checkState("init"):
         if r.isEnded():
@@ -31,8 +29,6 @@ while r.doLoop():
         elif r.isVictims():
             r.seqResetSequence()
             stMg.changeState("victim")
-
-
 
     if stMg.checkState("init"):
         if r.calibrate():
@@ -50,7 +46,6 @@ while r.doLoop():
         r.seqDelaySec(0.1)
         r.seqResetSequence()
 
-
     if stMg.checkState("followBest"):
         r.seqMg.startSequence()
         bestPos = r.getBestPos()
@@ -62,7 +57,6 @@ while r.doLoop():
             r.seqResetSequence()
             stMg.changeState("hole")
 
-
     if stMg.checkState("hole"):
         r.seqMg.startSequence()
         r.seqMoveWheels(-0.5, -0.5)
@@ -73,7 +67,7 @@ while r.doLoop():
         stMg.changeState("followBest")
 
     if stMg.checkState("victim"):
-        #print("Victim mode!!")
+        # print("Victim mode!!")
         r.seqMg.startSequence()
         r.seqMoveWheels(0, 0)
         r.seqPrint("stopping")
@@ -89,12 +83,12 @@ while r.doLoop():
         if r.seqMg.simpleSeqEvent(): r.endGame()
         r.seqMoveWheels(0, 0)
 
-    #print("--------------------------------------------------------------------")
+    # print("--------------------------------------------------------------------")
 
-    #e2 = cv.getTickCount()
+    # e2 = cv.getTickCount()
 
-    #time = (e2 - e1)/ cv.getTickFrequency()
-    #print(f"Tick time is {time}")
-    #print(f"Is it optimised? {isOptimised}")
+    # time = (e2 - e1)/ cv.getTickFrequency()
+    # print(f"Tick time is {time}")
+    # print(f"Is it optimised? {isOptimised}")
 
-    #print("--------------------------------------------------------------------")
+    # print("--------------------------------------------------------------------")

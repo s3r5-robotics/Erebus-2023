@@ -1,8 +1,7 @@
-from controller import Robot
-import cv2 as cv
-import sys
-import numpy as np
 import struct
+import sys
+
+from controller import Robot
 
 sys.path.append(r"C:\\Programming\\RoboCup_Erebus\\Erebus-2023\\src\\")
 from UtilityFunctions import *  # li
@@ -117,13 +116,13 @@ class Lidar():
         self.verticalRes = self.device.getNumberOfLayers()
         self.hRadPerDetection = self.fov / self.horizontalRes
         self.vRadPerDetection = self.verticalFov / self.verticalRes
-        self.detectRotOffset = 0 #math.pi * 0.75
+        self.detectRotOffset = 0  # math.pi * 0.75
         self.maxDetectionDistance = 0.06 * 10
 
     # Does a detection pass and returns a point cloud with the results
     def getPointCloud(self, layers=range(3)):
-        #(degsToRads(359 - radsToDegs(self.rotation)))
-        #rangeImage = self.device.getRangeImageArray()
+        # (degsToRads(359 - radsToDegs(self.rotation)))
+        # rangeImage = self.device.getRangeImageArray()
         ##print("Lidar vFov: ", self.verticalFov/ self.verticalRes)
         pointCloud = []
 
@@ -168,6 +167,7 @@ class Wheel:
         self.velocity = ratio * self.maxVelocity
         self.wheel.setVelocity(self.velocity)
 
+
 # Reads the colour sensor
 class ColourSensor:
     def __init__(self, sensor, distancefromCenter, timeStep):
@@ -184,24 +184,30 @@ class ColourSensor:
 
     def __update(self):
         colour = self.sensor.getImage()
-        #print("Colourimg:", colour)
+        # print("Colourimg:", colour)
         self.r = self.sensor.imageGetRed(colour, 1, 0, 0)
         self.g = self.sensor.imageGetGreen(colour, 1, 0, 0)
         self.b = self.sensor.imageGetBlue(colour, 1, 0, 0)
-        #print("Colour:", self.r, self.g, self.b)
+        # print("Colour:", self.r, self.g, self.b)
 
     def __isTrap(self):
         return (35 < self.r < 45 and 35 < self.g < 45)
+
     def __isSwamp(self):
         return (200 < self.r < 210 and 165 < self.g < 175 and 95 < self.b < 105)
+
     def __isCheckpoint(self):
         return (self.r > 232 and self.g > 232 and self.b > 232)
+
     def __isNormal(self):
         return self.r == 227 and self.g == 227
+
     def __isBlue(self):
         return (55 < self.r < 65 and 55 < self.g < 65 and 245 < self.b < 255)
+
     def __isPurple(self):
         return (135 < self.r < 145 and 55 < self.g < 65 and 215 < self.b < 225)
+
     def __isRed(self):
         return (245 < self.r < 255 and 55 < self.g < 65 and 55 < self.b < 65)
 
@@ -247,27 +253,24 @@ class Comunicator:
         message = struct.pack("i i c", position[0], position[1], letter)
         self.emmiter.send(message)
 
-
     def sendLackOfProgress(self):
         self.doGetWordInfo = False
-        message = struct.pack('c', 'L'.encode()) # message = 'L' to activate lack of progress
+        message = struct.pack('c', 'L'.encode())  # message = 'L' to activate lack of progress
         self.emmiter.send(message)
-
 
     def sendEndOfPlay(self):
         self.doGetWordInfo = False
         exit_mes = bytes('E', "utf-8")
         self.emmiter.send(exit_mes)
 
-
-        #print("Ended!!!!!")
+        # print("Ended!!!!!")
 
     def sendMap(self, npArray):
-         ## Get shape
-        #print(npArray)
+        ## Get shape
+        # print(npArray)
         s = npArray.shape
         ## Get shape as bytes
-        s_bytes = struct.pack('2i',*s)
+        s_bytes = struct.pack('2i', *s)
         ## Flattening the matrix and join with ','
         flatMap = ','.join(npArray.flatten())
         ## Encode
@@ -276,15 +279,15 @@ class Comunicator:
         a_bytes = s_bytes + sub_bytes
         ## Send map data
         self.emmiter.send(a_bytes)
-        #STEP3 Send map evaluate request
+        # STEP3 Send map evaluate request
         map_evaluate_request = struct.pack('c', b'M')
         self.emmiter.send(map_evaluate_request)
         self.doGetWordInfo = False
 
     def requestGameData(self):
         if self.doGetWordInfo:
-            message = struct.pack('c', 'G'.encode()) # message = 'G' for game information
-            self.emmiter.send(message) # send message
+            message = struct.pack('c', 'G'.encode())  # message = 'G' for game information
+            self.emmiter.send(message)  # send message
 
     def update(self):
 
@@ -303,17 +306,18 @@ class Comunicator:
 
             ##print("Remaining time:", self.remainingTime)
             self.lackOfProgress = False
-            if self.receiver.getQueueLength() > 0: # If receiver queue is not empty
+            if self.receiver.getQueueLength() > 0:  # If receiver queue is not empty
                 receivedData = self.receiver.getData()
-                #print(receivedData)
+                # print(receivedData)
                 if len(receivedData) < 2:
-                    tup = struct.unpack('c', receivedData) # Parse data into character
-                    if tup[0].decode("utf-8") == 'L': # 'L' means lack of progress occurred
-                        #print("Detected Lack of Progress!")
+                    tup = struct.unpack('c', receivedData)  # Parse data into character
+                    if tup[0].decode("utf-8") == 'L':  # 'L' means lack of progress occurred
+                        # print("Detected Lack of Progress!")
                         self.lackOfProgress = True
-                    self.receiver.nextPacket() # Discard the current data packetelse:
+                    self.receiver.nextPacket()  # Discard the current data packetelse:
         else:
             self.doGetWordInfo = True
+
 
 class DistanceSensor:
     def __init__(self, threshold, distanceFromCenter, angle, sensor, timeStep):
@@ -334,6 +338,7 @@ class DistanceSensor:
         sensorRotation = robotRotation + self.angle
         sensorPosition = getCoordsFromDegs(sensorRotation, self.distance)
         self.position = sumLists(sensorPosition, robotPosition)
+
 
 # Abstraction layer for robot
 class RobotLayer:
@@ -356,8 +361,10 @@ class RobotLayer:
         self.leftWheel = Wheel(self.robot.getDevice("wheel1 motor"), self.maxWheelSpeed)
         self.rightWheel = Wheel(self.robot.getDevice("wheel2 motor"), self.maxWheelSpeed)
         self.colorSensor = ColourSensor(self.robot.getDevice("colour_sensor"), 0.037, 32)
-        self.leftGroundSensor = DistanceSensor(0.04, 0.0523, 45, self.robot.getDevice("distance sensor2"), self.timeStep)
-        self.rightGroundSensor = DistanceSensor(0.04, 0.0523, -45, self.robot.getDevice("distance sensor1"), self.timeStep)
+        self.leftGroundSensor = DistanceSensor(0.04, 0.0523, 45, self.robot.getDevice("distance sensor2"),
+                                               self.timeStep)
+        self.rightGroundSensor = DistanceSensor(0.04, 0.0523, -45, self.robot.getDevice("distance sensor1"),
+                                                self.timeStep)
         self.comunicator = Comunicator(self.robot.getDevice("emitter"), self.robot.getDevice("receiver"), self.timeStep)
         self.rightCamera = Camera(self.robot.getDevice("camera2"), self.timeStep)
         self.leftCamera = Camera(self.robot.getDevice("camera1"), self.timeStep)
@@ -369,13 +376,13 @@ class RobotLayer:
         for camera in (self.rightCamera, self.leftCamera):
             img = camera.getImg()
             crop_center(img, 12)
-            img = cv.resize(img, (128, 128), interpolation = cv.INTER_NEAREST)
+            img = cv.resize(img, (128, 128), interpolation=cv.INTER_NEAREST)
             cposes, cimgs = self.victimClasifier.getVictimImagesAndPositions(img)
             poses += cposes
             imgs += cimgs
-        #print("Victim Poses: ",poses)
-        #for img in imgs:
-            #print("Victim shape:", img.shape)
+        # print("Victim Poses: ",poses)
+        # for img in imgs:
+        # print("Victim shape:", img.shape)
         closeVictims = self.victimClasifier.getCloseVictims(poses, imgs)
         finalVictims = []
         for closeVictim in closeVictims:
@@ -389,9 +396,8 @@ class RobotLayer:
         self.comunicator.sendMap(array)
 
     def sendEnd(self):
-        #print("End sended")
+        # print("End sended")
         self.comunicator.sendEndOfPlay()
-
 
     # Decides if the rotation detection is carried out by the gps or gyro
     @property
@@ -438,7 +444,7 @@ class RobotLayer:
         if diff > 180 or diff < -180:
             moveDiff = 360 - moveDiff
         speedFract = min(mapVals(moveDiff, accuracy, 90, 0.2, 0.8), maxSpeed)
-        if accuracy  * -1 < diff < accuracy or 360 - accuracy < diff < 360 + accuracy:
+        if accuracy * -1 < diff < accuracy or 360 - accuracy < diff < 360 + accuracy:
             self.rotateToDegsFirstTime = True
             return True
         else:
@@ -478,13 +484,13 @@ class RobotLayer:
 
     def rotateSmoothlyToDegs(self, degs, orientation="closest", maxSpeed=0.5):
         accuracy = 2
-        seqRotateToDegsinitialDiff = round(self.rotation  - degs)
+        seqRotateToDegsinitialDiff = round(self.rotation - degs)
         diff = self.rotation - degs
         moveDiff = max(round(self.rotation), degs) - min(self.rotation, degs)
         if diff > 180 or diff < -180:
             moveDiff = 360 - moveDiff
         speedFract = min(mapVals(moveDiff, accuracy, 90, 0.2, 0.8), maxSpeed)
-        if accuracy  * -1 < diff < accuracy or 360 - accuracy < diff < 360 + accuracy:
+        if accuracy * -1 < diff < accuracy or 360 - accuracy < diff < 360 + accuracy:
             self.rotateToDegsFirstTime = True
             return True
         else:
@@ -526,7 +532,7 @@ class RobotLayer:
         dist = getDistance((diffX, diffY))
         ##print("Dist: "+ str(dist))
         if errorMargin * -1 < dist < errorMargin:
-            #self.robot.move(0,0)
+            # self.robot.move(0,0)
             ##print("FinisehedMove")
             return True
         else:
@@ -544,11 +550,11 @@ class RobotLayer:
     # Gets a point cloud with all the detections from lidar and distance sensorss
     def getDetectionPointCloud(self):
 
-        rawPointCloud = self.lidar.getPointCloud(layers=(2,3))
+        rawPointCloud = self.lidar.getPointCloud(layers=(2, 3))
         processedPointCloud = []
         for point in rawPointCloud:
             procPoint = [point[0] + self.globalPosition[0], point[1] + self.globalPosition[1]]
-            #procPoint = [procPoint[0] + procPoint[0] * 0.1, procPoint[1] + procPoint[1] * 0.1]
+            # procPoint = [procPoint[0] + procPoint[0] * 0.1, procPoint[1] + procPoint[1] * 0.1]
             processedPointCloud.append(procPoint)
         return processedPointCloud
 
@@ -599,9 +605,9 @@ class RobotLayer:
         # Gets global rotation
         if self.__useGyroForRotation:
             self.rotation = self.gyroscope.getDegrees()
-            #print("USING GYRO")
+            # print("USING GYRO")
         else:
-            #print("USING GPS")
+            # print("USING GPS")
             val = self.gps.getRotation()
             if val is not None:
                 self.rotation = val
@@ -613,10 +619,7 @@ class RobotLayer:
         self.rightGroundSensor.setPosition(self.globalPosition, self.rotation)
         self.leftGroundSensor.setPosition(self.globalPosition, self.rotation)
 
-
-
         self.comunicator.update()
 
-        #victims = self.camera.getVictims()
+        # victims = self.camera.getVictims()
         ##print("Victims: ", victims)
-
