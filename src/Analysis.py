@@ -494,10 +494,10 @@ class PathFinder:
             bestNode = self.startNode
 
         bestPath = self.aStar(bfsStart, bestNode)
-        # print("BFS NODES: ", possibleNodes)
-        # print("Best Node:", bestNode)
-        # print("AStar PATH: ", bestPath)
-        # print("Start Vortex: ", self.startVortex)
+        print("BFS NODES: ", possibleNodes)
+        print("Best Node:", bestNode)
+        print("AStar PATH: ", bestPath)
+        print("Start Vortex: ", self.startVortex)
         return bestPath
 
 
@@ -682,7 +682,7 @@ class Analyst:
                     self.calculatePath = True
 
         if self.calculatePath:
-            # #print("Calculating path")
+            print("Calculating path")
             self.__bestPath = self.pathFinder.getBestPath(self.direction)
             self.pathIndex = 0
             # print("update - self.calculatePath => ", self.__bestPath, (not self.__bestPath is None) and len(self.getBestPathSafe()) < 2)

@@ -78,9 +78,11 @@ while r.doLoop():
         r.seqResetSequence()
         stMg.changeState("followBest")
 
+    # If state is "end", call game end function
     if stMg.checkState("end"):
         r.seqMg.startSequence()
-        if r.seqMg.simpleSeqEvent(): r.endGame()
+        if r.seqMg.simpleSeqEvent():
+            r.endGame()
         r.seqMoveWheels(0, 0)
 
     # print("--------------------------------------------------------------------")
