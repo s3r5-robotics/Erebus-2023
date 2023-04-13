@@ -87,7 +87,7 @@ class Gps:
     # Returns the global position
     def getPosition(self):
         vals = self.gps.getValues()
-        return [vals[0] * self.multiplier, vals[2] * self.multiplier]
+        return [vals[0] * self.multiplier, vals[1] * self.multiplier]
 
     # Returns the global rotation according to gps
     def getRotation(self):
@@ -396,7 +396,7 @@ class RobotLayer:
         self.comunicator.sendMap(array)
 
     def sendEnd(self):
-        # print("End sended")
+        print("End sended")
         self.comunicator.sendEndOfPlay()
 
     # Decides if the rotation detection is carried out by the gps or gyro
