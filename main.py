@@ -1,125 +1,45 @@
-# https://github.com/s3r5-robotics/Erebus-2022
 
-import numpy as np
-import math
+
+
+#######################
+# FILE: run.py
+#######################
+
+absolute_dir = r'C:\Programming\RoboCup_Erebus\Other Teams\rescate_laberinto-ale-new_navigation\src'
 import sys
+
+sys.path.append(absolute_dir)
+
+
+#######################
+# FILE: utilities.py
+#######################
+
+import math
 import cv2 as cv
-import copy
-from controller import Robot
-import struct
+import numpy as np
+import os
+from typing import Callable, List
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from enum import Enum
+from controller import Robot as WebotsRobot
+from copy import copy, deepcopy
+from heapq import heappop, heappush
 
 
-# File: "ClassifierTemplate.py"
+script_dir = os.path.dirname(__file__)
+image_dir = os.path.join(script_dir, "images")
+
+def save_image(image, filename):
+    cv.imwrite(os.path.join(image_dir, filename), image)
 
 
-tilesDict = {
-        
-        ("straight", "right"): np.array([[0, 0, 0, 0, 1, 1],
-                                         [0, 0, 0, 0, 1, 1],
-                                         [0, 0, 0, 0, 1, 1],
-                                         [0, 0, 0, 0, 1, 1],
-                                         [0, 0, 0, 0, 1, 1],
-                                         [0, 0, 0, 0, 1, 1]]),
-
-        ("straight", "left"): np.array([[1, 1, 0, 0, 0, 0],
-                                        [1, 1, 0, 0, 0, 0],
-                                        [1, 1, 0, 0, 0, 0],
-                                        [1, 1, 0, 0, 0, 0],
-                                        [1, 1, 0, 0, 0, 0],
-                                        [1, 1, 0, 0, 0, 0]]),
-                                
-           ("straight", "up"): np.array([[1, 1, 1, 1, 1, 1],
-                                         [1, 1, 1, 1, 1, 1],
-                                         [0, 0, 0, 0, 0, 0],
-                                         [0, 0, 0, 0, 0, 0],
-                                         [0, 0, 0, 0, 0, 0],
-                                         [0, 0, 0, 0, 0, 0]]),
-                                
-        ("straight", "down"): np.array([[0, 0, 0, 0, 0, 0],
-                                        [0, 0, 0, 0, 0, 0],
-                                        [0, 0, 0, 0, 0, 0],
-                                        [0, 0, 0, 0, 0, 0],
-                                        [1, 1, 1, 1, 1, 1],
-                                        [1, 1, 1, 1, 1, 1]]),
-
-        ("curved", "right-up"): np.array([[0, 0, 0, 0, 0, 0],
-                                          [0, 0, 0, 0, 0, 0],
-                                          [0, 0, 0, 1, 0, 0],
-                                          [0, 0, 0, 0, 0, 0],
-                                          [0, 0, 0, 0, 0, 0],
-                                          [0, 0, 0, 0, 0, 0]]),
-        
-
-        ("curved", "left-up"): np.array([[0, 0, 0, 0, 0, 0],
-                                         [0, 0, 0, 0, 0, 0],
-                                         [0, 0, 1, 0, 0, 0],
-                                         [0, 0, 0, 0, 0, 0],
-                                         [0, 0, 0, 0, 0, 0],
-                                         [0, 0, 0, 0, 0, 0]]),
-                                
-        ("curved", "right-down"): np.array([[0, 0, 0, 0, 0, 0],
-                                            [0, 0, 0, 0, 0, 0],
-                                            [0, 0, 0, 0, 0, 0],
-                                            [0, 0, 0, 0, 0, 0],
-                                            [0, 0, 0, 1, 0, 0],
-                                            [0, 0, 0, 0, 0, 0]]),
-                                
-        ("curved", "left-down"): np.array([[0, 0, 0, 0, 0, 0],
-                                           [0, 0, 0, 0, 0, 0],
-                                           [0, 0, 0, 0, 0, 0],
-                                           [0, 0, 1, 0, 0, 0],
-                                           [0, 0, 0, 0, 0, 0],
-                                           [0, 0, 0, 0, 0, 0]]),
-        
-        ("curvedwall", "right-up"): np.array([[1, 1, 1, 0, -1, -1],
-                                              [1, 1, 1, 0, -1, -1],
-                                              [0, 0, 0, 0, 0, 0],
-                                              [0, 0, 0, 0, 1, 1],
-                                              [0, 0, 0, 0, 1, 1],
-                                              [0, 0, 0, 0, 1, 1]]),
-        
-
-        ("curvedwall", "left-up"): np.array([[-1, -1, 0, 1, 1, 1],
-                                             [-1, -1, 0, 1, 1, 1],
-                                             [0, 0, 0, 0, 0, 0],
-                                             [1, 1, 0, 0, 0, 0],
-                                             [1, 1, 0, 0, 0, 0],
-                                             [1, 1, 0, 0, 0, 0]]),
-                                
-        ("curvedwall", "right-down"): np.array([[0, 0, 0, 0, 1, 1],
-                                                [0, 0, 0, 0, 1, 1],
-                                                [0, 0, 0, 0, 1, 1],
-                                                [0, 0, 0, 0, 0, 0],
-                                                [1, 1, 1, 0, -1, -1],
-                                                [1, 1, 1, 0, -1, -1]]),
-                                
-        ("curvedwall", "left-down"): np.array([[1, 1, 0, 0, 0, 0],
-                                               [1, 1, 0, 0, 0, 0],
-                                               [1, 1, 0, 0, 0, 0],
-                                               [0, 0, 0, 0, 0, 0],
-                                               [-1, -1, 0, 1, 1, 1],
-                                               [-1, -1, 0, 1, 1, 1]])
-
-
-
-            }
-# File: "UtilityFunctions.py"
-
-
-# Corrects the given angle in degrees to be in a range from 0 to 360
-def normalizeDegs(ang):
-    ang = ang % 360
-    if ang < 0:
-        ang += 360
-    if ang == 360:
-        ang = 0
-    return ang
-
-# Corrects the given angle in radians to be in a range from 0 to a full rotaion
 def normalizeRads(rad):
-    ang = radsToDegs(rad)
-    normAng = normalizeDegs(ang)
-    return degsToRads(normAng)
+    rad %= 2 * math.pi
+    if rad < 0:
+        rad += 2 + math.pi
+    return rad
 
 # Converts from degrees to radians
 def degsToRads(deg):
@@ -146,24 +66,6 @@ def getCoordsFromDegs(deg, distance):
     x = float(distance * math.sin(rad))
     return (x, y)
 
-def getRadsFromCoords(coords):
-    return math.atan2(coords[0], coords[1])
-
-
-def getDegsFromCoords(coords):
-    rads = math.atan2(coords[0], coords[1])
-    return radsToDegs(rads)
-
-# Gets the distance to given coordinates
-def getDistance(position):
-    return math.sqrt((position[0] ** 2) + (position[1] ** 2))
-
-# Checks if a value is between two values
-def isInRange(val, minVal, maxVal):
-    return minVal < val < maxVal
-
-def roundDecimal(number, decimal):
-    return (round(number * decimal) / decimal)
 
 def multiplyLists(list1, list2):
     finalList = []
@@ -189,1395 +91,873 @@ def divideLists(list1, list2):
         finalList.append(item1 / item2)
     return finalList
 
-def crop_center(img, cropx):
-    y, x = (40, 64)
-    img[:, cropx:x - cropx]
 
-# File: "PointCloudToGrid.py"
+def draw_grid(image, square_size, offset = [0,0], color=255):
+    for y, row in enumerate(image):
+        for x, pixel in enumerate(row):
+            if (y + offset[1]) % square_size == 0 or (x + offset[0]) % square_size == 0:
+                if len(image.shape) == 3:
+                    image[y][x][:] = color
+                else:
+                    image[y][x] = color
 
-
-
-
-
-
-# Point class for point clou to grid converter
-class PointCloudConverterPoint:
-
-    def __init__(self, position):
-        self.position = position
-        self.count = 1
-
-    # Defines the "==" operator
-    def __eq__(self, other):
-        return self.position == other.position
-
-    # Defines what to #print if I ask to #print it
-    def __repr__(self):
-        return str(self.position + [self.count])
-    def __str__(self):
-        return str([self.position + [self.count]])
-
-
-# Converts a point cloud in to tiles with positions
-class PointCloudQueManager:
-
-    def __init__(self, queSize, pointMultiplier, queStep = 1):
-        self.queSize = queSize # Defines the size of the point cloud que
-        self.que = [] # A que of point clouds
-        self.queStep = queStep
-        self.queActualStep = 0
-        self.pointMultiplier = pointMultiplier
-        for _ in range(queSize):
-            self.que.append([])
-
-    # Converts the point coords in to ints and multiplies it with the point multiplier
-    def processPointCloud(self, pointCloud):
-
-        finalPointCloud = []
-        for point in pointCloud:
-            fpoint = [round(point[0] * self.pointMultiplier), round(point[1] * self.pointMultiplier), 1]
-            alreadyInFinal = False
-            for finalPoint in finalPointCloud:
-                if fpoint[:2] == finalPoint[:2]:
-                    finalPoint[2] += 1
-                    alreadyInFinal = True
-            if not alreadyInFinal:
-                finalPointCloud.append(fpoint)
-        return finalPointCloud
-
-    # Merges all the point clouds in the que and returns them
-    def getTotalPointCloud(self):
-        totalPointCloud = []
-        isInFinal = False
-        for pointCloud in self.que:
-            for item in pointCloud:
-                for totalItem in totalPointCloud:
-                    if item[:2] == totalItem[:2]:
-                        isInFinal = True
-                        totalItem[2] += item[2]
-                if not isInFinal:
-                    totalPointCloud.append(item)
-        ##print("total point cloud: ", totalPointCloud)
-        return totalPointCloud
-
-    # Adds a new point cloud to the que and removes the last element
-    def update(self, pointCloud):
-        if self.queActualStep >= self.queStep:
-            self.que.pop(0)
-            self.que.append(self.processPointCloud(pointCloud))
-            self.queActualStep = 0
+def draw_poses(image, poses, color=255, back_image=None, xx_yy_format=False):
+    if xx_yy_format:
+        if back_image is not None:
+            in_bounds_x = (poses[0] < min(image.shape[0], back_image.shape[0]) - 1) & (poses[0] > 0)
+            in_bounds_y = (poses[1] < min(image.shape[1], back_image.shape[1]) - 1) & (poses[1] > 0)
         else:
-            self.queActualStep += 1
+            in_bounds_x = (poses[0] < image.shape[0] - 1) & (poses[0] > 0)
+            in_bounds_y = (poses[1] < image.shape[1] - 1) & (poses[1] > 0)
+        
+        poses = (poses[0][in_bounds_x & in_bounds_y], poses[1][in_bounds_x & in_bounds_y])
+
+        if back_image is None:
+            image[poses[1], poses[0], :] = color
+        else:
+            image[poses[1], poses[0], :] = back_image[poses[1], poses[0], :]
+        
+    else:
+        in_bounds = (poses[:, 0] >= 0) & (poses[:, 0] < image.shape[1]) & (poses[:, 1] >= 0) & (poses[:, 1] < image.shape[0])
+        poses = poses[in_bounds]
+
+        if back_image is None:
+            image[poses[:, 1], poses[:, 0], :] = color
+        else:
+            image[poses[:, 1], poses[:, 0], :] = back_image[poses[:, 1], poses[:, 0], :]
+            
+
+def draw_squares_where_not_zero(image, square_size, offsets, color=(255, 255, 255)):
+    ref_image = image.copy()
+    for y in range(image.shape[0] // square_size):
+        for x in range(image.shape[1] // square_size):
+            square_points = [
+                (y * square_size)        + (square_size - offsets[1]),
+                ((y + 1) * square_size)  + (square_size - offsets[1]), 
+                (x * square_size)        + (square_size - offsets[0]),
+                ((x + 1) * square_size)  + (square_size - offsets[0])]
+            square = ref_image[square_points[0]:square_points[1], square_points[2]:square_points[3]]
+            non_zero_count = np.count_nonzero(square)
+            if non_zero_count > 0:
+                #print("Non zero count: ", non_zero_count)
+                #print("max: ", np.max(square))
+                cv.rectangle(image, (square_points[2], square_points[0]), (square_points[3], square_points[1]), color, 3)
+
+def get_squares(image, square_size, offsets):
+    grid = []
+    for y in range(image.shape[0] // square_size):
+        row = []
+        for x in range(image.shape[1] // square_size):
+            square_points = [
+                (y * square_size)        + (square_size - offsets[1]),
+                ((y + 1) * square_size)  + (square_size - offsets[1]), 
+                (x * square_size)        + (square_size - offsets[0]),
+                ((x + 1) * square_size)  + (square_size - offsets[0])]
+            row.append(square_points)
+        grid.append(row)
+    return grid
+
+def resize_image_to_fixed_size(image, size):
+    if image.shape[0] > size[0]:
+        ratio = size[0] / image.shape[0]
+
+        width = round(image.shape[1] * ratio)
+        final_image = cv.resize(image.astype(np.uint8), dsize=(width, size[0]))
+    
+    elif image.shape[1] > size[1]:
+        ratio = size[1] / image.shape[1]
+
+        height = round(image.shape[0] * ratio)
+        final_image = cv.resize(image.astype(np.uint8), dsize=(size[1], height))
+    
+    elif image.shape[1] >= image.shape[0]:
+        ratio = size[1] / image.shape[1]
+
+        height = round(image.shape[0] * ratio)
+        final_image = cv.resize(image.astype(np.uint8), dsize=(size[1], height), interpolation=cv.INTER_NEAREST)
+    
+    elif image.shape[0] >= image.shape[1]:
+        ratio = size[0] / image.shape[0]
+
+        width = round(image.shape[1] * ratio)
+        final_image = cv.resize(image.astype(np.uint8), dsize=(width, size[0]), interpolation=cv.INTER_NEAREST)
+    
+    return final_image
+
+
+def divide_into_chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
 
 
 
-class PointCloudDivider:
-    def __init__(self, tileSize, pointMultiplier, pointPermanenceThresh):
-        # Defines the size of a tie in the scale of the original coordinates
-        self.tileSize = tileSize
-         # Defines the number to multiply the coordinates to convert them in to ints
-        self.pointMultiplier = pointMultiplier
-        # Defines the number of times a point has to repeat to be considered definitive
-        self.pointPermanenceThresh = pointPermanenceThresh
-        self.realTileSize = self.tileSize * self.pointMultiplier
+#######################
+# FILE: flags.py
+#######################
+
+
+SHOW_FIXTURE_DEBUG = False
+SHOW_DEBUG = False
+
+SHOW_GRANULAR_NAVIGATION_GRID = True
+SHOW_PATHFINDING_DEBUG = False
+SHOW_BEST_POSITION_FINDER_DEBUG = False
+
+PRINT_MAP_AT_END = True
+
+DO_WAIT_KEY = True
+
+
+#######################
+# FILE: data_structures/angle.py
+#######################
+
+import math
+
+class Angle:
+    RADIANS = 0
+    DEGREES = 1
+    def __init__(self, value, unit=RADIANS):
+        if unit == self.RADIANS:
+            self.__radians = float(value)
+        else:
+            self.degrees = value
+
+    @property
+    def radians(self, value):
+        self.__radians = value
+
+    @radians.getter
+    def radians(self):
+        return float(self.__radians)
+    
+    @property
+    def degrees(self):
+        return float(self.__radians * 180 / math.pi)
+    
+    @degrees.setter
+    def degrees(self, value):
+        self.__radians = value * math.pi / 180
+
+    def normalize(self):
+        self.__radians %= 2 * math.pi
+
+        if self.__radians < 0:
+            self.__radians += 2 + math.pi
+    
+    def get_absolute_distance_to(self, angle):
+        angle = copy(angle)
+        angle.normalize()
+        min_ang = min(self.radians, angle.radians)
+        max_ang = max(self.radians, angle.radians)
+
+        clockwise_distance = max_ang - min_ang
+        counterclockwise_distance = (math.pi * 2 + min_ang) - max_ang
+
+        return Angle(min(clockwise_distance, counterclockwise_distance))
+    
+    def __str__(self):
+        return str(self.degrees)
+    
+    def __add__(self, other):
+        if isinstance(other, Angle):
+            return Angle(self.radians + other.radians)
+        return Angle(self.radians + other)
+    
+    def __radd__(self, other):
+        return self.__add__(other)
+    
+    def __sub__(self, other):
+        if isinstance(other, Angle):
+            return Angle(self.radians - other.radians)
+        return Angle(self.radians - other)
+    
+    def __rsub__(self, other):
+        return self.__sub__(other)
+    
+    def __mul__(self, other):
+        if isinstance(other, Angle):
+            return Angle(self.radians * other.radians)
+        return Angle(self.radians * other)
+    
+    def __rmul__(self, other):
+        return self.__mul__(other)
+    
+    def __truediv__(self, other):
+        if isinstance(other, Angle):
+            return Angle(self.radians / other.radians)
+        return Angle(self.radians / other)
+    
+    def __rtruediv__(self, other):
+        return self.__truediv__(other)
+    
+    def __floordiv__(self, other):
+        if isinstance(other, Angle):
+            return Angle(self.radians // other.radians)
+        return Angle(self.radians // other)
+    
+    def __rfloordiv__(self, other):
+        return self.__floordiv__(other)
+    
+    def __mod__(self, other):
+        if isinstance(other, Angle):
+            return Angle(self.radians % other.radians)
+        return Angle(self.radians % other)
+    
+    def __rmod__(self, other):
+        return self.__mod__(other)
+    
+    def __divmod__(self, other):
+        if isinstance(other, Angle):
+            return (Angle(self.radians // other.radians), Angle(self.radians % other.radians))
+        return (Angle(self.radians // other), Angle(self.radians % other))
+    
+    def __rdivmod__(self, other):
+        return self.__divmod__(other)
+    
+    def __pow__(self, other):
+        if isinstance(other, Angle):
+            return Angle(self.radians ** other.radians)
+        return Angle(self.radians ** other)
+    
+    def __rpow__(self, other):
+        return self.__pow__(other)
+    
+    def __neg__(self):
+        return Angle(-self.radians)
+
+    def __pos__(self):
+        return self
+
+    def __abs__(self):
+        return Angle(abs(self.radians))
+
+    def __eq__(self, other):
+        if isinstance(other, Angle):
+            return self.radians == other.radians
+        return self.radians == other
+
+    def __ne__(self, other):
+        if isinstance(other, Angle):
+            return self.radians != other.radians
+        return self.radians != other
+
+    def __lt__(self, other):
+        if isinstance(other, Angle):
+            return self.radians < other.radians
+        return self.radians < other
+
+    def __le__(self, other):
+        if isinstance(other, Angle):
+            return self.radians <= other.radians
+        return self.radians <= other
+
+    def __gt__(self, other):
+        if isinstance(other, Angle):
+            return self.radians > other.radians
+        return self.radians > other
+
+    def __ge__(self, other):
+        if isinstance(other, Angle):
+            return self.radians >= other.radians
+        return self.radians >= other
+
+    def __int__(self):
+        return int(self.radians)
+
+    def __float__(self):
+        return float(self.radians)
+
+    def __complex__(self):
+        return complex(self.radians)
+    
+    def __round__(self, ndigits=None):
+        return Angle(round(self.__radians, ndigits))
+    
 
 
 
-    def getTile(self, position):
-        return (int(position[0] // self.realTileSize), int(position[1] // self.realTileSize))
+#######################
+# FILE: data_structures/compound_expandable_grid.py
+#######################
 
-    def getPosInTile(self, position):
-        tile = self.getTile(position)
-        tilePosition = multiplyLists(tile, [self.realTileSize, self.realTileSize])
-        posInTile = [round(round(position[0]) - tilePosition[0]), round(round(position[1]) - tilePosition[1])]
-        return posInTile
-
-    # Returns a list with dictionarys containing the tile number and the position inside of said tile
-    def getTiles(self, totalPointCloud):
-        tiles = []
-        ##print("Total Point Cloud: ", totalPointCloud)
-        for item in totalPointCloud:
-            inTiles = False
-            if item[2] >= self.pointPermanenceThresh:
-                ##print(item[:2])
-                itemTile = self.getTile(item[:2])
-                itemPosInTile = self.getPosInTile(item[:2])
-                for tile in tiles:
-                    if tile["tile"] == itemTile:
-                        inTiles = True
-                        tile["posInTile"].append(itemPosInTile)
-
-                if not inTiles:
-                    tiles.append({"tile":itemTile, "posInTile":[itemPosInTile]})
-        ##print("Tiles: ", tiles)
-        return tiles
-
-class PointCloudConverter:
-
-    def __init__(self, tileSize, pointMultiplier):
-        self.queManager = PointCloudQueManager(queSize=5, pointMultiplier=pointMultiplier)
-        self.divider = PointCloudDivider(tileSize, pointMultiplier, pointPermanenceThresh=30)
-        self.totalPointCloud = []
+import numpy as np
+import cv2 as cv
+import copy
+import math
 
 
-    def loadPointCloud(self, pointCloud):
-        self.queManager.update(pointCloud)
+class CompoundExpandableGrid:
+    def __init__(self, initial_shape, pixel_per_m):
+        self.array_shape = np.array(initial_shape, dtype=int)
+        self.offsets = self.array_shape // 2
+
+        self.grid_index_max = self.array_shape - self.offsets # Maximum grid index
+        self.grid_index_min = self.offsets * -1 # Minimum grid index
+
+        self.arrays = {}
+
+        self.resolution = pixel_per_m # resolution of the grid with regards to the coordinate system of the gps / the world
+    
+    # Index conversion
+    def coordinates_to_grid_index(self, coordinates: np.ndarray) -> np.ndarray:
+        coords = (coordinates * self.resolution).astype(int)
+        return np.flip(coords)
+
+    def grid_index_to_coordinates(self, grid_index: np.ndarray) -> np.ndarray:
+        index = (grid_index.astype(float) / self.resolution)
+        return np.flip(index)
+
+    def array_index_to_grid_index(self, array_index: np.ndarray) -> np.ndarray:
+        return array_index - self.offsets
+    
+    def grid_index_to_array_index(self, grid_index: np.ndarray) -> np.ndarray:
+        return grid_index + self.offsets
+    
+    def array_index_to_coordinates(self, array_index) -> np.ndarray:
+        grid_index = self.array_index_to_grid_index(array_index)
+        return self.grid_index_to_coordinates(grid_index)
+    
+    def coordinates_to_array_index(self, coordinates) -> np.ndarray:
+        grid_index = self.coordinates_to_grid_index(coordinates)
+        return self.grid_index_to_array_index(grid_index)
+
+    # Grid expansion
+    def expand_to_grid_index(self, grid_index: np.ndarray):
+        """
+        Expands all arrays to the specified index. 
+        Note that all array_idexes should be recalculated after this operation.
+        """
+
+        array_index = self.grid_index_to_array_index(grid_index)
+        if array_index[0] + 1 > self.array_shape[0]:
+            self.add_end_row(array_index[0] - self.array_shape[0] + 1)
+
+        if array_index[1] + 1 > self.array_shape[1]:
+            self.add_end_column(array_index[1] - self.array_shape[1] + 1)
+
+        if array_index[0] < 0:
+            self.add_begining_row(array_index[0] * -1)
+        if array_index[1] < 0:
+            self.add_begining_column(array_index[1] * -1)
+    
+    def add_end_row(self, size):
+        self.array_shape = np.array([self.array_shape[0] + size, self.array_shape[1]])
+        
+        for key in self.arrays:
+            self.arrays[key] = self.__add_end_row_to_grid(self.arrays[key], size)
+        
+    def add_begining_row(self, size):
+        self.offsets[0] += size
+        self.array_shape = np.array([self.array_shape[0] + size, self.array_shape[1]])
+
+        for key in self.arrays:
+            self.arrays[key] = self.__add_begining_row_to_grid(self.arrays[key], size)
+
+    def add_end_column(self, size):
+        self.array_shape = np.array([self.array_shape[0], self.array_shape[1] + size])
+
+        for key in self.arrays:
+            self.arrays[key] = self.__add_end_column_to_grid(self.arrays[key], size)
+
+    def add_begining_column(self, size):
+        self.offsets[1] += size
+        self.array_shape = np.array([self.array_shape[0], self.array_shape[1] + size])
+
+        for key in self.arrays:
+            self.arrays[key] = self.__add_begining_column_to_grid(self.arrays[key], size)
+
+    def __add_end_row_to_grid(self, grid, size):
+        grid = np.vstack((grid, np.zeros((size, self.array_shape[1]), dtype=grid.dtype)))
+        return grid
+    
+    def __add_begining_row_to_grid(self, grid, size):
+        grid = np.vstack((np.zeros((size, self.array_shape[1]), dtype=grid.dtype), grid))
+        return grid
+    
+    def __add_end_column_to_grid(self, grid, size):
+        grid = np.hstack((grid, np.zeros((self.array_shape[0], size), dtype=grid.dtype)))
+        return grid
+
+    def __add_begining_column_to_grid(self, grid, size):
+        grid = np.hstack((np.zeros((self.array_shape[0], size), dtype=grid.dtype), grid))
+        return grid
+    
+    # Debug
+    def get_colored_grid(self):
+       pass
+    
 
 
-    def getTilesWithPoints(self):
-        self.totalPointCloud = self.queManager.getTotalPointCloud()
-        return (self.divider.getTiles(self.totalPointCloud))
+#######################
+# FILE: flow_control/sequencer.py
+#######################
 
 
-# Uses a dict of tile templates to return the elements present in a tile given points inside that tile
-class Classifier:
-    def __init__(self, tilesDict):
-        self.tilesDict = tilesDict
-        self.validTileDictKeys = list(self.tilesDict.keys())
-        self.tilesDictPositivesCount = {}
-        for key, value in self.tilesDict.items():
-            count = 0
-            for y in range(len(value)):
-                for x in range(len(value[y])):
-                    count += value[x][y]
-            self.tilesDictPositivesCount[key] = count
 
-    # Returns the similarity of the points imputted to the templates in percentages
-    def getCalsificationPercentages(self, pointList):
-        elementsDict = {}
-        for key in self.validTileDictKeys:
-            elementsDict[key] = 0
 
-        for point in pointList:
-            for key, modelGrid in self.tilesDict.items():
-                elementsDict[key] += modelGrid[point[0]][point[1]]
-
-        return elementsDict
-
-# File: "StateMachines.py"
-# Manages states
-class StateManager:
-    def __init__(self, initialState):
-        self.state = initialState
-
-    # Sets the state to a certain value
-    def changeState(self, newState):
-        self.state = newState
-        return True
-
-    # Checks if the state corresponds to a specific value
-    def checkState(self, state):
-        return self.state == state
-
-# Makes it possible to run arbitrary code sequentially without interrupting other code that must run continuoulsy
-class SequenceManager:
-    def __init__(self):
-        self.lineIdentifier = 0
-        self.linePointer = 1
+class Sequencer:
+    """
+    Makes it possible to run arbitrary code sequentially without interrupting other code that must run continuoulsy.
+    For example, one can make the robot execute a series of pre-programmed functions with delays and so on, without interrupting
+    a sensor that must run continously. 
+    This functions basically as an alternative to multithreading or multiprocessing.
+    """
+    def __init__(self, reset_function=None):
+        self.line_identifier = 0
+        self.line_pointer = 1
         self.done = False
+        self.reset_function = reset_function
 
-    # Resets the sequence and makes it start from the first event
-    def resetSequence(self):
-        self.linePointer = 1
-        #print("----------------")
-        #print("reseting sequence")
-        #print("----------------")
+    def reset_sequence(self):
+        """
+        Resets the sequence and makes it start from the first event.
+        """
+        if self.reset_function is not None:
+            self.reset_function()
+        self.line_pointer = 1
+        if SHOW_DEBUG:
+            print("----------------")
+            print("reseting sequence")
+            print("----------------")
 
-    def seqResetSequence(self):
+    def seq_reset_sequence(self):
         if self.check():
-            self.resetSequence()
+            self.reset_sequence()
             
             return True
         return False
 
-    # This has to be at the start of any sequence of events
-    def startSequence(self):
-        self.lineIdentifier = 0
+    def start_sequence(self):
+        """
+        Starts the sequence. This must be at the start of any sequence of events.
+        """
+        self.line_identifier = 0
         self.done = False
 
-    # Returns if the line pointer and identifier match and increases the identifier
-    # Must be included at the end of any sequential function
+
     def check(self):
+        """
+        Returns if the line pointer and identifier match and increases the identifier.
+        Must be included at the end of any sequential function.
+        """
         self.done = False
-        self.lineIdentifier += 1
-        return self.lineIdentifier == self.linePointer
+        self.line_identifier += 1
+        return self.line_identifier == self.line_pointer
 
-    # Changes to the next event
-    def nextSeq(self):
-        self.linePointer += 1
+    def next_seq(self):
+        """
+        Changes to the next event.
+        """
+        self.line_pointer += 1
         self.done = True
 
-    # returns if the sequence has reached its end
-    def seqDone(self):
+    def seq_done(self):
+        """
+        returns if the sequence has reached its end
+        """
         return self.done
 
-    # Can be used to make a function sequential or used in an if statement to make a code block sequential
-    def simpleSeqEvent(self, function=None, *args, **kwargs):
+    def simple_event(self, function=None, *args, **kwargs):
+        """
+        Can be used to make a function sequential or used with an if statement to make a code block sequential.
+        """
         if self.check():
             if function is not None:
                 function(*args, **kwargs)
-            self.nextSeq()
+            self.next_seq()
             return True
         return False
 
-    # The function inputted must return True when it ends
-    def complexSeqEvent(self, function, *args, **kwargs):
+    def complex_event(self, function, *args, **kwargs):
+        """
+        Can be used to make a function sequential. The function inputted must return True when it ends
+        """
         if self.check():
             if function(*args, **kwargs):
-                self.nextSeq()
+                self.next_seq()
                 return True
         return False
     
-    # When inpuuted any function it returns a sequential version of it that can be used in a sequence
-    def makeSimpleSeqEvent(self, function):
+    def make_simple_event(self, function):
+        """
+        When inpuuted any function it returns a sequential version of it that can be used in a sequence.
+        """
         def event(*args, **kwargs):
             if self.check():
                 function(*args, **kwargs)
-                self.nextSeq()
+                self.next_seq()
                 return True
             return False
         return event
 
-    # When inputted a function that returns True when it ends returns a sequential version of it that can be used in a sequence
-    def makeComplexSeqEvent(self, function):
+    def make_complex_event(self, function):
+        """
+        When inputted a function that returns True when it ends returns a sequential version of it that can be used in a sequence.
+        """
         def event(*args, **kwargs):
             if self.check():
                 if function(*args, **kwargs):
-                    self.nextSeq()
+                    self.next_seq()
                     return True
             return False
         return event
-# File: "Analysis.py"
 
 
 
+#######################
+# FILE: flow_control/state_machine.py
+#######################
 
 
+class StateMachine:
+    """
+    A simple state machine.
+    """
+    def __init__(self, initial_state, function_on_change_state=lambda:None):
+        self.state = initial_state
+        self.current_function = lambda:None
 
+        self.change_state_function = function_on_change_state
 
+        self.state_functions = {}
+        self.allowed_state_changes = {}
+        self.possible_states = set()
 
+    def create_state(self, name: str, function: Callable, possible_changes = set()):
+        if name in self.possible_states:
+            raise ValueError("Failed to create new state. State already exists.")
+        self.possible_states.add(name)
+        self.state_functions[name] = function
+        self.allowed_state_changes[name] = possible_changes
+        if name == self.state:
+            self.current_function = self.state_functions[self.state]
 
+    def change_state(self, new_state):
+        """Sets the state the specified value."""
+        if new_state not in self.possible_states:
+            raise ValueError("Can't change state. New state doesn't exist.")
+        
+        if new_state in self.allowed_state_changes[self.state]:
+            self.change_state_function()
+            self.state = new_state
+            self.current_function = self.state_functions[self.state]
 
-# Class that defines a tile node in the grid
-class TileNode:
-    __wallFixtureTypes = ("harmed", "secure", "unharmed", "flammable_gas", "poison", "corrosive", "organic_proxide")
-    # Tuple with all allowed tile types
-    __allowedTypes = ("undefined", "normal", "hole", "swamp", "checkpoint", "start", "connection1-2", "connection2-3")
-    __allowedCurvedWalls = ([1, 1], [-1, -1], [-1, 1], [-1, 1])
-    __typesToNumbers = {"undefined": "0", "normal": "0", "hole": "2", "swamp": "3", "checkpoint": "4", "start": "5",
-                        "connection1-2": "6", "connection1-3": "7", "connection2-3": "8"}
-
-    def __init__(self, tileType="undefined", curvedWall=[0, 0], fixtures=[], obstacles=[]):
-        self.dimensions = [0.06, 0.06]  # Dimensions of the tile
-        self.__tileType = tileType  # Can be undefined, start, normal, swamp, hole, checkpoint, connection1-2, connection2-3
-        self.traversed = False
-        self.tileGroup = [0, 0]
-        self.curvedWall = curvedWall  # if it is a tile with curved walls and curved wall position
-        self.fixtures = fixtures  # List of all fixtures in walls adjacent to tile
-        self.obstacles = obstacles  # List of obstacles in tile
-
-    @property
-    def tileType(self):
-        return self.__tileType
-
-    @tileType.setter
-    def tileType(self, value):
-        if self.__tileType in ("normal", "undefined") or value in ("start",):
-            self.__tileType = value
-
-    def getString(self):
-        return self.__typesToNumbers[self.tileType]
-
-
-# Class that defines a wall node in the grid
-class WallNode:
-    __wallFixtureTypes = ("H", "S", "U", "F", "P", "C", "O")
-
-    def __init__(self, occupied=False, fixtures=[]):
-        self.dimensions = [0.06, 0.06, 0.01]  # Dimensions of the wall
-        self.__occupied = occupied  # If there is a wall. Can be True or false.
-        self.isFloating = False  # If it is a floating wal
-        self.traversed = False
-        self.fixtures = fixtures  # List of all fixtures in wall
-
-    @property
-    def occupied(self):
-        return self.__occupied
-
-    @occupied.setter
-    def occupied(self, value):
-        if value and not self.traversed:
-            self.__occupied = True
         else:
-            self.__occupied = False
+            raise RuntimeWarning("Can't change state. New state is not in the possible changes for old state.")
+        return True
 
-    def getString(self):
-        if len(self.fixtures):
-            returnString = "".join(self.fixtures)
-        elif self.occupied:
-            returnString = "1"
-        else:
-            returnString = "0"
-        return returnString
-
-
-# Class that defines a vortex node in the grid
-class VortexNode:
-    def __init__(self, occupied=False):
-        self.dimensions = [0.01, 0.01, 0.06]  # Dimensions of the vortex
-        self.occupied = occupied  # If there is a vortex. Can be True or false.
-        self.traversed = False
-        self.victimDetected = False
-        self.tileType = "undefined"
-
-    @property
-    def occupied(self):
-        return self.__occupied
-
-    @occupied.setter
-    def occupied(self, value):
-        if value and not self.traversed:
-            self.__occupied = True
-        else:
-            self.__occupied = False
-
-    def getString(self):
-        return str(int(self.occupied))
+    def check_state(self, state):
+        """Checks if the state corresponds the specified value."""
+        return self.state == state
+    
+    def run(self):
+        return self.current_function(self.change_state)
 
 
-# A virtual representation of the competition map
-class Grid:
-    def __init__(self, chunk, initialSize):
-        self.startingSize = initialSize  # The initial size of the grid, cant be 0 and has to be divisible by the size of the chunk
-        self.size = [2, 2]  # The actual size of the grid
-        self.offsets = [0, 0]  # Offsets of the grid to allow negative indexes
-        self.grid = [[]]  # The grid containing the data
-        self.chunk = chunk  # A chunk of nodes constituting the grid
-        self.chunkSize = (len(chunk), len(chunk[0]))
-        self.__constructGrid()
-
-    # Given a string indicating direction returns an array directing to that direction
-    def directionToNumber(self, direction):
-        if direction == "center" or direction == "centre":
-            n = [0, 0]
-        elif direction == "right":
-            n = [0, 1]
-        elif direction == "left":
-            n = [0, -1]
-        elif direction == "up":
-            n = [-1, 0]
-        elif direction == "down":
-            n = [1, 0]
-        elif direction == "right-up" or direction == "up-right":
-            n = [1, -1]
-        elif direction == "right-down" or direction == "down-right":
-            n = [1, 1]
-        elif direction == "left-down" or direction == "down-left":
-            n = [-1, 1]
-        elif direction == "left-up" or direction == "up-left":
-            n = [-1, -1]
-        return n
-
-    # Constructs the grid
-    def __constructGrid(self):
-        self.grid = copy.deepcopy(self.chunk)
-        for _ in range((self.startingSize[0] // self.chunkSize[0]) - 1):
-            self.addColumnAtEnd()
-        for _ in range((self.startingSize[1] // self.chunkSize[1]) - 1):
-            self.addRowAtEnd()
-
-        self.offsets[0] = self.startingSize[0] // self.chunkSize[0]
-        self.offsets[1] = self.startingSize[1] // self.chunkSize[1]
-        if not self.offsets[0] % self.chunkSize[0]:
-            self.offsets[0] -= 1
-        if not self.offsets[1] % self.chunkSize[1]:
-            self.offsets[1] -= 1
-
-        self.size = self.startingSize
-
-    # Adds a row at the end of the grid
-    def addRowAtEnd(self):
-        row = copy.deepcopy(self.chunk)
-        if self.size[0] > 1:
-            for _ in range((self.size[0] // self.chunkSize[0]) - 1):
-                row = np.hstack((row.copy(), copy.deepcopy(self.chunk)))
-            self.grid = np.vstack((self.grid.copy(), copy.deepcopy(row)))
-            self.size[1] += self.chunkSize[0]
-
-    # Adds a row at the start of the grid
-    def addRowAtStart(self):
-        row = copy.deepcopy(self.chunk)
-        if self.size[0] > 1:
-            for _ in range((self.size[0] // self.chunkSize[0]) - 1):
-                row = np.hstack((row.copy(), copy.deepcopy(self.chunk)))
-            self.grid = np.vstack((copy.deepcopy(row), self.grid.copy()))
-            self.size[1] += self.chunkSize[0]
-            self.offsets[1] += self.chunkSize[0]
-
-    # Adds a column at the end of the grid
-    def addColumnAtEnd(self):
-        column = self.chunk.copy()
-        if self.size[1] > 1:
-            for _ in range((self.size[1] // self.chunkSize[1]) - 1):
-                column = np.vstack((column.copy(), copy.deepcopy(self.chunk)))
-            self.grid = np.hstack((self.grid.copy(), copy.deepcopy(column)))
-            self.size[0] += self.chunkSize[1]
-
-    # Adds a column at the start of the grid
-    def addColumnAtStart(self):
-        column = copy.deepcopy(self.chunk)
-        if self.size[1] > 1:
-            for _ in range((self.size[1] // self.chunkSize[1]) - 1):
-                column = np.vstack((column.copy(), copy.deepcopy(self.chunk)))
-            self.grid = np.hstack((copy.deepcopy(column), self.grid.copy()))
-            self.size[0] += self.chunkSize[1]
-            self.offsets[0] += self.chunkSize[1]
-
-    # returns the node in the position in the grid taking in to account offsets
-    def getRawNode(self, position):
-        x = position[0] + self.offsets[0]
-        y = position[1] + self.offsets[1]
-        return self.grid[y][x]
-
-    # Sets a value in the position in the grid taking in to account offsets
-    def setRawNode(self, position, value):
-        x = position[0] + self.offsets[0]
-        y = position[1] + self.offsets[1]
-        self.grid[y][x] = value
-
-    def processedToRawNode(self, position, side=[0, 0]):
-        if isinstance(side, str):
-            x = position[0] * self.chunkSize[0] + self.directionToNumber(side)[0]
-            y = position[1] * self.chunkSize[1] + self.directionToNumber(side)[1]
-        else:
-            x = position[0] * self.chunkSize[0] + side[0]
-            y = position[1] * self.chunkSize[1] + side[1]
-        if x < self.offsets[0] * -1:
-            raise IndexError("Index too small for list with min index " + str(self.offsets[0] * -1))
-        if y < self.offsets[1] * -1:
-            raise IndexError("Index too small for list with min index " + str(self.offsets[0] * -1))
-        return (x, y)
-
-    def rawToProcessedNode(self, rawNode):
-        x = rawNode[0] // self.chunkSize[0]
-        y = rawNode[1] // self.chunkSize[1]
-        sideX = rawNode[0] % self.chunkSize[0]
-        sideY = rawNode[1] % self.chunkSize[1]
-        quadrant = [0, 0]
-        if sideX > 0: quadrant[0] = 1
-        if sideY > 0: quadrant[1] = 1
-        return (x, y), quadrant
-
-    # Returns a node given the position of a tile and directions to indicate walls and vertices
-    def getNode(self, position, side=[0, 0]):
-        return self.getRawNode(self.processedToRawNode(position, side))
-
-    # Sets a node given the position of a tile and directions to indicate walls and vertices
-    def setNode(self, position, value, side=[0, 0]):
-        self.setRawNode(self.processedToRawNode(position, side), value)
-
-    def getArrayRepresentation(self):
-        grid = []
-        for y in self.grid:
-            row = []
-            for node in y:
-                row.append(node.getString())
-            grid.append(row)
-        return np.array(grid)
-
-    def getNumpyPrintableArray(self):
-        printableArray = np.zeros(self.size, np.uint8)
-        for y in range(len(self.grid)):
-            for x, node in enumerate(self.grid[y]):
-
-                if isinstance(node, TileNode):
-                    if node.tileType == "start":
-                        printableArray[x][y] = 100
-                    elif node.tileType == "hole":
-                        # #print("NEW HOLE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-                        printableArray[x][y] = 255
-                    elif node.tileType == "checkpoint":
-                        printableArray[x][y] = 60
-                    elif node.tileType == "swamp":
-                        printableArray[x][y] = 80
-
-                    elif node.tileType in ("connection1-2", "connection2-3", "connection1-3"):
-                        printableArray[x][y] = 120
-                    elif node.traversed:
-                        printableArray[x][y] = 150
-
-                elif isinstance(node, VortexNode):
-                    if node.tileType == "start":
-                        printableArray[x][y] = 100
-                    elif node.occupied:
-                        printableArray[x][y] = 255
-                    elif node.traversed:
-                        printableArray[x][y] = 150
-                    else:
-                        printableArray[x][y] = 50
-
-                elif isinstance(node, WallNode):
-                    if node.occupied:
-                        printableArray[x][y] = 255
-                    elif node.traversed:
-                        printableArray[x][y] = 150
-                    else:
-                        printableArray[x][y] = 50
-
-        return np.flip(printableArray, 1)
+#######################
+# FILE: flow_control/delay.py
+#######################
 
 
-# aStarNode class for A* pathfinding (Not to be confused with the node grid)
-class aStarNode():
-    def __init__(self, parent=None, position=None):
-        self.parent = parent
-        self.position = position
-        self.g = 0
-        self.h = 0
-        self.f = 0
 
-    def __eq__(self, other):
-        return self.position == other.position
+class DelayManager:
+    def __init__(self) -> None:
+        self.time = 0
+        self.delay_first_time = True
+        self.delay_start = 0
+    
+    def update(self, time):
+        self.time = time
 
-
-# Finds the best path to follow
-class PathFinder:
-    def __init__(self, vortexNode, wallNode, tileNode, grid, searchLimit, startNode):
-        self.grid = grid
-        self.startVortex = [0, 0]
-        self.prevVortex = [0, 0]
-        self.objectiveVortex = [0, 0]
-        self.vortexNode = vortexNode
-        self.wallNode = wallNode
-        self.tileNode = tileNode
-        self.searchLimit = searchLimit
-        self.startNode = startNode
-
-    def isTraversable(self, index):
-        node = self.grid.getRawNode(index)
-        if isinstance(node, TileNode):
-            raise ValueError("Invalid instance")
-            return node.tileType != "hole"
-        if isinstance(node, WallNode):
-            raise ValueError("Invalid instance")
-            return not node.occupied
-        if isinstance(node, VortexNode):
-            if node.occupied:
-                return False
-            traversable = True
-            for adjacentIndex in ((-1, 1), (1, -1), (1, 1), (-1, -1), (0, 1), (0, -1), (1, 0), (-1, 0)):
-                adjacent = self.grid.getRawNode((index[0] + adjacentIndex[0], index[1] + adjacentIndex[1]))
-                if isinstance(adjacent, TileNode):
-                    if adjacent.tileType == "hole":
-                        traversable = False
-                elif isinstance(adjacent, WallNode):
-                    if adjacent.occupied:
-                        traversable = False
-                else:
-                    raise ValueError(("invalid instance: " + str(type(adjacent))))
-            return traversable
-        return False
-
-    # Returns a list of tuples as a path from the given start to the given end in the given maze
-    def aStar(self, start, end):
-        # Create start and end node
-        startNode = aStarNode(None, (start[0], start[1]))
-        startNode.g = startNode.h = startNode.f = 0
-        endNode = aStarNode(None, (end[0], end[1]))
-        endNode.g = endNode.h = endNode.f = 0
-        # Initialize open and closed list
-        openList = []
-        closedList = []
-        # Add the start node
-        openList.append(startNode)
-        # Loop until end
-        while len(openList) > 0:
-            # Get the current node
-            currentNode = openList[0]
-            currentIndex = 0
-            for index, item in enumerate(openList):
-                if item.f < currentNode.f:
-                    currentNode = item
-                    currentIndex = index
-            # Pop current off open list, add to closed list
-            openList.pop(currentIndex)
-            closedList.append(currentNode)
-            # If found the goal
-            if currentNode == endNode:
-                path = []
-                current = currentNode
-                while current is not None:
-                    path.append(current.position)
-                    current = current.parent
-                return path[::-1]  # Return reversed path
-            # Generate children
-            children = []
-            for newPosition in ((0, 1), (0, -1), (-1, 0), (1, 0)):  # Adjacent squares
-                # Get node position
-                nodePosition = (
-                currentNode.position[0] + (newPosition[0] * 2), currentNode.position[1] + (newPosition[1] * 2))
-                # Make sure walkable terrain
-                if not self.isTraversable(nodePosition):
-                    continue
-                # Create new node
-                newNode = aStarNode(currentNode, nodePosition)
-                # Append
-                children.append(newNode)
-            # Loop through children
-            for child in children:
-                continueLoop = False
-                # Child is on the closed list
-                for closedChild in closedList:
-                    if child == closedChild:
-                        continueLoop = True
-                        break
-                # Create the f, g, and h values
-                child.g = currentNode.g + 1
-                child.h = ((child.position[0] - endNode.position[0]) ** 2) + (
-                    (child.position[1] - endNode.position[1]) ** 2)
-                child.f = child.g + child.h
-                # Child is already in the open list
-                for openNode in openList:
-                    if child == openNode and child.g > openNode.g:
-                        continueLoop = True
-                        break
-                if continueLoop:
-                    continue
-                # Add the child to the open list
-                openList.append(child)
-
-    def isBfsAddable(self, index):
-        node = self.grid.getRawNode(index)
-        if isinstance(node, self.vortexNode):
-            for adjacentPos in ((1, 1), (-1, 1), (1, -1), (-1, -1)):
-                adjacent = [index[0] + adjacentPos[0], index[1] + adjacentPos[1]]
-                if not self.grid.getRawNode(adjacent).traversed:
+    def delay_seconds(self, delay):
+            if SHOW_DEBUG:
+                print("Current delay: ", delay)
+            if self.delay_first_time:
+                self.delay_start = self.time
+                self.delay_first_time = False
+            else:
+                if self.time - self.delay_start >= delay:
+                    
+                    self.delay_first_time = True
                     return True
             return False
+    
+    def reset_delay(self):
+         self.delay_first_time = True
+
+
+#######################
+# FILE: data_structures/vectors.py
+#######################
+
+import math
+import numpy as np
+
+
+class Position2D:
+    def __init__(self, *args, **kwargs):
+        """
+        Takes either two values or an iterable with at least two indices.
+        """
+        if len(args) == 0:
+            self.x = None
+            self.y = None
+        elif len(args) == 1:
+            self.x = args[0][0]
+            self.y = args[0][1]
+        elif len(args) == 2:
+            self.x = args[0]
+            self.y = args[1]
+        else:
+            raise TypeError()
+
+    
+    def __iter__(self):
+        yield self.x
+        yield self.y
+    
+    def __array__(self, *args, **kwargs):
+        return np.array([self.x, self.y], *args, **kwargs)
+        
+    def __repr__(self):
+        return f"Position2D({self.x}, {self.y})"
+    
+    def __eq__(self, other):
+        if isinstance(other, Position2D):
+            return self.x == other.x and self.y == other.y
         else:
             return False
-
-    # Breath First Search algorithm
-    # Returns the tiles with in order and with the distance of each one
-    def bfs(self, start, limit="undefined"):
-        visited = []
-        queue = []
-        found = []
-        start = [start[0], start[1], 0]
-        visited.append(start)
-        queue.append(start)
-        while queue:
-            if len(found) > 3:
-                break
-            coords = queue.pop(0)
-            y = coords[1]
-            x = coords[0]
-            dist = coords[2]
-            if limit != "undefined":
-                if dist > limit:
-                    break
-
-            if self.isBfsAddable(coords):
-                found.append(coords)
-            for newPosition in (0, 1), (0, -1), (-1, 0), (1, 0):
-                neighbour = [x + newPosition[0] * 2, y + newPosition[1] * 2, dist + 1]
-                inList = False
-                for node in visited:
-                    if node[0] == neighbour[0] and node[1] == neighbour[1]:
-                        inList = True
-                        break
-                if inList:
-                    continue
-
-                # Make sure walkable terrain
-                try:
-                    if self.isTraversable(neighbour):
-                        visited.append(neighbour)
-                        queue.append(neighbour)
-                except IndexError:
-                    pass
-        return found
-
-    def getPreferabilityScore(self, node):
-        pass
-
-    def setStartVortex(self, startRawVortexPos):
-        if not isinstance(self.grid.getRawNode(startRawVortexPos), self.vortexNode):
-            raise ValueError("Inputed position does not correspond to a vortex node")
-        if self.startVortex != startRawVortexPos:
-            self.prevVortex = self.startVortex
-
-        self.startVortex = startRawVortexPos
-        #if not self.isTraversable(startRawVortexPos):
-            #print("INITIAL VORTEX NOT TRAVERSABLE")
-
-    def setGrid(self, grid):
-        self.grid = grid
-
-    def getBestPath(self, orientation):
-        bfsLimits = ("undefined",)
-        possibleNodes = []
-        if self.isTraversable(self.startVortex):
-            bfsStart = self.startVortex
+    
+    def __add__(self, other):
+        if isinstance(other, Position2D):
+            return Position2D(self.x + other.x, self.y + other.y)
         else:
-            bfsStart = self.prevVortex
-        for limit in bfsLimits:
-            possibleNodes = self.bfs(bfsStart, limit)
-            if len(possibleNodes) > 0:
-                break
-
-        if len(possibleNodes) > 0:
-            bestNode = possibleNodes[0]
-            if bestNode[:2] == list(self.startVortex):
-                bestNode = possibleNodes[1]
-            for posNode in possibleNodes:
-                diff = substractLists(self.startVortex, posNode[:2])
-                # #print("Diff:", diff)
-                # #print("Multiplied orientation: ", multiplyLists(orientation, [-2, -2]))
-                if posNode[2] > 1:
-                    break
-
-                elif diff == multiplyLists(orientation, [-2, -2]):
-                    bestNode = posNode
-                    break
+            return Position2D(self.x + other, self.y + other)
+    
+    def __radd__(self, other):
+        return self + other
+    
+    def __sub__(self, other):
+        if isinstance(other, Position2D):
+            return Position2D(self.x - other.x, self.y - other.y)
         else:
-            bestNode = self.startNode
-
-        bestPath = self.aStar(bfsStart, bestNode)
-        #print("BFS NODES: ", possibleNodes)
-        #print("Best Node:", bestNode)
-        #print("AStar PATH: ", bestPath)
-        #print("Start Vortex: ", self.startVortex)
-        return bestPath
-
-
-class Analyst:
-    def __init__(self, tileSize):
-        # Important variables
-        self.tileSize = tileSize
-        self.posMultiplier = 100
-        # Grid
-        gridChunk = np.array([[VortexNode(), WallNode()],
-                              [WallNode(), TileNode()]])
-        self.grid = Grid(gridChunk, (100, 100))
-        # Converter
-        self.converter = PointCloudConverter(self.tileSize, pointMultiplier=self.posMultiplier)
-        # Classifier
-        self.classifier = Classifier(tilesDict)
-        # Path finder
-        self.pathFinder = PathFinder(VortexNode, WallNode, TileNode, self.grid, 10, [0, 0])
-        self.pathFinder.setStartVortex((1, 1))
-        # self.pathFinder.getBestPath()
-        # Variables
-        self.direction = None
-        self.__bestPath = []
-        self.calculatePath = True
-        self.stoppedMoving = False
-        self.pathIndex = 0
-        self.positionReachedThresh = 0.01
-        self.prevRawNode = [0, 0]
-        self.ended = False
-
-    def getBestPathSafe(self):
-        if self.__bestPath is None:
-            self.__bestPath = []
-
-        return self.__bestPath
-
-    def getRawAdjacents(self, node, side):
-        rawNode = self.grid.processedToRawNode(node, side)
-        adjacents = []
-        for i in ((0, 1), (1, 0), (0, -1), (-1, 0)):
-            adjacents.append(sumLists(rawNode, i))
-        return adjacents
-
-    def loadPointCloud(self, pointCloud):
-        self.converter.loadPointCloud(pointCloud)
-        tilesWithPoints = self.converter.getTilesWithPoints()
-        # #print("tilesWithPoints: ", tilesWithPoints)
-        for item in tilesWithPoints:
-            percentages = self.classifier.getCalsificationPercentages(item["posInTile"])
-            # #print("percentages: ", percentages)
-            for key, value in percentages.items():
-                wallType, orientation = key
-                if wallType == "straight":
-
-                    if value >= 5:
-                        self.grid.getNode(item["tile"], orientation).occupied = True
-                        for adjacent in self.getRawAdjacents(item["tile"], orientation):
-                            adjNode = self.grid.getRawNode(adjacent)
-                            if isinstance(adjNode, VortexNode):
-                                adjNode.occupied = True
-
-                elif wallType == "curved":
-                    if value > 0:
-                        # #print("Robot tile", self.tile)
-                        # #print("Curved", orientation, "in sight at", item["tile"])
-                        if percentages[("curvedwall", orientation)] > 6:
-                            walls = orientation.split("-")
-                            for wall in walls:
-                                self.grid.getNode(item["tile"], wall).occupied = True
-
-    def loadColorDetection(self, colorSensorPosition, tileType):
-        convPos = self.getTile(colorSensorPosition)
-        self.grid.getNode(convPos).tileType = tileType
-        """
-        if tileType == "hole":
-            self.calculatePath = True
-        """
-
-    def getQuadrant(self, posInTile):
-        if posInTile[0] > self.tileSize / 2:
-            x = 1
+            return Position2D(self.x - other, self.y - other)
+    
+    def __rsub__(self, other):
+        return -self + other
+    
+    def __mul__(self, other):
+        if isinstance(other, Position2D):
+            return Position2D(self.x * other.x, self.y * other.y)
         else:
-            x = -1
-        if posInTile[1] > self.tileSize / 2:
-            y = 1
+            return Position2D(self.x * other, self.y * other)
+    
+    def __rmul__(self, other):
+        return self * other
+    
+    def __truediv__(self, other):
+        if isinstance(other, Position2D):
+            return Position2D(self.x / other.x, self.y / other.y)
         else:
-            y = -1
-        return [x, y]
-
-    def getTile(self, position):
-        return (int(position[0] // self.tileSize), int(position[1] // self.tileSize))
-
-    def getPosInTile(self, position):
-        return ((position[0] % self.tileSize), (position[1] % self.tileSize))
-
-    def getVortexPosInTile(self, quadrant):
-        return [(self.tileSize / 2) + (quadrant[0] * (self.tileSize / 2)),
-                (self.tileSize / 2) + (quadrant[1] * (self.tileSize / 2))]
-
-    def getTilePos(self, tile):
-        return (tile[0] * self.tileSize, tile[1] * self.tileSize)
-
-    def multiplyPos(self, position):
-        return (position[0] * self.posMultiplier, position[1] * self.posMultiplier)
-
-    def getStartRawNodePos(self):
-        node, quadrant = self.grid.rawToProcessedNode(self.pathFinder.startVortex)
-        nodePos = self.getTilePos(node)
-
-        vortexPos = self.getVortexPosInTile(quadrant)
-        return [nodePos[0] + vortexPos[0], nodePos[1] + vortexPos[1]]
-
-    def getQuadrantFromDegs(self, degs):
-        if 315 <= degs < 360 or 0 <= degs < 45:
-            quadrant = (0, 1)
-        elif 45 <= degs < 135:
-            quadrant = (1, 0)
-        elif 135 <= degs < 225:
-            quadrant = (0, -1)
-        elif 255 <= 315:
-            quadrant = (-1, 0)
-        return quadrant
-
-    def blockFront(self):
-        front = [self.startRawNode[0] + (self.direction[0] * 2), self.startRawNode[1] + (self.direction[1] * 2)]
-        self.grid.getRawNode(front).occupied = True
-
-    def registerStart(self):
-        self.pathFinder.startNode = self.startRawNode
-        self.grid.getRawNode(self.startRawNode).tileType = "start"
-        for i in ((1, 1), (-1, -1), (-1, 1), (1, -1)):
-            adjacent = sumLists(self.startRawNode, i)
-            self.grid.getRawNode(adjacent).tileType = "start"
-
-    def registerVictim(self):
-        self.grid.getRawNode(self.startRawNode).victimDetected = True
-
-    def isRegisteredVictim(self):
-        return self.grid.getRawNode(self.startRawNode).victimDetected
-
-    def getArrayRepresentation(self):
-        return self.grid.getArrayRepresentation()
-
-    def update(self, position, rotation):
-        self.direction = self.getQuadrantFromDegs(rotation)
-
-        posInTile = self.getPosInTile(position)
-        quadrant = self.getQuadrant(posInTile)
-        self.tile = self.getTile(position)
-        startRawNode = self.grid.processedToRawNode(self.tile, quadrant)
-        self.startRawNode = startRawNode
-        # #print("startRawNode: ", startRawNode)
-        self.pathFinder.setStartVortex(startRawNode)
-        self.pathFinder.setGrid(self.grid)
-
-        vortexPosInTile = self.getVortexPosInTile(quadrant)
-        diff = [vortexPosInTile[0] - posInTile[0], vortexPosInTile[1] - posInTile[1]]
-        distToVortex = getDistance(diff)
-        if distToVortex < self.positionReachedThresh:
-            self.grid.getRawNode(self.startRawNode).traversed = True
-            for adjacentPos in ((1, 1), (-1, 1), (1, -1), (-1, -1), (0, 1), (1, 0), (-1, 0), (0, -1)):
-                adjacent = [self.startRawNode[0] + adjacentPos[0], self.startRawNode[1] + adjacentPos[1]]
-                self.grid.getRawNode(adjacent).traversed = True
-
-        if self.stoppedMoving:
-            self.blockFront
-            self.calculatePath = True
-
-        if len(self.getBestPathSafe()):
-            #print("Dist to Vortex: ", distToVortex)
-            if distToVortex < self.positionReachedThresh and startRawNode == self.__bestPath[self.pathIndex]:
-                self.pathIndex += 1
-
-        #print("PathLenght: ", len(self.getBestPathSafe()))
-        if self.pathIndex >= len(self.getBestPathSafe()):
-            self.calculatePath = True
-
+            return Position2D(self.x / other, self.y / other)
+    
+    def __rtruediv__(self, other):
+        return Position2D(other / self.x, other / self.y)
+    
+    def __floordiv__(self, other):
+        if isinstance(other, Position2D):
+            return Position2D(self.x // other.x, self.y // other.y)
+        return Position2D(self.x // other, self.y // other)
+    
+    def __rfloordiv__(self, other):
+        return self.__floordiv__(other)
+    
+    def __mod__(self, other):
+        if isinstance(other, Position2D):
+            return Position2D(self.x % other.x, self.y % other.y)
         else:
-            bestNode = self.getBestRawNodeToMove()
-            if bestNode is not None:
-                if not self.pathFinder.isTraversable(bestNode):
-                    self.calculatePath = True
-
-        if self.calculatePath:
-            # #print("Calculating path")
-            self.__bestPath = self.pathFinder.getBestPath(self.direction)
-            self.pathIndex = 0
-            #print("update - self.calculatePath => ", self.__bestPath, (not self.__bestPath is None) and len(self.getBestPathSafe()) < 2)
-            if len(self.getBestPathSafe()) < 2:
-                self.ended = True
-            self.calculatePath = False
-
-    def getBestRawNodeToMove(self):
-        # #print("Best path: ", self.__bestPath)
-        # #print("Index: ", self.pathIndex)
-        if len(self.getBestPathSafe()):
-            return self.__bestPath[self.pathIndex]
+            return Position2D(self.x % other, self.y % other)
+    
+    def __rmod__(self, other):
+        return self.__mod__(other)
+    
+    def __divmod__(self, other):
+        return self.__floordiv__(other), self.__mod__(other)
+    
+    
+    def __rdivmod__(self, other):
+        return self.__divmod__(other)
+    
+    def __pow__(self, other):
+        if isinstance(other, Position2D):
+            return Position2D(self.x ** other.x, self.y ** other.y)
         else:
-            return None
-
-    def getBestPosToMove(self):
-        bestRawNode = self.getBestRawNodeToMove()
-        # #print("BEST PATH: ", bestRawNode)
-        if bestRawNode is None:
-            return None
-        node, quadrant = self.grid.rawToProcessedNode(bestRawNode)
+            return Position2D(self.x ** other, self.y ** other)
+    
+    def __rpow__(self, other):
+        return self.__pow__(other)
+    
+    def __neg__(self):
+        return Position2D(-self.x, -self.y)
+    
+    def __pos__(self):
+        return Position2D(self.x, self.y)
+    
+    def __abs__(self):
+        return math.sqrt(self.x ** 2 + self.y ** 2)
+    
+    def __getitem__(self, index):
+        if index == 0:
+            return self.x
+        elif index == 1:
+            return self.y
+        else:
+            raise IndexError("Vector index out of range")
+    
+    def __setitem__(self, index, value):
+        if index == 0:
+            self.x = value
+        elif index == 1:
+            self.y = value
+        else:
+            raise IndexError("Vector index out of range")
+        
+    def astype(self, dtype: type):
+        return self.apply_to_all(dtype)
+    
+    def apply_to_all(self, function):
+        return Position2D(function(self.x), function(self.y))
+    
+    def get_distance_to(self, other):
+        return abs(self - other)
+    
+    def get_angle_to(self, other):
+        delta = self - other 
+        result = Angle(math.atan2(delta.x, delta.y)) + Angle(180, Angle.DEGREES)
+        result.normalize()
+        return result
+    
+
+    def to_vector(self):
+        m = Position2D(0, 0).get_distance_to(self)
+        a = Position2D(0, 0).get_angle_to(self)
+        return Vector2D(a, m)
+       
+class Vector2D:
+    def __init__(self, direction:Angle=None, magnitude=None):
+        self.direction = direction
+        self.magnitude = magnitude
+        
+    def __repr__(self):
+        return f"Vector2D(direction={self.direction}, magnitude={self.magnitude})"
+    
+    def __eq__(self, other):
+        if isinstance(other, Vector2D):
+            return self.direction == other.direction and self.magnitude == other.magnitude
+        else:
+            return False
+    
+    def __add__(self, other):
+        if isinstance(other, Vector2D):
+            return Vector2D(self.direction + other.direction, self.magnitude + other.magnitude)
+        else:
+            raise TypeError("Argument must be of type Vector2D")
+    
+    def __radd__(self, other):
+        return self + other
+    
+    def __sub__(self, other):
+        if isinstance(other, Vector2D):
+            return Vector2D(self.direction - other.direction, self.magnitude - other.y)
+        else:
+            raise TypeError("Argument must be of type Vector2D")
+    
+    def __rsub__(self, other):
+        return -self + other
+    
+    
+    def __neg__(self):
+        return Vector2D(-self.direction, -self.magnitude)
+    
+    def __pos__(self):
+        return Vector2D(self.direction, self.magnitude)
+    
+    
+    def to_position(self):
+        y = float(self.magnitude * math.cos(self.direction.radians))
+        x = float(self.magnitude * math.sin(self.direction.radians))
+        return Position2D(x, y)
+    
+
+
+#######################
+# FILE: executor/stuck_detector.py
+#######################
 
-        nodePos = self.getTilePos(node)
-
-        vortexPos = self.getVortexPosInTile(quadrant)
-        return [nodePos[0] + vortexPos[0], nodePos[1] + vortexPos[1]]
-        # return nodePos
-
-    def getBestPoses(self):
-        bestPoses = []
-        for bestRawNode in self.__bestPath:
-            node, quadrant = self.grid.rawToProcessedNode(bestRawNode)
-
-            nodePos = self.getTilePos(node)
-
-            vortexPos = self.getVortexPosInTile(quadrant)
-            # #print("Vortex pos: ", vortexPos)
-            # return
-            bestPoses.append([nodePos[0] + vortexPos[0], nodePos[1] + vortexPos[1]])
-        return bestPoses
-
-    def getGrid(self):
-        return self.grid.grid
-
-    def showGrid(self):
-        None
-        # cv.imshow("Analyst grid",
-        #    cv.resize(self.grid.getNumpyPrintableArray(), (400, 400), interpolation=cv.INTER_NEAREST))
-
-# File: "CameraDetection.py"
-# noinspection PyInterpreter
-
-
-
-
-class Listener:
-    def __init__(self, lowerHSV, upperHSV):
-        self.lower = np.array(lowerHSV)
-        self.upper = np.array(upperHSV)
-
-    def getFiltered(self, img):
-        hsv_image = cv.cvtColor(img, cv.COLOR_BGR2HSV)
-        mask = cv.inRange(hsv_image, self.lower, self.upper)
-        #imgResult = cv.bitwise_and(img, img, mask=mask)
-        return mask
-
-class VictimClassifier:
-    def __init__(self):
-        self.redListener = Listener(lowerHSV=(73, 157, 127), upperHSV=(179, 255, 255))
-        self.yellowListener = Listener(lowerHSV=(0, 157, 82), upperHSV=(40, 255, 255))
-        self.whiteListener = Listener(lowerHSV=(0, 0, 200), upperHSV=(0, 255, 255))
-        self.blackListener = Listener(lowerHSV=(0, 0, 0), upperHSV=(0, 255, 90))
-        self.victimLetterListener = Listener(lowerHSV=(0, 0, 0), upperHSV=(5, 255, 70))
-
-    def isClose(self, height):
-        #print(f"Current height: {height}")
-        return height > 45
-
-    def isInCenter(self, pos):
-        #print(f"Current pos1: {pos[1]}")
-        return 15 < pos[1] < 70
-
-    def getCloseVictims(self, victimPoses, victimImages):
-        finalVictims = []
-        for pos, img in zip(victimPoses, victimImages):
-            height = img.shape[0]
-            if self.isClose(height) and self.isInCenter(pos):
-                finalVictims.append(img)
-        return finalVictims
-
-
-
-    def getSumedFilters(self, images):
-        finalImg = images[0]
-        for index, image in enumerate(images):
-            finalImg += image
-            #cv.imshow(str(index), image)
-        return finalImg
-
-
-    def filterVictims(self, poses, images):
-        finalPoses = []
-        finalImages = []
-        for pos, img in zip(poses, images):
-            #print(f"Current victim pos0: {pos[0]}")
-            if 25 < pos[0] < 60:
-                finalPoses.append(pos)
-                finalImages.append(img)
-
-        return finalPoses, finalImages
-
-    def getVictimImagesAndPositions(self, image):
-        binaryImages = [self.redListener.getFiltered(image),
-                        self.yellowListener.getFiltered(image),
-                        self.whiteListener.getFiltered(image),
-                        self.blackListener.getFiltered(image)]
-
-        binaryImage = self.getSumedFilters(binaryImages)
-        #cv.imshow("binaryImage", binaryImage)
-
-        contours, _ = cv.findContours(binaryImage, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-        for c0 in contours:
-            x, y, w, h = cv.boundingRect(c0)
-            cv.rectangle(binaryImage, (x, y), (x + w, y + h), (225, 255, 255), -1)
-        # cv.imshow("thresh2", binaryImage)
-        contours, _ = cv.findContours(binaryImage, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-        finalPoses = []
-        finalImages = []
-        for c in contours:
-            x, y, w, h = cv.boundingRect(c)
-            finalImages.append(image[y:y + h, x:x + w])
-            finalPoses.append((y, x))
-
-        return self.filterVictims(finalPoses, finalImages)
-
-    def cropWhite(self, binaryImg):
-        white = 255
-        ##print(conts)
-        maxX = 0
-        maxY = 0
-        minX = binaryImg.shape[0]
-        minY = binaryImg.shape[1]
-        for yIndex, row in enumerate(binaryImg):
-            for xIndex, pixel in enumerate(row):
-                if pixel == white:
-                    maxX = max(maxX, xIndex)
-                    maxY = max(maxY, yIndex)
-                    minX = min(minX, xIndex)
-                    minY = min(minY, yIndex)
-
-        return binaryImg[minY:maxY, minX:maxX]
-
-    def classifyHSU(self, img):
-        white = 255
-        print("Hello!!!!!")
-
-        img =  cv.resize(img, (100, 100), interpolation=cv.INTER_AREA)
-        #conts, h = cv.findContours(thresh1, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-        #print(str(img))
-        binary = self.victimLetterListener.getFiltered(img)
-        print("Binary image: ")
-        print(str(binary))
-        letter1 = self.cropWhite(binary)
-        #print(str(letter1))
-
-        x, y = letter1.shape
-
-
-        if(x < 1):
-            return "N"
-
-
-        letter1 = cv.resize(letter1, (100, 100), interpolation=cv.INTER_AREA)
-        #print(str(letter1))
-        letter = letter1[:,10:90]
-        #print(str(letter))
-        letter = self.cropWhite(letter)
-        #print(str(letter))
-        letter = cv.resize(letter, (100, 100), interpolation=cv.INTER_AREA)
-        # cv.imshow("letra", letter)
-        # #cv.imshow("letra1", letter1)
-        # cv.imshow("thresh", binary)
-        letterColor = cv.cvtColor(letter, cv.COLOR_GRAY2BGR)
-        areaWidth = 20
-        areaHeight = 30
-        areas = {
-            "top": ((0, areaHeight),(50 - areaWidth // 2, 50 + areaWidth // 2)),
-            "middle": ((50 - areaHeight // 2, 50 + areaHeight // 2), (50 - areaWidth // 2, 50 + areaWidth // 2)),
-            "bottom": ((100 - areaHeight, 100), (50 - areaWidth // 2, 50 + areaWidth // 2 ))
-            }
-        images = {
-            "top": letter[areas["top"][0][0]:areas["top"][0][1], areas["top"][1][0]:areas["top"][1][1]],
-            "middle": letter[areas["middle"][0][0]:areas["middle"][0][1], areas["middle"][1][0]:areas["middle"][1][1]],
-            "bottom": letter[areas["bottom"][0][0]:areas["bottom"][0][1], areas["bottom"][1][0]:areas["bottom"][1][1]]
-            }
-        cv.rectangle(letterColor,(areas["top"][1][0], areas["top"][0][0]), (areas["top"][1][1], areas["top"][0][1]), (0, 255, 0), 1)
-        cv.rectangle(letterColor, (areas["middle"][1][0], areas["middle"][0][0]), (areas["middle"][1][1], areas["middle"][0][1]), (0, 0, 255), 1)
-        cv.rectangle(letterColor,(areas["bottom"][1][0], areas["bottom"][0][0]), (areas["bottom"][1][1], areas["bottom"][0][1]), (225, 0, 255), 1)
-        counts = {}
-        for key in images.keys():
-            count = 0
-            for row in images[key]:
-                for pixel in row:
-                    if pixel == white:
-                        count += 1
-            counts[key] = count > 20
-        letters = {
-            "H":{'top': False, 'middle': True, 'bottom': False},
-            "S":{'top': True, 'middle': True, 'bottom': True},
-            "U":{'top': False, 'middle': False, 'bottom': True}
-            }
-
-        finalLetter = "S"
-        for letterKey in letters.keys():
-            if counts == letters[letterKey]:
-                finalLetter = letterKey
-                break
-
-        #print("Counts: " + counts)
-        print("Hello!!!!!: " + finalLetter)
-
-        ##print(counts)
-        ##print(finalLetter)
-        return finalLetter
-
-    def isPoison(self, blackPoints, whitePoints):
-        return blackPoints < 600 and whitePoints > 700 and whitePoints < 4000
-
-    def isVictim(self, blackPoints, whitePoints):
-        return whitePoints > 5000 and 2000 > blackPoints > 100
-
-    def isCorrosive(self, blackPoints, whitePoints):
-        return 700 < whitePoints < 2500 and 1000 < blackPoints < 2500
-
-    def isFlammable(self, redPoints, whitePoints):
-        return redPoints and whitePoints
-
-    def isOrganicPeroxide(self, redPoints, yellowPoints):
-        return redPoints and yellowPoints
-
-    def classifyVictim(self, img):
-        #print("in classify victim")
-        letter = "N"
-        image = cv.resize(img, (100, 100), interpolation=cv.INTER_AREA)
-        print(str(image))
-        colorImgs = {
-        "red" : self.redListener.getFiltered(image),
-        "yellow" : self.yellowListener.getFiltered(image),
-        "white" : self.whiteListener.getFiltered(image),
-        "black" : self.blackListener.getFiltered(image)}
-
-        cv.imshow("black filter:", image)
-
-        colorPointCounts = {}
-        for key, img in colorImgs.items():
-            ##print("Shpae idisjfdj:", img.shape)
-            sought = 255
-            all_points = np.where(img == 255)
-            all_points = all_points[0]
-            count = len(all_points)
-
-            colorPointCounts[key] = count
-
-        print("Black: " + str(colorPointCounts["black"]) + " White: " + str(colorPointCounts["white"]))
-
-        #print(colorPointCounts)
-        if self.isPoison(colorPointCounts["black"], colorPointCounts["white"]):
-            #print("Poison!")
-            letter = "P"
-
-        if self.isVictim(colorPointCounts["black"], colorPointCounts["white"]):
-            #cv.imshow("black filter:", image)
-            letter = self.classifyHSU(image)
-            #print("Victim:", letter)
-
-
-        if self.isCorrosive(colorPointCounts["black"], colorPointCounts["white"]):
-            #print("Corrosive!")
-            letter = "C"
-
-        if self.isOrganicPeroxide(colorPointCounts["red"], colorPointCounts["yellow"]):
-            #print("organic peroxide!")
-            letter = "O"
-
-        if self.isFlammable(colorPointCounts["red"], colorPointCounts["white"]):
-            #print("Flammable!")
-            letter = "F"
-
-        print("Detected: ", colorPointCounts)
-        print("Victim: ", letter)
-
-        return letter
-
-# File: "RobotLayer.py"
-
-
-
-
-
-
-
-
-
-
-
-# Captures images and processes them
-class Camera:
-    def __init__(self, camera, timeStep):
-        self.camera = camera
-        self.camera.enable(timeStep)
-        self.height = self.camera.getHeight()
-        self.width = self.camera.getWidth()
-
-    # Gets an image from the raw camera data
-    def getImg(self):
-        imageData = self.camera.getImage()
-        return np.array(np.frombuffer(imageData, np.uint8).reshape((self.height, self.width, 4)))
-
-    def getImgBuffered(self):
-        imageData = self.camera.getImage()
-        return np.frombuffer(imageData, np.uint8).reshape((self.height, self.width, 4))
-
-
-# Tracks global rotation
-class Gyroscope:
-    def __init__(self, gyro, index, timeStep):
-        self.sensor = gyro
-        self.sensor.enable(timeStep)
-        self.oldTime = 0.0
-        self.index = index
-        self.rotation = 0
-        self.lastRads = 0
-
-    # Do on every timestep
-    def update(self, time):
-        ##print("Gyro Vals: " + str(self.sensor.getValues()))
-        timeElapsed = time - self.oldTime  # Time passed in time step
-        radsInTimestep = (self.sensor.getValues())[self.index] * timeElapsed
-        self.lastRads = radsInTimestep
-        finalRot = self.rotation + radsInTimestep
-        self.rotation = normalizeRads(finalRot)
-        self.oldTime = time
-
-    # Gets the actual angular Velocity
-    def getDiff(self):
-        if self.lastRads < 0:
-            return self.lastRads * -1
-
-        return self.lastRads
-
-    # Returns the rotation on degrees
-    def getDegrees(self):
-        return radsToDegs(self.rotation)
-
-    # Returns the rotation on radians
-    def getRadians(self):
-        return self.rotation
-
-    # Sets the rotation in radians
-    def setRadians(self, rads):
-        self.rotation = rads
-
-    # Sets the rotation in degrees
-    def setDegrees(self, degs):
-        self.rotation = degsToRads(degs)
-
-
-# Tracks global position
-class Gps:
-    def __init__(self, gps, timeStep, coordsMultiplier=1):
-        self.gps = gps
-        self.gps.enable(timeStep)
-        self.multiplier = coordsMultiplier
-        self.__prevPosition = []
-        self.position = self.getPosition()
-
-    # updates gps, must run every timestep
-    def update(self):
-        self.__prevPosition = self.position
-        self.position = self.getPosition()
-
-    # Returns the global position
-    def getPosition(self):
-        vals = self.gps.getValues()
-        return [vals[0] * self.multiplier, vals[2] * self.multiplier]
-
-    # Returns the global rotation according to gps
-    def getRotation(self):
-        if self.__prevPosition != self.position:
-            posDiff = ((self.position[0] - self.__prevPosition[0]), (self.position[1] - self.__prevPosition[1]))
-            accuracy = getDistance(posDiff)
-            ##print("accuracy: " + str(accuracy))
-            if accuracy > 0.001:
-                degs = getDegsFromCoords(posDiff)
-                return normalizeDegs(degs)
-        return None
-
-
-# Returns a point cloud of the detctions it makes
-class Lidar():
-    def __init__(self, device, timeStep):
-        self.device = device
-        self.device.enable(timeStep)
-        self.x = 0
-        self.y = 0
-        self.z = 0
-        self.rotation = 0
-        self.fov = device.getFov()
-        self.verticalFov = self.device.getVerticalFov()
-        self.horizontalRes = self.device.getHorizontalResolution()
-        self.verticalRes = self.device.getNumberOfLayers()
-        self.hRadPerDetection = self.fov / self.horizontalRes
-        self.vRadPerDetection = self.verticalFov / self.verticalRes
-        self.detectRotOffset = 0 #math.pi * 0.75
-        self.maxDetectionDistance = 0.06 * 10
-
-    # Does a detection pass and returns a point cloud with the results
-    def getPointCloud(self, layers=range(3)):
-        #(degsToRads(359 - radsToDegs(self.rotation)))
-        #rangeImage = self.device.getRangeImageArray()
-        ##print("Lidar vFov: ", self.verticalFov/ self.verticalRes)
-        pointCloud = []
-
-        for layer in layers:
-            actualVDetectionRot = (layer * self.vRadPerDetection) + self.verticalFov / 2
-            depthArray = self.device.getLayerRangeImage(layer)
-            actualHDetectionRot = self.detectRotOffset + ((2 * math.pi) - self.rotation)
-            for item in depthArray:
-                if item <= self.maxDetectionDistance:
-                    if item != float("inf") and item != float("inf") * -1 and item != 0:
-                        x = item * math.cos(actualVDetectionRot)
-                        x += 0.06 * 0.2
-                        coords = getCoordsFromRads(actualHDetectionRot, x)
-                        pointCloud.append([coords[0] - 0, (coords[1] * -1) - 0])
-                actualHDetectionRot += self.hRadPerDetection
-        return pointCloud
-
-    # Sets the rotation of the sensors in radians
-    def setRotationRadians(self, rads):
-        self.rotation = rads
-
-    # Sets the rotation of the sensors in degrees
-    def setRotationDegrees(self, degs):
-        self.rotation = degsToRads(degs)
 
+class StuckDetector:
+    """Checks if the robot is rotating the wheels but not actually moving."""
+    def __init__(self) -> None:
+        self.stuck_counter = 0
+
+        self.stuck_threshold = 50
+        self.minimum_distance_traveled = 0.00001
+
+        self.__position = Position2D(0, 0)
+        self.__previous_position = Position2D(0, 0)
+        self.__wheel_direction = 0
+
+    def update(self, position, previous_position, wheel_direction):
+        self.__wheel_direction = wheel_direction
+        self.__position = position
+        self.__previous_position = previous_position
+
+        # Check if the robot is not moving
+        if self.__is_stuck_this_step():
+            self.stuck_counter += 1
+        else:
+            self.stuck_counter = 0    
+
+    def is_stuck(self):
+        return self.stuck_counter > self.stuck_threshold
+    
+    def __is_stuck_this_step(self):
+        distance_traveled = self.__position.get_distance_to(self.__previous_position)
+        is_rotating_wheels = self.__wheel_direction > 0
+        return is_rotating_wheels and distance_traveled < self.minimum_distance_traveled
+
+
+   
+
+
+#######################
+# FILE: flow_control/step_counter.py
+#######################
+
+class StepCounter:
+    """
+    Allows to execute actions every n number of timesteps. This can be useful for performance, as it enables the program
+    to execute taxing tasks sparsely while not interrupting actions that must run constantly.
+    """
+
+    def __init__(self, interval):
+        self.__current_step = 0
+        self.interval = interval
+
+    def increase(self):
+        self.__current_step += 1
+        if self.__current_step == self.interval:
+            self.__current_step = 0
+    
+    def check(self):
+        return self.__current_step == 0
+
+
+#######################
+# FILE: robot/devices/wheel.py
+#######################
 
 # Controlls a wheel
 class Wheel:
@@ -1597,793 +977,3539 @@ class Wheel:
         self.velocity = ratio * self.maxVelocity
         self.wheel.setVelocity(self.velocity)
 
-# Reads the colour sensor
-class ColourSensor:
-    def __init__(self, sensor, distancefromCenter, timeStep):
-        self.distance = distancefromCenter
-        self.sensor = sensor
-        self.sensor.enable(timeStep)
-        self.r = 0
-        self.g = 0
-        self.b = 0
 
-    def getPosition(self, robotGlobalPosition, robotGlobalRotation):
-        realPosition = getCoordsFromDegs(robotGlobalRotation, self.distance)
-        return [robotGlobalPosition[0] + realPosition[0], robotGlobalPosition[1] + realPosition[1]]
-
-    def __update(self):
-        colour = self.sensor.getImage()
-        #print("Colourimg:", colour)
-        self.r = self.sensor.imageGetRed(colour, 1, 0, 0)
-        self.g = self.sensor.imageGetGreen(colour, 1, 0, 0)
-        self.b = self.sensor.imageGetBlue(colour, 1, 0, 0)
-        #print("Colour:", self.r, self.g, self.b)
-
-    def __isTrap(self):
-        return (35 < self.r < 45 and 35 < self.g < 45)
-    def __isSwamp(self):
-        return (200 < self.r < 210 and 165 < self.g < 175 and 95 < self.b < 105)
-    def __isCheckpoint(self):
-        return (self.r > 232 and self.g > 232 and self.b > 232)
-    def __isNormal(self):
-        return self.r == 227 and self.g == 227
-    def __isBlue(self):
-        return (55 < self.r < 65 and 55 < self.g < 65 and 245 < self.b < 255)
-    def __isPurple(self):
-        return (135 < self.r < 145 and 55 < self.g < 65 and 215 < self.b < 225)
-    def __isRed(self):
-        return (245 < self.r < 255 and 55 < self.g < 65 and 55 < self.b < 65)
-
-    # Returns the type of tyle detected from the colour data
-    def getTileType(self):
-        self.__update()
-        tileType = "undefined"
-        if self.__isNormal():
-            tileType = "normal"
-        elif self.__isTrap():
-            tileType = "hole"
-        elif self.__isSwamp():
-            tileType = "swamp"
-        elif self.__isCheckpoint():
-            tileType = "checkpoint"
-        elif self.__isBlue():
-            tileType = "connection1-2"
-        elif self.__isPurple():
-            tileType = "connection2-3"
-        elif self.__isRed():
-            tileType = "connection1-3"
-
-        ##print("Color: " + tileType)
-        ##print("r: " + str(self.r) + "g: " + str(self.g) + "b: " +  str(self.b))
-        return tileType
+#######################
+# FILE: robot/devices/sensor.py
+#######################
 
 
-class Comunicator:
+class Sensor(ABC):
+    def __init__(self, webots_device, time_step):
+        self.time_step = time_step
+        self.device = webots_device
+        self.device.enable(time_step)
+
+    def update(self):
+        pass
+
+class TimedSensor(Sensor):
+    def __init__(self, webots_device, time_step, step_counter):
+        super().__init__(webots_device, time_step)
+        self.step_counter = step_counter
+
+    def update(self):
+        self.step_counter.increase()
+
+
+
+#######################
+# FILE: robot/devices/camera.py
+#######################
+
+import numpy as np
+import cv2 as cv
+
+
+
+
+import math
+
+@dataclass
+class CameraData:
+    height: int
+    width: int
+    vertical_fov: Angle
+    horizontal_fov: Angle
+    relative_vertical_orientation: Angle
+    relative_horizontal_orientation: Angle
+    vertical_orientation: Angle
+    horizontal_orientation: Angle
+    distance_from_center: float
+
+class CameraImage:
+    def __init__(self) -> None:
+        self.image: np.ndarray = None
+        self.data: CameraData = None
+
+# Captures images and processes them
+class Camera(TimedSensor):
+    def __init__(self, webots_device, time_step, step_counter: StepCounter, orientation: Angle, distance_from_center: float, rotate180=False):
+        super().__init__(webots_device, time_step, step_counter)
+        self.rotate180 = rotate180
+        self.height = self.device.getHeight()
+        self.width = self.device.getWidth()
+        self.horizontal_fov = Angle(self.device.getFov())
+        self.vertical_fov = Angle(2 * math.atan(math.tan(self.horizontal_fov * 0.5) * (self.height / self.width)))
+        self.image = CameraImage()
+        
+        self.horizontal_orientation_in_robot = orientation
+        self.vertical_orientation_in_robot = Angle(0)
+
+        self.horizontal_orientation = orientation
+        self.vertical_orientation = Angle(0)
+        self.distance_from_center = distance_from_center
+
+    # Returns the camera image
+    def get_image(self):
+        if self.step_counter.check():
+            return self.image
+        
+    def get_data(self):
+        data = CameraData(self.height,
+                          self.width,
+                          self.vertical_fov,
+                          self.horizontal_fov,
+                          self.vertical_orientation_in_robot,
+                          self.horizontal_orientation_in_robot,
+                          self.vertical_orientation,
+                          self.horizontal_orientation,
+                          self.distance_from_center)
+        return data
+    
+    def update(self, robot_orientation: Angle):
+        super().update()
+
+        self.horizontal_orientation = self.horizontal_orientation_in_robot + robot_orientation
+        
+        # Do evey n steps
+        if self.step_counter.check():
+            # Extract image from buffer
+            image_data = self.device.getImage()
+            self.image.image = np.array(np.frombuffer(image_data, np.uint8).reshape((self.height, self.width, 4)))
+
+            if self.rotate180:
+                self.image.image = np.rot90(self.image.image, 2, (0, 1))
+
+            self.image.orientation = self.horizontal_orientation
+
+            self.image.data = self.get_data()
+
+            
+
+
+#######################
+# FILE: robot/devices/lidar.py
+#######################
+
+import math
+
+import utilities
+
+
+# Returns a point cloud of the detctions it makes
+class Lidar(TimedSensor):
+    def __init__(self, webots_device, time_step, step_counter, layers_used=range(4)):
+        super().__init__(webots_device, time_step, step_counter)
+        self.x = 0
+        self.y = 0
+        self.z = 0
+        self.orientation = Angle(0)
+        
+        self.horizontal_fov = self.device.getFov()
+        self.vertical_fov = self.device.getVerticalFov()
+
+        self.horizontal_resolution = self.device.getHorizontalResolution()
+        self.vertical_resolution = self.device.getNumberOfLayers()
+
+        self.radian_per_detection_horizontally = self.horizontal_fov / self.horizontal_resolution
+        self.radian_per_layer_vertically = self.vertical_fov / self.vertical_resolution
+
+        self.rotation_offset = 0
+
+        self.max_detection_distance = 0.06 * 8
+        self.min_detection_distance = 0.06 * 0.6
+
+        self.is_point_close = False
+        self.is_point_close_threshold = 0.03
+        self.is_point_close_range = (0, 360)
+
+        self.distance_bias = 0#0.06 * 0.12
+
+        self.layers_used = layers_used
+
+        self.__point_cloud = None
+        self.__out_of_bounds_point_cloud = None
+        self.__distance_detections = None
+
+    # Returns the in-bounds point cloud
+    def get_point_cloud(self):
+        if self.step_counter.check():
+            return self.__point_cloud
+    
+    # Returns a point cloud with all the out of bounds detections as points with a fixed distance
+    # to the center.
+    def get_out_of_bounds_point_cloud(self):
+        if self.step_counter.check():
+            return self.__out_of_bounds_point_cloud
+        
+    def get_detections(self):
+        if self.step_counter.check():
+            return self.__distance_detections
+
+    def set_orientation(self, angle):
+        self.orientation = angle
+
+
+    def update(self):
+        super().update()
+
+        # Do every n steps
+        if self.step_counter.check():
+            self.__update_point_clouds()
+
+
+    # Create point clouds from detections and check if a point is close
+    def __update_point_clouds(self):
+        self.is_point_close = False
+        
+        # (degsToRads(359 - radsToDegs(self.rotation)))
+        # rangeImage = self.device.getRangeImageArray()
+        # print("Lidar vFov: ", self.verticalFov/ self.verticalRes)
+
+        self.__point_cloud = []
+        self.__out_of_bounds_point_cloud = []
+        self.__distance_detections = []
+
+        total_depth_array = self.device.getRangeImage()
+        total_depth_array = divide_into_chunks(total_depth_array, self.horizontal_resolution)
+        #print(total_depth_array)
+        
+        for layer_number, layer_depth_array in enumerate(total_depth_array):
+            if layer_number not in self.layers_used:
+                continue
+
+            vertical_angle = layer_number * self.radian_per_layer_vertically + self.vertical_fov / 2
+            horizontal_angle = self.rotation_offset + ((2 * math.pi) - self.orientation.radians)
+
+            for item in layer_depth_array:
+                # Item is out of bounds
+                if item >= self.max_detection_distance or item == float("inf") or item == float("inf") *-1:
+                    
+                    # Corrects for vertical rotation and adds offset
+                    distance = self.__normalize_distance(self.max_detection_distance, vertical_angle)
+                    # Calculates 2d point from distance and horizontal angle
+                    point = utilities.getCoordsFromRads(horizontal_angle, distance)
+                    self.__out_of_bounds_point_cloud.append(self.__normalize_point(point))
+                
+                # Item is in bounds
+                else:
+                    if item >= self.min_detection_distance:
+                        # Corrects for vertical rotation and adds offset
+                        distance = self.__normalize_distance(item, vertical_angle)
+                        # Calculates 2d point from distance and horizontal angle
+                        point = utilities.getCoordsFromRads(horizontal_angle, distance)
+                        self.__point_cloud.append(self.__normalize_point(point))
+
+                        v = Vector2D(Angle(horizontal_angle), distance)
+                        v.direction = Angle(math.pi) - v.direction
+                        v.direction.normalize()
+                        self.__distance_detections.append(v)
+                        
+                        #Check if point is close
+                        if self.__in_range_for_close_point(horizontal_angle) and distance < self.is_point_close_threshold:
+                            self.is_point_close = True
+
+                horizontal_angle += self.radian_per_detection_horizontally
+        
+        if len(self.__out_of_bounds_point_cloud) == 0:
+            self.__out_of_bounds_point_cloud = [[0, 0]]
+        
+        if len(self.__point_cloud) == 0:
+            self.__point_cloud = [[0, 0]]
+    
+    def __in_range_for_close_point(self, horizontal_angle):
+        return utilities.degsToRads(self.is_point_close_range[0]) > horizontal_angle > utilities.degsToRads(self.is_point_close_range[1])
+    
+    def __normalize_distance(self, distance, vertical_angle):
+        # Correct for vertical inclination
+        distance = distance * math.cos(vertical_angle)
+        # Add offset
+        distance += self.distance_bias
+        return distance
+
+    def __normalize_point(self, point):
+            return [point[0], point[1] * -1]
+
+
+
+
+#######################
+# FILE: robot/devices/gps.py
+#######################
+
+
+
+class Gps(Sensor):
+    """
+    Tracks global position and rotation.
+    """
+    def __init__(self, webots_device, time_step, coords_multiplier=1):
+        super().__init__(webots_device, time_step)
+        self.multiplier = coords_multiplier
+        self.__prev_position = Position2D()
+        self.position = self.get_position()
+
+    def update(self):
+        """
+        Updates gps, must run every timestep.
+        """
+        self.__prev_position = self.position
+        self.position = self.get_position()
+
+    def get_position(self):
+        """
+        Returns the global position.
+        """
+        vals = self.device.getValues()
+        return Position2D(vals[0] * self.multiplier, vals[2] * self.multiplier)
+
+    def get_orientation(self):
+        """
+        Returns the global orientation according to gps. This is calculated from the difference in angle from the current position
+        to the position of the previous time_step (The robot must be driving perfectly straight for it to work).
+        """
+        if self.__prev_position != self.position:
+            accuracy = abs(self.position.get_distance_to(self.__prev_position))
+            if accuracy > 0.001:
+                angle = self.__prev_position.get_angle_to(self.position)
+                angle.normalize()
+                return angle
+        return None
+
+
+#######################
+# FILE: robot/devices/gyroscope.py
+#######################
+
+
+
+class Gyroscope(Sensor):
+    """
+    Tracks global rotation.
+    """
+    def __init__(self, webots_device, index, time_step):
+        super().__init__(webots_device, time_step)
+        self.index = index
+        self.orientation = Angle(0)
+        self.angular_velocity = Angle(0)
+
+    def update(self):
+        """
+        Do on every timestep.
+        """
+        time_elapsed = self.time_step / 1000
+        sensor_y_value = self.device.getValues()[self.index]
+        self.angular_velocity = Angle(sensor_y_value * time_elapsed)
+        self.orientation += self.angular_velocity
+        self.orientation.normalize()
+
+    def get_angular_velocity(self):
+        """
+        Gets the current angular velocity without direction data.
+        """
+        return abs(self.angular_velocity)
+
+    def get_orientation(self):
+        return self.orientation
+    
+    def set_orientation(self, angle):
+        self.orientation = angle
+
+
+#######################
+# FILE: robot/devices/comunicator.py
+#######################
+
+import utilities
+import struct
+
+
+class Comunicator(Sensor):
     def __init__(self, emmiter, receiver, timeStep):
         self.receiver = receiver
         self.emmiter = emmiter
         self.receiver.enable(timeStep)
-        self.lackOfProgress = False
-        self.doGetWordInfo = True
-        self.gameScore = 0
-        self.remainingTime = 0
+        self.lack_of_progress = False
+        self.do_get_world_info = True
+        self.game_score = 0
+        self.remaining_time = 0
 
-    def sendVictim(self, position, victimtype):
-        self.doGetWordInfo = False
+    def send_victim(self, position, victimtype):
+        self.do_get_world_info = False
         letter = bytes(victimtype, "utf-8")
-        position = multiplyLists(position, [100, 100])
+        position = utilities.multiplyLists(position, [100, 100])
         position = [int(position[0]), int(position[1])]
         message = struct.pack("i i c", position[0], position[1], letter)
         self.emmiter.send(message)
+        self.do_get_world_info = False
 
-
-    def sendLackOfProgress(self):
-        self.doGetWordInfo = False
-        message = struct.pack('c', 'L'.encode()) # message = 'L' to activate lack of progress
+    def send_lack_of_progress(self):
+        self.do_get_world_info = False
+        message = struct.pack('c', 'L'.encode())  # message = 'L' to activate lack of progress
         self.emmiter.send(message)
+        self.do_get_world_info = False
 
-
-    def sendEndOfPlay(self):
-        self.doGetWordInfo = False
-        exit_mes = bytes('E', "utf-8")
+    def send_end_of_play(self):
+        self.do_get_world_info = False
+        exit_mes = struct.pack('c', b'E')
         self.emmiter.send(exit_mes)
+        print("Ended!!!!!")
 
-
-        #print("Ended!!!!!")
-
-    def sendMap(self, npArray):
-         ## Get shape
-        #print(npArray)
-        s = npArray.shape
-        ## Get shape as bytes
-        s_bytes = struct.pack('2i',*s)
-        ## Flattening the matrix and join with ','
-        flatMap = ','.join(npArray.flatten())
-        ## Encode
+    def send_map(self, np_array):
+        # Get shape
+        print(np_array)
+        s = np_array.shape
+        # Get shape as bytes
+        s_bytes = struct.pack('2i', *s)
+        # Flattening the matrix and join with ','
+        flatMap = ','.join(np_array.flatten())
+        # Encode
         sub_bytes = flatMap.encode('utf-8')
-        ## Add togeather, shape + map
+        # Add togeather, shape + map
         a_bytes = s_bytes + sub_bytes
-        ## Send map data
+        # Send map data
         self.emmiter.send(a_bytes)
-        #STEP3 Send map evaluate request
+        # STEP3 Send map evaluate request
         map_evaluate_request = struct.pack('c', b'M')
         self.emmiter.send(map_evaluate_request)
-        self.doGetWordInfo = False
+        self.do_get_world_info = False
 
-    def requestGameData(self):
-        if self.doGetWordInfo:
-            message = struct.pack('c', 'G'.encode()) # message = 'G' for game information
-            self.emmiter.send(message) # send message
+    def request_game_data(self):
+        if self.do_get_world_info:
+            message = struct.pack('c', 'G'.encode())  # message = 'G' for game information
+            self.emmiter.send(message)  # send message
 
     def update(self):
-
-        if self.doGetWordInfo:
-            """
-            self.requestGameData()
+        if self.do_get_world_info:
+            self.request_game_data()
             if self.receiver.getQueueLength() > 0: # If receiver queue is not empty
-                receivedData = self.receiver.getData()
-                if len(receivedData) > 2:
-                    tup = struct.unpack('c f i', receivedData) # Parse data into char, float, int
+                received_data = self.receiver.getBytes()
+                if len(received_data) > 2:
+                    tup = struct.unpack('c f i', received_data) # Parse data into char, float, int
                     if tup[0].decode("utf-8") == 'G':
-                        self.gameScore = tup[1]
-                        self.remainingTime = tup[2]
+                        self.game_score = tup[1]
+                        self.remaining_time = tup[2]
                         self.receiver.nextPacket() # Discard the current data packet
-            """
 
-            ##print("Remaining time:", self.remainingTime)
-            self.lackOfProgress = False
-            if self.receiver.getQueueLength() > 0: # If receiver queue is not empty
-                receivedData = self.receiver.getData()
-                #print(receivedData)
-                if len(receivedData) < 2:
-                    tup = struct.unpack('c', receivedData) # Parse data into character
-                    if tup[0].decode("utf-8") == 'L': # 'L' means lack of progress occurred
-                        #print("Detected Lack of Progress!")
-                        self.lackOfProgress = True
-                    self.receiver.nextPacket() # Discard the current data packetelse:
+            self.lack_of_progress = False
+            if self.receiver.getQueueLength() > 0:  # If receiver queue is not empty
+                received_data = self.receiver.getBytes()
+                print(received_data)
+                if len(received_data) < 2:
+                    tup = struct.unpack('c', received_data)  # Parse data into character
+                    if tup[0].decode("utf-8") == 'L':  # 'L' means lack of progress occurred
+                        print("Detected Lack of Progress!")
+                        self.lack_of_progress = True
+                    self.receiver.nextPacket()  # Discard the current data packetelse:
         else:
-            self.doGetWordInfo = True
-
-class DistanceSensor:
-    def __init__(self, threshold, distanceFromCenter, angle, sensor, timeStep):
-        self.sensor = sensor
-        self.angle = angle
-        self.distance = distanceFromCenter
-        self.timeStep = timeStep
-        self.threshold = threshold
-        self.position = [0, 0]
-        self.sensor.enable(self.timeStep)
-
-    def isFar(self):
-        distance = self.sensor.getValue()
-        ##print("Sensor distance:", distance)
-        return distance > self.threshold
-
-    def setPosition(self, robotPosition, robotRotation):
-        sensorRotation = robotRotation + self.angle
-        sensorPosition = getCoordsFromDegs(sensorRotation, self.distance)
-        self.position = sumLists(sensorPosition, robotPosition)
-
-# Abstraction layer for robot
-class RobotLayer:
-    def __init__(self, timeStep):
-        self.maxWheelSpeed = 6.28
-        self.timeStep = timeStep
-        self.robot = Robot()
-        self.prevRotation = 0
-        self.rotation = 0
-        self.globalPosition = [0, 0]
-        self.prevGlobalPosition = [0, 0]
-        self.positionOffsets = [0, 0]
-        self.__useGyroForRotation = True
-        self.time = 0
-        self.rotateToDegsFirstTime = True
-        self.delayFirstTime = True
-        self.gyroscope = Gyroscope(self.robot.getDevice("gyro"), 1, self.timeStep)
-        self.gps = Gps(self.robot.getDevice("gps"), self.timeStep)
-        self.lidar = Lidar(self.robot.getDevice("lidar"), self.timeStep)
-        self.leftWheel = Wheel(self.robot.getDevice("wheel1 motor"), self.maxWheelSpeed)
-        self.rightWheel = Wheel(self.robot.getDevice("wheel2 motor"), self.maxWheelSpeed)
-        self.colorSensor = ColourSensor(self.robot.getDevice("colour_sensor"), 0.037, 32)
-        self.leftGroundSensor = DistanceSensor(0.04, 0.0523, 45, self.robot.getDevice("distance sensor2"), self.timeStep)
-        self.rightGroundSensor = DistanceSensor(0.04, 0.0523, -45, self.robot.getDevice("distance sensor1"), self.timeStep)
-        self.comunicator = Comunicator(self.robot.getDevice("emitter"), self.robot.getDevice("receiver"), self.timeStep)
-        self.rightCamera = Camera(self.robot.getDevice("camera2"), self.timeStep)
-        self.leftCamera = Camera(self.robot.getDevice("camera1"), self.timeStep)
-        self.victimClasifier = VictimClassifier()
-
-    def getVictims(self):
-        poses = []
-        imgs = []
-        for camera in (self.rightCamera, self.leftCamera):
-            img = camera.getImg()
-            crop_center(img, 12)
-            img = cv.resize(img, (128, 128), interpolation = cv.INTER_NEAREST)
-            cposes, cimgs = self.victimClasifier.getVictimImagesAndPositions(img)
-            poses += cposes
-            imgs += cimgs
-        #print("Victim Poses: ",poses)
-        #for img in imgs:
-            #print("Victim shape:", img.shape)
-        closeVictims = self.victimClasifier.getCloseVictims(poses, imgs)
-        finalVictims = []
-        for closeVictim in closeVictims:
-            finalVictims.append(self.victimClasifier.classifyVictim(closeVictim))
-        return finalVictims
-
-    def reportVictims(self, letter):
-        self.comunicator.sendVictim(self.globalPosition, letter)
-
-    def sendArray(self, array):
-        self.comunicator.sendMap(array)
-
-    def sendEnd(self):
-        #print("End sended")
-        self.comunicator.sendEndOfPlay()
+            self.do_get_world_info = True
 
 
-    # Decides if the rotation detection is carried out by the gps or gyro
-    @property
-    def rotationDetectionType(self):
-        if self.__useGyroForRotation:
-            return "gyroscope"
-        else:
-            return "gps"
+#######################
+# FILE: robot/pose_manager.py
+#######################
 
-    @rotationDetectionType.setter
-    def rotationDetectionType(self, rotationType):
-        if rotationType == "gyroscope":
-            self.__useGyroForRotation = True
 
-        elif rotationType == "gps":
-            self.__useGyroForRotation = False
-        else:
-            raise ValueError("Invalid rotation detection type inputted")
 
-    def delaySec(self, delay):
-        if self.delayFirstTime:
-            self.delayStart = self.robot.getTime()
-            self.delayFirstTime = False
-        else:
-            if self.time - self.delayStart >= delay:
-                self.delayFirstTime = True
-                return True
-        return False
 
-    # Moves the wheels at the specified ratio
-    def moveWheels(self, leftRatio, rightRatio):
-        self.leftWheel.move(leftRatio)
-        self.rightWheel.move(rightRatio)
+class PoseManager:
+    GPS = 0
+    GYROSCOPE = 1
 
-    def rotateToDegs(self, degs, orientation="closest", maxSpeed=0.5):
-        accuracy = 2
-        if self.rotateToDegsFirstTime:
-            ##print("STARTED ROTATION")
-            self.rotateToDegsFirstTime = False
-        self.seqRotateToDegsInitialRot = self.rotation
-        self.seqRotateToDegsinitialDiff = round(self.seqRotateToDegsInitialRot - degs)
-        diff = self.rotation - degs
-        moveDiff = max(round(self.rotation), degs) - min(self.rotation, degs)
-        if diff > 180 or diff < -180:
-            moveDiff = 360 - moveDiff
-        speedFract = min(mapVals(moveDiff, accuracy, 90, 0.2, 0.8), maxSpeed)
-        if accuracy  * -1 < diff < accuracy or 360 - accuracy < diff < 360 + accuracy:
-            self.rotateToDegsFirstTime = True
-            return True
-        else:
-            if orientation == "closest":
-                if 180 > self.seqRotateToDegsinitialDiff > 0 or self.seqRotateToDegsinitialDiff < -180:
-                    direction = "right"
-                else:
-                    direction = "left"
-            elif orientation == "farthest":
-                if 180 > self.seqRotateToDegsinitialDiff > 0 or self.seqRotateToDegsinitialDiff < -180:
-                    direction = "left"
-                else:
-                    direction = "right"
-            else:
-                direction = orientation
+    def __init__(self, gps: Gps, gyroscope: Gyroscope, position_offsets=Position2D(0, 0)) -> None:
+        self.maximum_angular_velocity_for_gps = 0.00001
 
-            if moveDiff > 10:
-                if direction == "right":
-                    self.moveWheels(speedFract * -1, speedFract)
-                elif direction == "left":
-                    self.moveWheels(speedFract, speedFract * -1)
-            else:
-                if direction == "right":
-                    self.moveWheels(speedFract * -0.5, speedFract)
-                elif direction == "left":
-                    self.moveWheels(speedFract, speedFract * -0.5)
-            ##print("speed fract: " +  str(speedFract))
-            ##print("target angle: " +  str(degs))
-            ##print("moveDiff: " + str(moveDiff))
-            ##print("diff: " + str(diff))
-            ##print("orientation: " + str(orientation))
-            ##print("direction: " + str(direction))
-            ##print("initialDiff: " + str(self.seqRotateToDegsinitialDiff))
+        self.gps = gps
+        self.gyroscope = gyroscope
 
-        ##print("ROT IS FALSE")
-        return False
+        self.orientation = Angle(0)
+        self.previous_orientation = Angle(0)
 
-    def rotateSmoothlyToDegs(self, degs, orientation="closest", maxSpeed=0.5):
-        accuracy = 2
-        seqRotateToDegsinitialDiff = round(self.rotation  - degs)
-        diff = self.rotation - degs
-        moveDiff = max(round(self.rotation), degs) - min(self.rotation, degs)
-        if diff > 180 or diff < -180:
-            moveDiff = 360 - moveDiff
-        speedFract = min(mapVals(moveDiff, accuracy, 90, 0.2, 0.8), maxSpeed)
-        if accuracy  * -1 < diff < accuracy or 360 - accuracy < diff < 360 + accuracy:
-            self.rotateToDegsFirstTime = True
-            return True
-        else:
-            if orientation == "closest":
-                if 180 > seqRotateToDegsinitialDiff > 0 or seqRotateToDegsinitialDiff < -180:
-                    direction = "right"
-                else:
-                    direction = "left"
-            elif orientation == "farthest":
-                if 180 > seqRotateToDegsinitialDiff > 0 or seqRotateToDegsinitialDiff < -180:
-                    direction = "left"
-                else:
-                    direction = "right"
-            else:
-                direction = orientation
-            if direction == "right":
-                self.moveWheels(speedFract * -0.5, speedFract)
-            elif direction == "left":
-                self.moveWheels(speedFract, speedFract * -0.5)
-            ##print("speed fract: " +  str(speedFract))
-            ##print("target angle: " +  str(degs))
-            ##print("moveDiff: " + str(moveDiff))
-            ##print("diff: " + str(diff))
-            ##print("orientation: " + str(orientation))
-            ##print("direction: " + str(direction))
-            ##print("initialDiff: " + str(seqRotateToDegsinitialDiff))
+        self.__position = Position2D(0, 0)
+        self.__previous_position = Position2D(0, 0)
 
-        ##print("ROT IS FALSE")
-        return False
+        self.orientation_sensor = self.GYROSCOPE
+        self.automatically_decide_orientation_sensor = True
 
-    def moveToCoords(self, targetPos):
-        errorMargin = 0.01
-        descelerationStart = 0.5 * 0.12
-        diffX = targetPos[0] - self.globalPosition[0]
-        diffY = targetPos[1] - self.globalPosition[1]
-        ##print("Target Pos: ", targetPos)
-        ##print("Used global Pos: ", self.globalPosition)
-        ##print("diff in pos: " + str(diffX) + " , " + str(diffY))
-        dist = getDistance((diffX, diffY))
-        ##print("Dist: "+ str(dist))
-        if errorMargin * -1 < dist < errorMargin:
-            #self.robot.move(0,0)
-            ##print("FinisehedMove")
-            return True
-        else:
-
-            ang = getDegsFromCoords((diffX, diffY))
-            ang = normalizeDegs(ang)
-            ##print("traget ang: " + str(ang))
-            ratio = min(mapVals(dist, 0, descelerationStart, 0.1, 1), 1)
-            ratio = max(ratio, 0.8)
-            if self.rotateToDegs(ang):
-                self.moveWheels(ratio, ratio)
-                ##print("Moving")
-        return False
-
-    # Gets a point cloud with all the detections from lidar and distance sensorss
-    def getDetectionPointCloud(self):
-
-        rawPointCloud = self.lidar.getPointCloud(layers=(2,3))
-        processedPointCloud = []
-        for point in rawPointCloud:
-            procPoint = [point[0] + self.globalPosition[0], point[1] + self.globalPosition[1]]
-            #procPoint = [procPoint[0] + procPoint[0] * 0.1, procPoint[1] + procPoint[1] * 0.1]
-            processedPointCloud.append(procPoint)
-        return processedPointCloud
-
-    def getColorDetection(self):
-        pos = self.colorSensor.getPosition(self.globalPosition, self.rotation)
-        detection = self.colorSensor.getTileType()
-        return pos, detection
-
-    def trapsAtSides(self):
-        sides = []
-        if self.leftGroundSensor.isFar():
-            sides.append(self.leftGroundSensor.position)
-        if self.rightGroundSensor.isFar():
-            sides.append(self.rightGroundSensor.position)
-        return sides
-
-    # Returns True if the simulation is running
-    def doLoop(self):
-        return self.robot.step(self.timeStep) != -1
-
-    def getWheelDirection(self):
-        if self.rightWheel.velocity + self.leftWheel.velocity == 0:
-            return 0
-        return (self.rightWheel.velocity + self.leftWheel.velocity) / 2
-
-    # Must run every TimeStep
-    def update(self):
-        # Updates the current time
-        self.time = self.robot.getTime()
-        # Updates the gps, gyroscope
+        self.position_offsets = position_offsets
+    
+    def update(self, wheel_direction):
+        # Gyro and gps update
         self.gps.update()
-        self.gyroscope.update(self.time)
+        self.gyroscope.update()
+        
+        # Get global position
+        self.__previous_position = self.position
+        self.__position = self.gps.get_position()
 
-        # Gets global position
-        self.prevGlobalPosition = self.globalPosition
-        self.globalPosition = self.gps.getPosition()
-        self.globalPosition[0] += self.positionOffsets[0]
-        self.globalPosition[1] += self.positionOffsets[1]
+        # Decides wich sensor to use for orientation detection
+        if self.automatically_decide_orientation_sensor:
+            self.decide_orientation_sensor(wheel_direction)
 
-        if self.gyroscope.getDiff() < 0.00001 and self.getWheelDirection() >= 0:
-            self.rotationDetectionType = "gps"
+        # Remembers the corrent rotation for the next timestep
+        self.previous_orientation = self.orientation
 
+        self.calculate_orientation()
+
+    def decide_orientation_sensor(self, wheel_direction):
+        """if the robot is going srtaight it tuses the gps. If not it uses the gyro."""
+        if self.robot_is_going_straight(wheel_direction):
+                self.orientation_sensor = self.GPS
         else:
-            self.rotationDetectionType = "gyroscope"
+            self.orientation_sensor = self.GYROSCOPE
 
-        self.prevRotation = self.rotation
+    def robot_is_going_straight(self, wheel_direction):
+        return self.gyroscope.get_angular_velocity() < self.maximum_angular_velocity_for_gps and wheel_direction >= 0
 
-        # Gets global rotation
-        if self.__useGyroForRotation:
-            self.rotation = self.gyroscope.getDegrees()
-            #print("USING GYRO")
+    def calculate_orientation(self):
+        
+         # Gets global rotation
+        gps_orientation = self.gps.get_orientation()
+
+        if self.orientation_sensor == self.GYROSCOPE or gps_orientation is None:
+            self.orientation = self.gyroscope.get_orientation()
+            if SHOW_DEBUG: print("USING GYRO")
         else:
-            #print("USING GPS")
-            val = self.gps.getRotation()
-            if val is not None:
-                self.rotation = val
-            self.gyroscope.setDegrees(self.rotation)
-
-        # Sets lidar rotation
-        self.lidar.setRotationDegrees(self.rotation + 0)
-
-        self.rightGroundSensor.setPosition(self.globalPosition, self.rotation)
-        self.leftGroundSensor.setPosition(self.globalPosition, self.rotation)
-
-
-
-        self.comunicator.update()
-
-        #victims = self.camera.getVictims()
-        ##print("Victims: ", victims)
-
-
-# File: "AbstractionLayer.py"
-
-
-
-
-
-
-
-
-
-
-class PlottingArray:
-    def __init__(self, size, offsets, scale, tileSize):
-        self.scale = scale
-        self.size = size
-        self.offsets = offsets
-        self.scale = scale
-        self.tileSize = tileSize
-        self.gridPlottingArray = np.zeros(self.size, np.uint8)
-
-        for y in range(0, len(self.gridPlottingArray), int(self.tileSize * scale)):
-            for x in range(len(self.gridPlottingArray[0])):
-                self.gridPlottingArray[x][y] = 50
-        for x in range(0, len(self.gridPlottingArray), int(self.tileSize * scale)):
-            for y in range(len(self.gridPlottingArray[0])):
-                self.gridPlottingArray[x][y] = 50
-
-    def plotPoint(self, point, value):
-        procPoint = [int(point[0] * self.scale), int(point[1] * self.scale * -1)]
-        finalx = procPoint[0] + int(self.offsets[0] * self.tileSize)
-        finaly = procPoint[1] + int(self.offsets[1] * self.tileSize)
-
-        if self.size[0] * -1 < finalx < self.size[0] and self.size[0] * -1 < finaly < self.size[1]:
-            self.gridPlottingArray[finalx][finaly] = value
-
-    def getPoint(self, point):
-        procPoint = [int(point[0] * self.scale), int(point[1] * self.scale * -1)]
-        finalx = procPoint[0] + int(self.offsets[0] * self.tileSize)
-        finaly = procPoint[1] + int(self.offsets[1] * self.tileSize)
-
-        if self.size[0] * -1 < finalx < self.size[0] and self.size[0] * -1 < finaly < self.size[1]:
-            return self.gridPlottingArray[finalx][finaly]
-
-    def reset(self):
-        self.gridPlottingArray = np.zeros(self.size, np.uint8)
-
-        for y in range(0, len(self.gridPlottingArray), round(self.tileSize * self.scale)):
-            for x in range(len(self.gridPlottingArray[0])):
-                self.gridPlottingArray[x][y] = 50
-        for x in range(0, len(self.gridPlottingArray), round(self.tileSize * self.scale)):
-            for y in range(len(self.gridPlottingArray[0])):
-                self.gridPlottingArray[x][y] = 50
-
-
-class AbstractionLayer():
-
-    def __init__(self):
-        # Variables
-        self.tileSize = 0.06
-        self.timeStep = 32
-        self.gridPlotter = PlottingArray((300, 300), [1500, 1500], 150, self.tileSize)
-        self.doWallMapping = False
-        self.actualTileType = "undefined"
-        self.isTrap = False
-        self.timeInRound = 8 * 60
-        self.timeWithoutMoving = 0
-        self.__timeWithoutMovingStart = 0
-
-        # Components
-        self.robot = RobotLayer(self.timeStep)
-        self.seqMg = SequenceManager()
-        self.analyst = Analyst(self.tileSize)
-
-        # -- Functions --
-        self.seqPrint = self.seqMg.makeSimpleSeqEvent(print)
-        self.seqDelaySec = self.seqMg.makeComplexSeqEvent(self.robot.delaySec)
-        self.seqMoveWheels = self.seqMg.makeSimpleSeqEvent(self.robot.moveWheels)
-        self.seqRotateToDegs = self.seqMg.makeComplexSeqEvent(self.robot.rotateToDegs)
-        self.seqMoveToCoords = self.seqMg.makeComplexSeqEvent(self.robot.moveToCoords)
-        self.seqResetSequenceFlags = self.seqMg.makeSimpleSeqEvent(self.resetSequenceFlags)
-        self.seqResetSequence = self.seqMg.makeSimpleSeqEvent(self.resetSequence)
-
-    def resetSequence(self):
-        self.seqMg.resetSequence()
-        self.resetSequenceFlags()
-        self.seqMg.linePointer = 0
-
-    def resetSequenceFlags(self):
-        self.robot.delayFirstTime = True
-
-    def calibrate(self):
-        self.seqMg.startSequence()
-        self.seqDelaySec(0.5)
-        if self.seqMg.simpleSeqEvent():
-            actualTile = [self.position[0] // self.tileSize, self.position[1] // self.tileSize]
-            self.robot.positionOffsets = [
-                round((actualTile[0] * self.tileSize) - self.position[0]) + self.tileSize // 2,
-                round((actualTile[1] * self.tileSize) - self.position[1]) + self.tileSize // 2]
-            self.robot.positionOffsets = [self.robot.positionOffsets[0] % self.tileSize,
-                                          self.robot.positionOffsets[1] % self.tileSize]
-
-            #print("positionOffsets: ", self.robot.positionOffsets)
-        if self.seqMg.simpleSeqEvent(): self.analyst.registerStart()
-        self.seqDelaySec(0.5)
-
-        if self.seqMg.simpleSeqEvent(): self.robot.rotationDetectionType = "gps"
-        self.seqMoveWheels(1, 1)
-        self.seqDelaySec(0.2)
-        if self.seqMg.simpleSeqEvent(): self.robot.rotationDetectionType = "gyroscope"
-        self.seqDelaySec(0.2)
-        self.seqMoveWheels(0, 0)
-        self.seqMoveWheels(-1, -1)
-        self.seqDelaySec(0.4)
-        self.seqMoveWheels(0, 0)
-        if self.seqMg.simpleSeqEvent(): self.doWallMapping = True
-        return self.seqMg.seqResetSequence()
-
-    @property
-    def rotation(self):
-        return self.robot.rotation
+            self.orientation = gps_orientation
+            self.gyroscope.set_orientation(self.orientation)
+            if SHOW_DEBUG: print("USING GPS")
 
     @property
     def position(self):
-        return self.robot.globalPosition
+        return self.__position + self.position_offsets
+    
+    @property
+    def previous_position(self):
+        return self.__previous_position + self.position_offsets
+        
+
+
+
+
+#######################
+# FILE: robot/drive_base.py
+#######################
+
+import math
+
+class Criteria(Enum):
+    LEFT = 1
+    RIGHT = 2
+    CLOSEST = 3
+    FARTHEST = 4
+
+class DriveBase:
+    def __init__(self, left_wheel, right_wheel, max_wheel_velocity) -> None:
+        self.max_wheel_velocity = max_wheel_velocity
+        self.left_wheel = left_wheel
+        self.right_wheel = right_wheel
+        self.rotation_manager = RotationManager(self.left_wheel, self.right_wheel)
+        #self.movement_manager = MovementToCoordinatesManager(self.left_wheel, self.right_wheel)
+        self.movement_manager = SmoothMovementToCoordinatesManager(self.left_wheel, self.right_wheel)
+
+    # Moves the wheels at the specified Velocity
+    def move_wheels(self, left_ratio, right_ratio):
+        self.left_wheel.move(left_ratio)
+        self.right_wheel.move(right_ratio)
+    
+    def rotate_to_angle(self, angle:Angle, criteria:Criteria.CLOSEST) -> bool:
+        self.rotation_manager.rotate_to_angle(angle, criteria)
+        return self.rotation_manager.finished_rotating
+    
+    def move_to_position(self, position:Position2D) -> bool:
+        self.movement_manager.move_to_position(position)
+        return self.movement_manager.finished_moving
+    
+    @property
+    def position(self) -> Position2D:
+        return self.movement_manager.current_position
+    
+    @position.setter
+    def position(self, value:Position2D):
+        self.movement_manager.current_position = value
 
     @property
-    def prevPosition(self):
-        return self.robot.prevGlobalPosition
+    def orientation(self) -> Angle:
+        return self.rotation_manager.current_angle
+    
+    @orientation.setter
+    def orientation(self, value:Angle):
+        self.movement_manager.current_angle = value
+        self.rotation_manager.current_angle = value
 
-    def getBestPos(self):
-        return self.analyst.getBestPosToMove()
 
-    def doLoop(self):
-        return self.robot.doLoop()
+    def get_wheel_direction(self):
+        if self.right_wheel.velocity + self.left_wheel.velocity == 0:
+            return 0
+        return (self.right_wheel.velocity + self.left_wheel.velocity) / 2
 
-    def recalculatePath(self):
-        self.analyst.calculatePath = True
 
-    def isVictims(self):
-        victims = self.robot.getVictims()
-        if len(victims) and not self.analyst.isRegisteredVictim():
-            return True
-        return False
 
-    def reportVictims(self):
-        victims = self.robot.getVictims()
-        if len(victims):
-            self.robot.reportVictims(victims[0])
-        self.analyst.registerVictim()
 
-    def endGame(self):
-        self.sendFinalArray()
-        self.robot.sendEnd()
+class RotationManager:
+    def __init__(self, left_wheel, right_wheel) -> None:
+        self.Directions = Enum("Directions", ["LEFT", "RIGHT"])
+        
+        self.right_wheel = right_wheel
+        self.left_wheel = left_wheel
 
-    def sendFinalArray(self):
-        self.robot.sendArray(self.analyst.getArrayRepresentation())
+        self.initial_angle = Angle(0)
+        self.current_angle = Angle(0)
 
-    def isEnded(self):
-        return self.analyst.ended
+        self.first_time = True
+        self.finished_rotating = True
+
+        self.max_velocity_cap = 1
+        self.min_velocity_cap = 0.2
+
+        self.max_velocity = 1
+        self.min_velocity = 0.2
+
+        self.velocity_reduction_threshold = Angle(10, Angle.DEGREES)
+
+        self.accuracy = Angle(2, Angle.DEGREES)
+
+    def rotate_to_angle(self, target_angle, criteria=Criteria.CLOSEST):
+        if self.first_time:
+            self.initial_angle = self.current_angle
+            self.first_time = False
+            self.finished_rotating = False
+
+        if self.is_at_angle(target_angle):
+            self.finished_rotating = True
+            self.first_time = True
+            self.left_wheel.move(0)
+            self.right_wheel.move(0)
+
+        absolute_difference = self.current_angle.get_absolute_distance_to(target_angle)
+        velocity = mapVals(absolute_difference.degrees, self.accuracy.degrees, 90, self.min_velocity, self.max_velocity)
+
+        if absolute_difference < self.velocity_reduction_threshold:
+            velocity *= 0.5
+
+        velocity = min(velocity, self.max_velocity_cap)
+        velocity = max(velocity, self.min_velocity_cap)
+
+
+        direction = self.__get_direction(target_angle, criteria)
+        
+        if direction == self.Directions.RIGHT:
+            self.left_wheel.move(velocity * -1)
+            self.right_wheel.move(velocity)
+        elif direction == self.Directions.LEFT:
+            self.left_wheel.move(velocity)
+            self.right_wheel.move(velocity * -1)
+    
+    def is_at_angle(self, angle) -> bool:
+        return self.current_angle.get_absolute_distance_to(angle) < self.accuracy
+
+    def __get_direction(self, target_angle, criteria):
+        if criteria == Criteria.CLOSEST:
+            angle_difference = self.current_angle - target_angle
+
+            if 180 > angle_difference.degrees > 0 or angle_difference.degrees < -180:
+                return self.Directions.RIGHT
+            else:
+                return self.Directions.LEFT
+
+        elif criteria == Criteria.FARTHEST:
+            angle_difference = self.initial_angle - target_angle
+            if 180 > angle_difference.degrees > 0 or angle_difference.degrees < -180:
+                return self.Directions.LEFT
+            else:
+                return self.Directions.RIGHT
+
+        elif criteria == Criteria.LEFT: return self.Directions.LEFT
+        elif criteria == Criteria.RIGHT: return self.Directions.RIGHT
+
+
+class MovementToCoordinatesManager:
+    def __init__(self, left_wheel, right_wheel) -> None:
+        self.current_position = Position2D()
+
+        self.left_wheel = left_wheel
+        self.right_wheel = right_wheel
+        self.rotation_manager = RotationManager(self.left_wheel, self.right_wheel)
+
+        self.error_margin = 0.0005
+        self.desceleration_start = 0.5 * 0.12
+
+        self.max_velocity_cap = 1
+        self.min_velocity_cap = 0.8
+
+        self.max_velocity = 1
+        self.min_velocity = 0.1
+
+        self.finished_moving = False
 
     @property
-    def timeLeft(self):
-        return self.timeInRound - self.robot.time
+    def current_angle(self) -> Angle:
+        return self.rotation_manager.current_angle
+    
+    @current_angle.setter
+    def current_angle(self, value):
+        self.rotation_manager.current_angle = value
+
+    
+    def move_to_position(self, target_position:Position2D):
+
+        # print("Target Pos: ", targetPos)
+        # print("Used global Pos: ", self.position)
+
+        dist = abs(self.current_position.get_distance_to(target_position))
+
+        if SHOW_DEBUG: print("Dist: "+ str(dist))
+
+        if dist < self.error_margin:
+            # self.robot.move(0,0)
+            if SHOW_DEBUG: print("FinisehedMove")
+            self.finished_moving = True
+        else:
+            self.finished_moving = False
+            ang = self.current_position.get_angle_to(target_position)
+
+            if self.rotation_manager.is_at_angle(ang):
+
+                velocity = mapVals(dist, 0, self.desceleration_start, self.min_velocity, self.max_velocity)
+                velocity = min(velocity, self.max_velocity_cap)
+                velocity = max(velocity, self.min_velocity_cap)
+
+                self.right_wheel.move(velocity)
+                self.left_wheel.move(velocity)
+
+            else:
+                
+                self.rotation_manager.rotate_to_angle(ang)
+
+
+class SmoothMovementToCoordinatesManager:
+    def __init__(self, left_wheel, right_wheel) -> None:
+        self.current_position = Position2D()
+
+        self.left_wheel = left_wheel
+        self.right_wheel = right_wheel
+
+        self.current_angle = Angle(0)
+
+        self.error_margin = 0.003
+
+        self.velocity = 1
+
+        self.distance_weight = 5
+        self.angle_weight = 5
+
+        self.turning_speed_multiplier = 1.5
+
+        self.finished_moving = False
+
+        self.angle_error_margin = Angle(2, Angle.DEGREES)
+
+        self.strong_rotation_start = Angle(45, Angle.DEGREES)
+
+    def move_to_position(self, target_position:Position2D):
+        dist = abs(self.current_position.get_distance_to(target_position))
+
+        if SHOW_DEBUG: print("Dist: "+ str(dist))
+
+        if dist < self.error_margin:
+            # self.robot.move(0,0)
+            if SHOW_DEBUG: print("FinisehedMove")
+            self.finished_moving = True
+
+
+        else:
+            self.finished_moving = False
+
+            angle_to_target = self.current_position.get_angle_to(target_position)
+            angle_diff = self.current_angle - angle_to_target
+            absolute_angle_diff = self.current_angle.get_absolute_distance_to(angle_to_target)
+
+            #print("diff:", absolute_angle_diff)
+            if absolute_angle_diff < self.angle_error_margin:
+                self.right_wheel.move(self.velocity)
+                self.left_wheel.move(self.velocity)
+
+
+            elif absolute_angle_diff > self.strong_rotation_start:
+                if 180 > angle_diff.degrees > 0 or angle_diff.degrees < -180:
+                    self.right_wheel.move(self.velocity)
+                    self.left_wheel.move(self.velocity * -1)
+                else:
+                    self.right_wheel.move(self.velocity * -1)
+                    self.left_wheel.move(self.velocity)
+
+            else:
+                distance_speed = dist * -self.distance_weight
+                angle_speed = absolute_angle_diff.radians * self.angle_weight
+
+                speed = angle_speed * self.turning_speed_multiplier
+
+                if 180 > angle_diff.degrees > 0 or angle_diff.degrees < -180:
+                    self.right_wheel.move(speed)
+                    self.left_wheel.move(speed * distance_speed)
+                else:
+                    self.right_wheel.move(speed * distance_speed)
+                    self.left_wheel.move(speed)
+                
+                
+    
+
+
+
+
+#######################
+# FILE: robot/robot.py
+#######################
+
+
+
+
+# Devices
+
+
+
+import cv2 as cv
+
+
+class Robot:
+    """
+    Abstraction layer for the webots robot. In charge of low level movement and sensing.
+    """
+    def __init__(self, time_step):
+        self.time_step = time_step
+        self.time = 0
+
+        self.diameter = 0.074 # Robot diameter in meters
+        
+        self.robot = WebotsRobot() # Robot object provided by webots
+
+        self.gps = Gps(self.robot.getDevice("gps"), self.time_step)
+        self.gyroscope = Gyroscope(self.robot.getDevice("gyro"), 1, self.time_step)
+        
+        self.pose_manager = PoseManager(self.gps, self.gyroscope) # This manages position and orientation
+
+        # LIDAR
+        lidar_interval = 6
+        self.lidar = Lidar(webots_device = self.robot.getDevice("lidar"), 
+                           time_step = self.time_step * lidar_interval, 
+                           step_counter = StepCounter(lidar_interval),
+                           layers_used=(2,))
+        
+        # Cameras
+        self.camera_distance_from_center = 0.0295
+        camera_interval = 3
+        self.center_camera = Camera(webots_device = self.robot.getDevice("camera1"),
+                                    time_step = self.time_step * camera_interval,
+                                    step_counter = StepCounter(camera_interval),
+                                    orientation=Angle(0, Angle.DEGREES),
+                                    distance_from_center=self.camera_distance_from_center)
+        
+        self.right_camera = Camera(webots_device = self.robot.getDevice("camera2"),
+                                   time_step = self.time_step * camera_interval,
+                                   step_counter = StepCounter(camera_interval),
+                                   orientation=Angle(270, Angle.DEGREES),
+                                   distance_from_center=self.camera_distance_from_center)
+        
+        self.left_camera = Camera(webots_device = self.robot.getDevice("camera3"), 
+                                  time_step = self.time_step * camera_interval, 
+                                  step_counter = StepCounter(camera_interval),
+                                  orientation=Angle(90, Angle.DEGREES),
+                                  distance_from_center=self.camera_distance_from_center,
+                                  rotate180=True)
+        
+        # Comunicator (Emmiter and reciever)
+        self.comunicator = Comunicator(self.robot.getDevice("emitter"), self.robot.getDevice("receiver"), self.time_step)
+        
+        # Low level movement
+        max_wheel_speed = 6.28
+        self.drive_base = DriveBase(left_wheel = Wheel(self.robot.getDevice("wheel1 motor"), max_wheel_speed), 
+                                    right_wheel = Wheel(self.robot.getDevice("wheel2 motor"), max_wheel_speed),
+                                    max_wheel_velocity = max_wheel_speed)
 
     def update(self):
-        self.robot.update()
+        """Must run every TimeStep"""
+        # Update current time
+        self.time = self.robot.getTime()
 
-        #print("Time:", self.robot.time)
-        #print("time without moving: ", self.timeWithoutMoving)
-        #print("time left:", self.timeLeft)
-        diff = [self.position[0] - self.prevPosition[0], self.position[1] - self.prevPosition[1]]
-        if self.robot.getWheelDirection() < 0.1:
-            self.timeWithoutMoving = 0
-        elif -0.0001 < getDistance(diff) < 0.0001:
-            if self.timeWithoutMoving == 0:
-                self.__timeWithoutMovingStart = self.robot.time
-                self.timeWithoutMoving = 0.000000001
+        # Update pose manager (Position and rotation)
+        self.pose_manager.update(wheel_direction=self.drive_base.get_wheel_direction())
+
+        # Update drive base
+        self.drive_base.orientation = self.orientation
+        self.drive_base.position = self.position
+
+        # Lidar update
+        self.lidar.set_orientation(self.orientation)
+        self.lidar.update()
+
+        # Camera update
+        self.right_camera.update(self.orientation)
+        self.left_camera.update(self.orientation)
+        self.center_camera.update(self.orientation)
+
+    def do_loop(self):
+        """Advances the simulation by one step and returns True if the simulation is running."""
+        return self.robot.step(self.time_step) != -1
+
+    # Wrappers for DriveBase
+    @property
+    def max_wheel_speed(self):
+        return self.drive_base.max_wheel_velocity
+
+    def move_wheels(self, left_ratio, right_ratio):
+        self.drive_base.move_wheels(left_ratio, right_ratio)
+
+    def rotate_to_angle(self, angle, direction=Criteria.CLOSEST):
+        return self.drive_base.rotate_to_angle(Angle(angle, Angle.DEGREES), direction)
+
+    def move_to_coords(self, targetPos):
+        return self.drive_base.move_to_position(Position2D(targetPos[0], targetPos[1]))
+    
+    # Wrappers for lidar
+    @property
+    def point_is_close(self) -> bool:
+        return self.lidar.is_point_close
+
+    def get_point_cloud(self):
+        return self.lidar.get_point_cloud()
+
+    def get_out_of_bounds_point_cloud(self):
+        return self.lidar.get_out_of_bounds_point_cloud()
+    
+
+    def get_lidar_detections(self):
+        return self.lidar.get_detections()
+    
+    # Wrapper for cameras
+    def get_camera_images(self):
+        if self.center_camera.step_counter.check():
+            return [self.right_camera.get_image(), 
+                    self.center_camera.get_image(), 
+                    self.left_camera.get_image()]
+        
+    # Wrappers for pose
+    @property
+    def position(self):
+        return self.pose_manager.position
+    
+    @property
+    def previous_position(self):
+        return self.pose_manager.previous_position
+    
+    @property
+    def position_offsets(self):
+        return self.pose_manager.position_offsets
+    
+    @position_offsets.setter
+    def position_offsets(self, value):
+        self.pose_manager.position_offsets = value
+    
+    @property
+    def orientation(self):
+        return self.pose_manager.orientation
+    
+    @property
+    def previous_orientation(self):
+        return self.pose_manager.previous_orientation
+    
+    @property
+    def auto_decide_orientation_sensor(self):
+        return self.pose_manager.automatically_decide_orientation_sensor
+    
+    @auto_decide_orientation_sensor.setter
+    def auto_decide_orientation_sensor(self, value):
+        self.pose_manager.automatically_decide_orientation_sensor = value
+
+    @property
+    def orientation_sensor(self):
+        return self.pose_manager.orientation_sensor
+    
+    @orientation_sensor.setter
+    def orientation_sensor(self, value):
+        self.pose_manager.orientation_sensor = value
+    
+    @property
+    def GPS(self):
+        return PoseManager.GPS
+    
+    @property
+    def GYROSCOPE(self):
+        return PoseManager.GYROSCOPE
+    
+
+
+#######################
+# FILE: data_structures/compound_pixel_grid.py
+#######################
+
+import numpy as np
+
+
+class CompoundExpandablePixelGrid:
+    def __init__(self, initial_shape, pixel_per_m, robot_radius_m):
+        self.array_shape = np.array(initial_shape, dtype=int)
+        self.offsets = self.array_shape // 2
+        self.resolution = pixel_per_m # resolution of the grid with regards to the coordinate system of the gps / the world
+
+        self.arrays = {
+            "detected_points": np.zeros(self.array_shape, np.uint8), # Number of points detected in position
+            "walls": np.zeros(self.array_shape, np.bool_),
+            "occupied": np.zeros(self.array_shape, np.bool_), # Confirmed occupied point
+            "traversable": np.zeros(self.array_shape, np.bool_), # Is or not traversable by the robot, assuming that the robot center is there. True means not traversable.
+            "navigation_preference": np.zeros(self.array_shape, np.float32), # The preference for navigation for each pixel. More means less preferred to navigate through.
+            "traversed": np.zeros(self.array_shape, np.bool_), # Robot has already gone through there
+            "seen_by_camera": np.zeros(self.array_shape, np.bool_), # Has been seen by any of the cameras
+            "seen_by_lidar": np.zeros(self.array_shape, np.bool_), # Has been seen by the lidar (Though not necessarily detected as occupied)
+            "walls_seen_by_camera": np.zeros(self.array_shape, np.bool_),
+            "walls_not_seen_by_camera": np.zeros(self.array_shape, np.bool_),
+            "discovered": np.zeros(self.array_shape, np.bool_),
+            "floor_color": np.zeros((self.array_shape[0], self.array_shape[1], 3), np.uint8),
+            "floor_color_detection_distance": np.zeros(self.array_shape, np.uint8),
+            "average_floor_color": np.zeros((self.array_shape[0], self.array_shape[1], 3), np.uint8),
+            "holes": np.zeros(self.array_shape, np.bool_),
+            "victims": np.zeros(self.array_shape, np.bool_),
+            "victim_angles": np.zeros(self.array_shape, np.float32),
+        }
+
+    @property
+    def grid_index_max(self):
+        return self.array_shape - self.offsets # Maximum grid index
+    
+    @property
+    def grid_index_min(self):
+        return self.offsets * -1 # Minimum grid index
+
+    # Index conversion
+    def coordinates_to_grid_index(self, coordinates: np.ndarray) -> np.ndarray:
+        coords = (coordinates * self.resolution).astype(int)
+        return np.flip(coords)
+
+    def grid_index_to_coordinates(self, grid_index: np.ndarray) -> np.ndarray:
+        index = (grid_index.astype(float) / self.resolution)
+        return np.flip(index)
+
+    def array_index_to_grid_index(self, array_index: np.ndarray) -> np.ndarray:
+        return array_index - self.offsets
+    
+    def grid_index_to_array_index(self, grid_index: np.ndarray) -> np.ndarray:
+        return grid_index + self.offsets
+    
+    def array_index_to_coordinates(self, array_index) -> np.ndarray:
+        grid_index = self.array_index_to_grid_index(array_index)
+        return self.grid_index_to_coordinates(grid_index)
+    
+    def coordinates_to_array_index(self, coordinates) -> np.ndarray:
+        grid_index = self.coordinates_to_grid_index(coordinates)
+        return self.grid_index_to_array_index(grid_index)
+
+    # Grid expansion
+    def expand_to_grid_index(self, grid_index: np.ndarray):
+        """
+        Expands all arrays to the specified index. 
+        Note that all array_idexes should be recalculated after this operation.
+        """
+
+        array_index = self.grid_index_to_array_index(grid_index)
+        if array_index[0] + 1 > self.array_shape[0]:
+            self.add_end_row(array_index[0] - self.array_shape[0] + 1)
+
+        if array_index[1] + 1 > self.array_shape[1]:
+            self.add_end_column(array_index[1] - self.array_shape[1] + 1)
+
+        if array_index[0] < 0:
+            self.add_begining_row(array_index[0] * -1)
+        if array_index[1] < 0:
+            self.add_begining_column(array_index[1] * -1)
+    
+    def add_end_row(self, size):
+        self.array_shape = np.array([self.array_shape[0] + size, self.array_shape[1]])
+        
+        for key in self.arrays:
+            self.arrays[key] = self.__add_end_row_to_grid(self.arrays[key], size)
+        
+    def add_begining_row(self, size):
+        self.offsets[0] += size
+        self.array_shape = np.array([self.array_shape[0] + size, self.array_shape[1]])
+
+        for key in self.arrays:
+            self.arrays[key] = self.__add_begining_row_to_grid(self.arrays[key], size)
+
+    def add_end_column(self, size):
+        self.array_shape = np.array([self.array_shape[0], self.array_shape[1] + size])
+
+        for key in self.arrays:
+            self.arrays[key] = self.__add_end_column_to_grid(self.arrays[key], size)
+
+    def add_begining_column(self, size):
+        self.offsets[1] += size
+        self.array_shape = np.array([self.array_shape[0], self.array_shape[1] + size])
+
+        for key in self.arrays:
+            self.arrays[key] = self.__add_begining_column_to_grid(self.arrays[key], size)
+
+    def __add_end_row_to_grid(self, grid, size):
+        shape = np.array(grid.shape)
+        shape[0] = size
+        shape[1] = self.array_shape[1]
+        grid = np.vstack((grid, np.zeros(shape, dtype=grid.dtype)))
+        return grid
+    
+    def __add_begining_row_to_grid(self, grid, size):
+        shape = np.array(grid.shape)
+        shape[0] = size
+        shape[1] = self.array_shape[1]
+        grid = np.vstack((np.zeros(shape, dtype=grid.dtype), grid))
+        return grid
+    
+    def __add_end_column_to_grid(self, grid, size):
+        shape = np.array(grid.shape)
+        shape[0] = self.array_shape[0]
+        shape[1] = size
+        grid = np.hstack((grid, np.zeros(shape, dtype=grid.dtype)))
+        return grid
+
+    def __add_begining_column_to_grid(self, grid, size):
+        shape = np.array(grid.shape)
+        shape[0] = self.array_shape[0]
+        shape[1] = size
+        grid = np.hstack((np.zeros(shape, dtype=grid.dtype), grid))
+        return grid
+
+    # Debug
+    def get_colored_grid(self):
+        """
+        Get graphical representation of the grid for debug.
+        """
+        #color_grid = np.zeros((self.array_shape[0], self.array_shape[1], 3), dtype=np.float32)
+        color_grid = self.arrays["floor_color"].astype(np.float32) / 255
+        #color_grid[self.arrays["traversed"]] = (.5, 0., .5)
+        #color_grid[:, :, 1] = self.arrays["navigation_preference"][:, :] / 200
+        color_grid[self.arrays["traversable"]] = (1, 0, 0)
+        
+        #color_grid[self.arrays["discovered"]] = (0, 1, 1)
+        #color_grid[self.arrays["seen_by_lidar"]] += (0.5, 0, 0)
+
+        color_grid[self.arrays["occupied"]] = (1, 1, 1)
+
+        color_grid *= 0.5
+
+        color_grid[self.arrays["victims"]] = (0, 1, 0)
+
+        return color_grid
+
+
+#######################
+# FILE: data_structures/tile_color_grid.py
+#######################
+
+import numpy as np
+
+
+class TileColorExpandableGrid:
+    def __init__(self, initial_shape, tile_size):
+        self.array_shape = np.array(initial_shape, dtype=int)
+        self.offsets = self.array_shape // 2
+
+        self.grid_index_max = self.array_shape - self.offsets # Maximum grid index
+        self.grid_index_min = self.offsets * -1 # Minimum grid index
+
+        self.array = np.zeros(self.array_shape, np.bool_)
+
+        self.resolution = 1 / tile_size # resolution of the grid with regards to the coordinate system of the gps / the world
+    
+    # Index conversion
+    def coordinates_to_grid_index(self, coordinates: np.ndarray) -> np.ndarray:
+        coords = (coordinates * self.resolution).astype(int)
+        return np.flip(coords)
+
+    def grid_index_to_coordinates(self, grid_index: np.ndarray) -> np.ndarray:
+        index = (grid_index.astype(float) / self.resolution)
+        return np.flip(index)
+
+    def array_index_to_grid_index(self, array_index: np.ndarray) -> np.ndarray:
+        return array_index - self.offsets
+    
+    def grid_index_to_array_index(self, grid_index: np.ndarray) -> np.ndarray:
+        return grid_index + self.offsets
+    
+    def array_index_to_coordinates(self, array_index) -> np.ndarray:
+        grid_index = self.array_index_to_grid_index(array_index)
+        return self.grid_index_to_coordinates(grid_index)
+    
+    def coordinates_to_array_index(self, coordinates) -> np.ndarray:
+        grid_index = self.coordinates_to_grid_index(coordinates)
+        return self.grid_index_to_array_index(grid_index)
+
+    # Grid expansion
+    def expand_to_grid_index(self, grid_index: np.ndarray):
+        """
+        Expands all arrays to the specified index. 
+        Note that all array_idexes should be recalculated after this operation.
+        """
+
+        array_index = self.grid_index_to_array_index(grid_index)
+        if array_index[0] + 1 > self.array_shape[0]:
+            self.add_end_row(array_index[0] - self.array_shape[0] + 1)
+
+        if array_index[1] + 1 > self.array_shape[1]:
+            self.add_end_column(array_index[1] - self.array_shape[1] + 1)
+
+        if array_index[0] < 0:
+            self.add_begining_row(array_index[0] * -1)
+        if array_index[1] < 0:
+            self.add_begining_column(array_index[1] * -1)
+    
+    def add_end_row(self, size):
+        self.array_shape = np.array([self.array_shape[0] + size, self.array_shape[1]])
+        
+        self.array = self.__add_end_row_to_array(self.array, size)
+        
+    def add_begining_row(self, size):
+        self.offsets[0] += size
+        self.array_shape = np.array([self.array_shape[0] + size, self.array_shape[1]])
+
+        self.array = self.__add_begining_row_to_array(self.array, size)
+
+    def add_end_column(self, size):
+        self.array_shape = np.array([self.array_shape[0], self.array_shape[1] + size])
+
+        self.array = self.__add_end_column_to_array(self.array, size)
+
+    def add_begining_column(self, size):
+        self.offsets[1] += size
+        self.array_shape = np.array([self.array_shape[0], self.array_shape[1] + size])
+
+        self.array = self.__add_begining_column_to_array(self.array, size)
+
+    def __add_end_row_to_array(self, array, size):
+        array = np.vstack((array, np.zeros((size, self.array_shape[1]), dtype=array.dtype)))
+        return array
+    
+    def __add_begining_row_to_array(self, array, size):
+        array = np.vstack((np.zeros((size, self.array_shape[1]), dtype=array.dtype), array))
+        return array
+    
+    def __add_end_column_to_array(self, array, size):
+        array = np.hstack((array, np.zeros((self.array_shape[0], size), dtype=array.dtype)))
+        return array
+
+    def __add_begining_column_to_array(self, array, size):
+        array = np.hstack((np.zeros((self.array_shape[0], size), dtype=array.dtype), array))
+        return array
+    
+    # Debug
+    def get_colored_grid(self):
+       pass
+    
+
+
+#######################
+# FILE: mapping/wall_mapper.py
+#######################
+
+import numpy as np
+import cv2 as cv
+
+
+class WallMapper:
+    def __init__(self, compound_grid: CompoundExpandablePixelGrid, robot_diameter: float) -> None:
+        self.grid = compound_grid
+
+        self.robot_diameter = int(robot_diameter * self.grid.resolution)
+        self.robot_radius = int(robot_diameter / 2 * self.grid.resolution)
+
+        self.to_boolean_threshold = 3
+        self.delete_threshold = 1
+        
+        # Circle with the radius of the robot
+        self.robot_diameter_template = np.zeros((self.robot_diameter, self.robot_diameter), dtype=np.uint8)
+        self.robot_diameter_template = cv.circle(self.robot_diameter_template, (self.robot_radius, self.robot_radius), self.robot_radius, 255, -1)
+        self.robot_diameter_template = self.robot_diameter_template.astype(np.bool_)
+
+        # A template to calculated the preference of each pixel for navigation taking into account the distance from the wall
+        self.preference_template = self.__generate_quadratic_circle_gradient(self.robot_radius, self.robot_radius * 2)
+
+
+    def load_point_cloud(self, in_bounds_point_cloud, out_of_bounds_point_cloud, robot_position):
+        """
+        Loads into the corresponding arrays what has been seen by the lidar, what the lidar has detected, and
+        what walls the lidar has detected but the camera hasn't seen.
+        Calculates the travesable areas and the preference of each point for navigation.
+        """
+        
+        
+        robot_position_as_array = np.array(robot_position, dtype=float)
+        
+        self.__reset_seen_by_lidar()
+
+        self.load_in_bounds_point_cloud(in_bounds_point_cloud, robot_position_as_array)
+        self.load_out_of_bounds_point_cloud(out_of_bounds_point_cloud, robot_position_as_array)
+
+
+    def load_in_bounds_point_cloud(self, point_cloud, robot_position):
+        for p in point_cloud:
+            point = np.array(p, dtype=float) + robot_position
+
+            point_grid_index = self.grid.coordinates_to_grid_index(point)
+
+            self.grid.expand_to_grid_index(point_grid_index)
+
+            robot_array_index = self.grid.coordinates_to_array_index(robot_position)
+            point_array_index = self.grid.grid_index_to_array_index(point_grid_index)
+
+            self.occupy_point(point_array_index)
+
+            self.mark_point_as_seen_by_lidar(robot_array_index, point_array_index)
+            
+        self.filter_out_noise()
+
+        self.generate_navigation_margins()
+
+    def load_out_of_bounds_point_cloud(self, point_cloud, robot_position):
+        for p in point_cloud:
+            point = np.array(p, dtype=float) + robot_position
+
+            point_grid_index = self.grid.coordinates_to_grid_index(point)
+            self.grid.expand_to_grid_index(point_grid_index)
+
+            robot_array_index = self.grid.coordinates_to_array_index(robot_position)
+            point_array_index = self.grid.grid_index_to_array_index(point_grid_index)
+
+            self.mark_point_as_seen_by_lidar(robot_array_index, point_array_index)
+
+        self.calculate_seen_walls()
+
+    def calculate_seen_walls(self):
+        self.grid.arrays["walls_seen_by_camera"] = self.grid.arrays["seen_by_camera"] * self.grid.arrays["walls"]
+        self.grid.arrays["walls_not_seen_by_camera"] =  np.logical_xor(self.grid.arrays["walls"], self.grid.arrays["walls_seen_by_camera"])
+
+    def generate_navigation_margins(self):
+        # Areas traversable by the robot
+        occupied_as_int = self.grid.arrays["occupied"].astype(np.uint8)
+        diameter_template_as_int = self.robot_diameter_template.astype(np.uint8)
+
+        self.grid.arrays["traversable"] = cv.filter2D(occupied_as_int, -1, diameter_template_as_int)
+        self.grid.arrays["traversable"] = self.grid.arrays["traversable"].astype(np.bool_)
+
+        # Areas that the robot prefers to navigate through
+        self.grid.arrays["navigation_preference"] = cv.filter2D(occupied_as_int, -1, self.preference_template)
+
+    def filter_out_noise(self):
+        """
+        Filters out noise from the 'detected_points' array.
+        """
+        self.grid.arrays["detected_points"] = self.grid.arrays["detected_points"] * (self.grid.arrays["detected_points"] > self.delete_threshold)
+
+
+    # Initialization methods
+    def __generate_quadratic_circle_gradient(self, min_radius, max_radius):
+        min_radius = round(min_radius)
+        max_radius = round(max_radius)
+        template = np.zeros((max_radius * 2 + 1, max_radius * 2 + 1), dtype=np.float32)
+        for i in range(max_radius, min_radius, -1):
+            template = cv.circle(template, (max_radius, max_radius), i, max_radius ** 2 - i ** 2, -1)
+        
+        return template * 0.1
+    
+    def __generate_linear_circle_gradient(self, min_radius, max_radius):
+        min_radius = round(min_radius)
+        max_radius = round(max_radius)
+        template = np.zeros((max_radius * 2 + 1, max_radius * 2 + 1), dtype=np.float32)
+        for i in range(max_radius, min_radius, -1):
+            print("i:", i)
+            template = cv.circle(template, (max_radius, max_radius), i, max_radius - i, -1)
+        
+        return template * 0.5
+    
+    def occupy_point(self, point_array_index):        
+        if not self.grid.arrays["walls"][point_array_index[0], point_array_index[1]]:
+            self.grid.arrays["detected_points"][point_array_index[0], point_array_index[1]] += 1
+            
+            if self.grid.arrays["detected_points"][point_array_index[0], point_array_index[1]] > self.to_boolean_threshold:
+                if not self.grid.arrays["traversed"][point_array_index[0], point_array_index[1]]:
+                    self.grid.arrays["walls"][point_array_index[0], point_array_index[1]] = True
+                    self.grid.arrays["occupied"][point_array_index[0], point_array_index[1]] = True
+                    
+
+    def mark_point_as_seen_by_lidar(self, robot_array_index, point_array_index):
+        self.grid.arrays["seen_by_lidar"] = self.__draw_bool_line(self.grid.arrays["seen_by_lidar"], point_array_index, robot_array_index)
+    
+    def __draw_bool_line(self, array, point1, point2):
+        array = cv.line(array.astype(np.uint8), (point1[1], point1[0]), (point2[1], point2[0]), 255, thickness=1, lineType=cv.LINE_8)
+        return array.astype(np.bool_)
+    
+    def __reset_seen_by_lidar(self):
+        self.grid.arrays["seen_by_lidar"] = np.zeros_like(self.grid.arrays["seen_by_lidar"])
+
+
+#######################
+# FILE: mapping/floor_mapper.py
+#######################
+
+import numpy as np
+import cv2 as cv
+import imutils
+
+class ColorFilter:
+    def __init__(self, lower_hsv, upper_hsv):
+        self.lower = np.array(lower_hsv)
+        self.upper = np.array(upper_hsv)
+    
+    def filter(self, img):
+        hsv_image = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+        mask = cv.inRange(hsv_image, self.lower, self.upper)
+        return mask
+
+class FloorMapper:
+    def __init__(self, pixel_grid: CompoundExpandablePixelGrid, tile_resolution, tile_size, camera_distance_from_center) -> None:
+        self.pixel_grid = pixel_grid
+        self.tile_resolution = tile_resolution
+        self.tile_size = tile_size
+        self.pixel_per_m = tile_resolution / tile_size
+        self.pov_distance_from_center = round(0.064 * self.pixel_per_m) 
+        self.hole_color_filter = ColorFilter((0, 0, 10), (0, 0, 30))
+
+        tiles_up = 0
+        tiles_down = 1
+        tiles_sides = 1
+
+        min_x = self.tile_resolution * tiles_sides
+        max_x = self.tile_resolution * (tiles_sides + 1)
+        min_y = self.tile_resolution * tiles_down
+        max_y = self.tile_resolution * (tiles_down + 1)
+
+        self.center_tile_points_in_final_image = np.array(((min_x, min_y),
+                                                           (max_x, min_y),
+                                                           (max_x, max_y),
+                                                           (min_x, max_y),), dtype=np.float32)
+        
+        self.center_tile_points_in_input_image = np.array(([0, 24],  [39, 24], [32, 16], [7, 16]), dtype=np.float32)
+
+        self.flattened_image_shape = (self.tile_resolution * (tiles_sides * 2 + 1),
+                                      self.tile_resolution * (tiles_up + tiles_down + 1))
+        
+        self.final_povs_shape = (120, 120)
+        self.distance_to_center_gradient = self.__get_distance_to_center_gradient(self.final_povs_shape)
+
+    def flatten_camera_pov(self, camera_pov: np.ndarray):
+        ipm_matrix = cv.getPerspectiveTransform(self.center_tile_points_in_input_image, 
+                                                self.center_tile_points_in_final_image, 
+                                                solveMethod=cv.DECOMP_SVD)
+        
+        ipm = cv.warpPerspective(camera_pov, ipm_matrix, self.flattened_image_shape, flags=cv.INTER_NEAREST)
+
+        ipm = cv.resize(ipm, self.flattened_image_shape, interpolation=cv.INTER_CUBIC)
+
+        blank_space = np.zeros((self.pov_distance_from_center, self.flattened_image_shape[0], 4), dtype=np.uint8)
+        ipm = np.vstack((blank_space, ipm))
+
+        return ipm
+    
+    def set_in_background(self, pov: np.ndarray, background=None):
+        #cv.imshow('pov', pov)
+        max_dim = max(pov.shape)
+        if background  is None: background = np.zeros((max_dim * 2, max_dim * 2, 4), dtype=np.uint8)
+
+        start = (max_dim, max_dim - round(pov.shape[1] / 2))
+        end =  (start[0] + pov.shape[0], start[1] + pov.shape[1])
+        
+        background[start[0]:end[0], start[1]:end[1], :] = pov[:,:,:]
+
+        #cv.imshow("pov in background", background)
+
+        return background
+    
+
+    def get_global_camera_orientations(self, robot_orientation: Angle):
+        global_camera_orientations = []
+        for camera_orientation in self.pixel_grid.camera_orientations:
+            o = camera_orientation + robot_orientation
+            o.normalize()
+            global_camera_orientations.append(o)
+        
+        return global_camera_orientations
+    
+    def rotate_image_to_angle(self, image: np.ndarray, angle: Angle):
+        return imutils.rotate(image, angle.degrees, (image.shape[0] // 2, image.shape[1] // 2))
+    
+
+    def get_unified_povs(self, camera_images: List[CameraImage]):
+        povs_list = []
+        for camera_image in camera_images:
+            pov = self.flatten_camera_pov(np.rot90(copy(camera_image.image), k=3))
+            pov = np.flip(pov, 1)
+            pov = self.set_in_background(pov)
+            pov = self.rotate_image_to_angle(pov, camera_image.data.horizontal_orientation)
+            povs_list.append(pov)
+
+        return sum(povs_list)
+    
+    def map_floor(self, camera_images, robot_grid_index):
+        povs = self.get_unified_povs(camera_images)
+
+        #cv.imshow("final_pov", povs[:, :, 3])
+
+        self.load_povs_to_grid(robot_grid_index, povs)
+
+    def load_povs_to_grid(self, robot_grid_index, povs):
+        
+        start = np.array((robot_grid_index[0] - (povs.shape[0] // 2), robot_grid_index[1] - (povs.shape[1] // 2)))
+        end = np.array((robot_grid_index[0] + (povs.shape[0] // 2), robot_grid_index[1] + (povs.shape[1] // 2)))
+
+        self.pixel_grid.expand_to_grid_index(start)
+        self.pixel_grid.expand_to_grid_index(end)
+
+        start = self.pixel_grid.grid_index_to_array_index(start)
+        end = self.pixel_grid.grid_index_to_array_index(end)
+
+        mask = povs[:,:,3] > 254
+
+        gradient = self.__get_distance_to_center_gradient(povs.shape[:2])
+
+        povs_gradient = np.zeros_like(self.distance_to_center_gradient)
+        povs_gradient[mask] = self.distance_to_center_gradient[mask]
+
+        #cv.imshow("gradient", povs_gradient)
+
+        detection_distance_mask = self.pixel_grid.arrays["floor_color_detection_distance"][start[0]:end[0], start[1]:end[1]] < povs_gradient
+
+        seen_by_camera_mask = self.pixel_grid.arrays["seen_by_camera"][start[0]:end[0], start[1]:end[1]]
+
+        final_mask = seen_by_camera_mask * detection_distance_mask
+
+        self.pixel_grid.arrays["floor_color_detection_distance"][start[0]:end[0], start[1]:end[1]][final_mask] = povs_gradient[final_mask]
+
+
+        self.pixel_grid.arrays["floor_color"][start[0]:end[0], start[1]:end[1]][final_mask] = povs[:,:,:3][final_mask]
+
+        self.detect_holes()
+
+        #self.load_average_tile_color()
+        
+    
+    def __get_distance_to_center_gradient(self, shape):
+        gradient = np.zeros(shape, dtype=np.float32)
+        for x in range(shape[0]):
+            for y in range(shape[1]):
+                gradient[x, y] = (x - shape[0] // 2) ** 2 + (y - shape[1] // 2) ** 2
+        
+        gradient = 1 - gradient / gradient.max()
+
+        return (gradient * 255).astype(np.uint8)
+    
+    def __get_offsets(self, tile_size):
+        x_offset = int(self.pixel_grid.offsets[0] % tile_size + tile_size / 2) 
+        y_offset = int(self.pixel_grid.offsets[1] % tile_size + tile_size / 2)
+
+        return (x_offset, y_offset)
+    
+    def offset_array(self, array, offsets):
+        return array[offsets[0]:, offsets[1]:]
+    
+    def get_color_average_kernel(self):
+        tile_size = round(self.tile_size * self.pixel_per_m)
+        square_propotion = 0.8
+        square_size = round(tile_size * square_propotion)
+
+        kernel = np.ones((square_size, square_size), dtype=np.float32)
+
+        kernel = kernel / kernel.sum()
+
+        return kernel
+    
+    def detect_holes(self):
+        tile_size = self.tile_size * self.pixel_per_m
+        offsets = self.__get_offsets(tile_size)
+        floor_color = deepcopy(self.pixel_grid.arrays["floor_color"])
+
+        self.pixel_grid.arrays["holes"] = self.hole_color_filter.filter(self.pixel_grid.arrays["floor_color"])
+
+        self.pixel_grid.arrays["occupied"] += self.pixel_grid.arrays["holes"].astype(np.bool_)
+
+        """
+        for x in range(round(offsets[0] + tile_size / 2), floor_color.shape[0], round(tile_size)):
+            row = []
+            for y in range(round(offsets[1] + tile_size / 2), floor_color.shape[1], round(tile_size)):
+                row.append(floor_color[x, y, :])
+            image.append(row)
+
+        image = np.array(image, dtype=np.uint8)
+        """
+
+    def load_average_tile_color(self):
+        tile_size = self.tile_size * self.pixel_per_m
+        offsets = self.__get_offsets(tile_size)
+        floor_color = deepcopy(self.pixel_grid.arrays["floor_color"])
+
+        kernel = self.get_color_average_kernel()
+
+        floor_color = cv.filter2D(floor_color, -1, kernel)
+        #print("offsets", offsets)
+        image = []
+
+        for x in range(round(offsets[0] + tile_size / 2), floor_color.shape[0], round(tile_size)):
+            row = []
+            for y in range(round(offsets[1] + tile_size / 2), floor_color.shape[1], round(tile_size)):
+                row.append(floor_color[x, y, :])
+            image.append(row)
+
+        image = np.array(image, dtype=np.uint8)
+
+        
+        image = cv.resize(image, (0, 0), fx=tile_size, fy=tile_size, interpolation=cv.INTER_NEAREST)
+
+                    
+        final_x = image.shape[0] if image.shape[0] + offsets[0] < self.pixel_grid.array_shape[0] else self.pixel_grid.array_shape[0] - offsets[0]
+        final_y = image.shape[1] if image.shape[1] + offsets[1] < self.pixel_grid.array_shape[1] else self.pixel_grid.array_shape[1] - offsets[1]
+
+        #self.pixel_grid.arrays["average_floor_color"] = np.zeros((final_x, final_y, 3), dtype=np.uint8)
+
+        self.pixel_grid.arrays["average_floor_color"][offsets[0]:offsets[0] + final_x:, offsets[1]:offsets[1] + final_y, :] = image[:final_x,:final_y, :]
+        
+
+
+#######################
+# FILE: mapping/robot_mapper.py
+#######################
+
+import numpy as np
+import cv2 as cv
+import math
+
+class RobotMapper:
+    def __init__(self, pixel_grid: CompoundExpandablePixelGrid, robot_diameter, pixels_per_m) -> None:
+        self.pixel_grid = pixel_grid
+        self.robot_radius = round(robot_diameter / 2 * pixels_per_m)
+        
+        # True indexes inside the circle
+        self.__robot_diameter_indexes = self.__get_circle_template_indexes(self.robot_radius)
+
+
+        self.__camera_pov_amplitude = Angle(30, Angle.DEGREES) # Horizontal amplitued of the fostrum of each camera
+        self.__camera_pov_lenght = int(0.12 * 2 * pixels_per_m) # Range of each camera
+        self.__camera_orientations = (Angle(0, Angle.DEGREES), Angle(270, Angle.DEGREES), Angle(90, Angle.DEGREES)) # Orientation of the cameras
+        
+        self.__discovery_pov_amplitude =  Angle(170, Angle.DEGREES)
+        self.__discovery_pov_lenght = self.__camera_pov_lenght
+        self.__discovery_pov_orientation = Angle(0, Angle.DEGREES)
+
+    def map_traversed_by_robot(self, robot_grid_index):
+        circle = np.zeros_like(self.__robot_diameter_indexes)
+        circle[0] = self.__robot_diameter_indexes[0] + np.array(robot_grid_index)[0]
+        circle[1] = self.__robot_diameter_indexes[1] + np.array(robot_grid_index)[1]
+
+        self.pixel_grid.expand_to_grid_index((np.max(circle[0]), np.max(circle[1])))
+        self.pixel_grid.expand_to_grid_index((np.min(circle[0]), np.min(circle[1])))
+
+        robot_array_index =  self.pixel_grid.grid_index_to_array_index(robot_grid_index)[:]
+
+        circle[0] = self.__robot_diameter_indexes[0] + robot_array_index[0]
+        circle[1] = self.__robot_diameter_indexes[1] + robot_array_index[1]
+
+        self.pixel_grid.arrays["traversed"][circle[0], circle[1]] = True
+
+    def map_seen_by_camera(self, robot_grid_index, robot_rotation: Angle):
+        global_camera_orientations = []
+
+        for o in self.__camera_orientations:
+            o1 = o + robot_rotation
+            o1.normalize()
+            global_camera_orientations.append(o1)
+
+        camera_povs = self.__get_camera_povs_template_indexes(global_camera_orientations, robot_grid_index)
+
+        self.pixel_grid.expand_to_grid_index(np.array((np.max(camera_povs[0]), np.max(camera_povs[1]))))
+        self.pixel_grid.expand_to_grid_index(np.array((np.min(camera_povs[0]), np.min(camera_povs[1]))))
+
+
+        camera_povs[0] += self.pixel_grid.offsets[0]
+        camera_povs[1] += self.pixel_grid.offsets[1]
+
+        self.pixel_grid.arrays["seen_by_camera"][camera_povs[0], camera_povs[1]] += self.pixel_grid.arrays["seen_by_lidar"][camera_povs[0], camera_povs[1]]
+
+    def map_discovered_by_robot(self, robot_grid_index, robot_rotation: Angle):
+        global_discovered_orientation = self.__discovery_pov_orientation + robot_rotation
+        global_discovered_orientation.normalize()
+        
+        discovered_template = self.__get_cone_template(self.__discovery_pov_lenght, 
+                                                       global_discovered_orientation, 
+                                                       self.__discovery_pov_amplitude)
+        
+        disc_povs = self.__get_indexes_from_template(discovered_template, robot_grid_index - np.array((self.__discovery_pov_lenght, self.__discovery_pov_lenght)))
+        
+        self.pixel_grid.expand_to_grid_index(np.array((np.max(disc_povs[0]), np.max(disc_povs[1]))))
+        self.pixel_grid.expand_to_grid_index(np.array((np.min(disc_povs[0]), np.min(disc_povs[1]))))
+        
+        disc_povs[0] += self.pixel_grid.offsets[0]
+        disc_povs[1] += self.pixel_grid.offsets[1]
+
+        self.pixel_grid.arrays["discovered"][disc_povs[0], disc_povs[1]] += self.pixel_grid.arrays["seen_by_lidar"][disc_povs[0], disc_povs[1]]
+
+    def __get_cone_template(self, lenght, orientation: Angle, amplitude: Angle):
+        matrix_size = math.ceil(lenght) * 2
+        int_lenght = math.ceil(lenght)
+
+        matrix = np.zeros((matrix_size + 1, matrix_size + 1), np.uint8)
+
+        circle_matrix = cv.circle(np.zeros_like(matrix), (int_lenght,  int_lenght), int_lenght, 1, -1)
+        
+        center_position = Position2D(int_lenght, int_lenght)
+        
+        start_angle = orientation - (amplitude / 2)
+        start_angle.normalize()
+        start_vector = Vector2D(start_angle, lenght * 2)
+        start_position = start_vector.to_position()
+        start_position += center_position
+        start_position = (math.ceil(start_position.x), math.ceil(start_position.y))
+
+        center_angle = orientation
+        center_angle.normalize()
+        center_vector = Vector2D(center_angle, lenght * 2)
+        center_up_position = center_vector.to_position()
+        center_up_position += center_position
+        center_up_position = center_up_position.astype(int)
+
+        end_angle = orientation + (amplitude / 2)
+        end_angle.normalize()
+        end_vector = Vector2D(end_angle, lenght * 2)
+        end_position = end_vector.to_position()
+        end_position += center_position
+        end_position = (math.ceil(end_position.x), math.ceil(end_position.y))
+
+        triangle_matrix = cv.fillPoly(np.zeros_like(matrix), 
+                                      [np.array([start_position, center_up_position, end_position, np.array(center_position)])],
+                                      1)
+        
+        final_matrix = triangle_matrix * circle_matrix
+
+        #cv.imshow("cone template", final_matrix * 100)
+
+        return final_matrix
+    
+    def __get_camera_povs_template_indexes(self,  camera_orientations, robot_index):
+        final_template = None
+        for orientation in camera_orientations:
+            cone_template = self.__get_cone_template(self.__camera_pov_lenght, orientation, self.__camera_pov_amplitude)
+            if final_template is None:
+                final_template = cone_template
             else:
-                self.timeWithoutMoving = self.robot.time - self.__timeWithoutMovingStart
+                final_template += cone_template
+
+        povs_indexes = self.__get_indexes_from_template(final_template, (-self.__camera_pov_lenght + robot_index[0], -self.__camera_pov_lenght + robot_index[1]))
+
+        return povs_indexes
+
+    # Camera fostrum template generation
+    def __get_circle_template_indexes(self, radius):
+        diameter = int(radius * 2 + 1)
+
+        diameter_template = np.zeros((diameter, diameter), dtype=np.uint8)
+        diameter_template = cv.circle(diameter_template, (radius, radius), radius, 255, -1)
+        diameter_template = diameter_template.astype(np.bool_)
+
+        return self.__get_indexes_from_template(diameter_template, (-radius, -radius))
+
+    def __get_indexes_from_template(self, template: np.ndarray, offsets=(0, 0)):
+        indexes = []
+        indexes = template.nonzero()
+        indexes = np.array(indexes)
+        offsets = np.array(offsets)
+        indexes[0] += offsets[0]
+        indexes[1] += offsets[1]
+        return indexes
+
+
+#######################
+# FILE: mapping/data_extractor.py
+#######################
+
+import numpy as np
+import cv2 as cv
+import copy
+
+import utilities
+
+
+class FloorColorExtractor:
+    def __init__(self, tile_resolution) -> None:
+        self.tile_resolution = tile_resolution
+        self.floor_color_ranges = {
+                    "normal":
+                        {   
+                            "range":   ((0, 0, 37), (0, 0, 192)), 
+                            "threshold":0.2},
+
+                    "nothing":
+                        {
+                            "range":((100, 0, 0), (101, 1, 1)),
+                            "threshold":0.9},
+                    
+                    "checkpoint":
+                        {
+                            "range":((95, 0, 65), (128, 122, 198)),
+                            "threshold":0.2},
+                    "hole":
+                        {
+                            "range":((0, 0, 10), (0, 0, 30)),
+                            "threshold":0.2},
+                    
+                    "swamp":
+                        {
+                            "range":((19, 112, 32), (19, 141, 166)),
+                            "threshold":0.2},
+
+                    "connection1-2":
+                        {
+                            "range":((120, 182, 49), (120, 204, 232)),
+                            "threshold":0.2},
+
+                    "connection1-3":
+                        {
+                            "range":((132, 156, 36), (133, 192, 185)),
+                            "threshold":0.2},
+
+                    "connection2-3":
+                        {
+                            "range":((0, 182, 49), (0, 204, 232)),
+                            "threshold":0.2},
+                    }
+        self.final_image = np.zeros((700, 700, 3), np.uint8)
+        
+    def get_square_color(self, image, square_points):
+        square = image[square_points[0]:square_points[1], square_points[2]:square_points[3]]
+        square = cv.cvtColor(square, cv.COLOR_BGR2HSV)
+        if np.count_nonzero(square) == 0:
+            return "nothing"
+        color_counts = {}
+        for color_key, color_range in self.floor_color_ranges.items():
+            colour_count = np.count_nonzero(cv.inRange(square, color_range["range"][0], color_range["range"][1]))
+            if colour_count > color_range["threshold"] * square.shape[0] * square.shape[1]:
+                color_counts[color_key] = colour_count
+        
+        if len(color_counts) == 0:
+            return "nothing"
         else:
-            self.timeWithoutMoving = 0
+            return max(color_counts, key=color_counts.get)
+    
+    def get_sq_color(self, image, square_points):
+        square = image[square_points[0]:square_points[1], square_points[2]:square_points[3]]
+        # remove pixels with value 0, 0, 0
+        white_count = np.count_nonzero(cv.inRange(square, (180, 180, 180), (255, 255, 255)))
+        black_count = np.count_nonzero(cv.inRange(square, (20, 20, 20), (180, 180, 180)))
 
-        if self.doWallMapping:
-            #print("Doing wall mapping")
+        if white_count > black_count and white_count > square.shape[0] * square.shape[1] / 8:
+            return (255, 255, 255)
+        else:
+            return (100, 100, 100)
 
-            if self.timeWithoutMoving > 1:
-                self.analyst.stoppedMoving = True
+    def get_floor_colors(self, floor_image, robot_position):
+
+        grid_offsets = [(((p + 0) % 0.06) / 0.06) * 50 for p in robot_position]
+        
+        grid_offsets = [int(o) for o in grid_offsets]
+
+        offsets = [((((p + 0.03) % 0.06) - 0.03) / 0.06) * 50 for p in robot_position]
+        
+        offsets = [int(o) for o in offsets]
+
+        
+        utilities.save_image(floor_image, "floor_image.png")
+
+        squares_grid = utilities.get_squares(floor_image, self.tile_resolution, offsets)
+
+        color_tiles = []
+        for row in squares_grid:
+            for square in row:
+                color_key = self.get_square_color(floor_image, square)
+                if color_key == "normal":
+                    color = (255, 255, 255)
+                elif color_key == "checkpoint":
+                    color = (100, 100, 100)
+                else:
+                    color = (0, 0, 0)
+                #if color != (0, 0, 0):
+                #cv.rectangle(self.final_image, [square[2], square[0]], [square[3], square[1]], color, -1)
+
+                tile = [square[2], square[0]]
+                tile = utilities.substractLists(tile, (350 - offsets[0], 350 - offsets[1]))
+                tile = utilities.divideLists(tile, [self.tile_resolution, self.tile_resolution])
+                tile = [int(t) for t in tile]
+                if color_key != "nothing":
+                    if SHOW_DEBUG:
+                        print(tile, color_key)
+                    color_tiles.append((tile, color_key))
+
+        if SHOW_DEBUG:
+            drawing_image = floor_image.copy() #self.final_image.copy()
+            utilities.draw_grid(drawing_image, self.tile_resolution, offset=grid_offsets)
+            cv.circle(drawing_image, (350 - offsets[0], 350 - offsets[1]), 10, (255, 0, 0), -1)
+            cv.imshow("final_floor_image", utilities.resize_image_to_fixed_size(drawing_image, (600, 600)))        
+        return color_tiles
+
+
+        
+        
+
+class PointCloudExtarctor:
+    def __init__(self, resolution):
+        self.threshold = 8
+        self.resolution = resolution
+        self.straight_template = np.zeros((self.resolution + 1, self.resolution + 1), dtype=int)
+        self.straight_template[:][0:2] = 1
+        #self.straight_template[3:-3][0:2] = 2
+        self.straight_template[0][0:2] = 0
+        self.straight_template[-1][0:2] = 0
+
+        straight = [
+            [0, 1, 2, 2, 2, 1, 0],
+            [0, 1, 2, 2, 2, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+                ]
+        
+        self.straight_template = np.array(straight)
+
+        curved = [
+            [0, 0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 3, 1, 0, 0, 0],
+            [0, 1, 1, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+                ]
+        
+        self.curved_template = np.array(curved)
+
+
+        self.templates = {}
+
+        for i, name in enumerate([("u",), ("l",), ("d",), ("r",)]):
+            self.templates[name] = np.rot90(self.straight_template, i)
+        
+        for i, name in enumerate([("u", "l"), ("d", "l"), ("d", "r"),  ("u", "r")]):
+            self.templates[name] = np.rot90(self.curved_template, i)
+
+    def get_tile_status(self, min_x, min_y, max_x, max_y, point_cloud):
+        counts = {name: 0 for name in self.templates}
+        square = point_cloud[min_x:max_x+1, min_y:max_y+1]
+        if square.shape != (self.resolution+1, self.resolution+1):
+            return []
+
+        non_zero_indices = np.where(square != 0)
+        for name, template in self.templates.items():
+            counts[name] = np.sum(template[non_zero_indices])
+
+        names = [name for name, count in counts.items() if count >= self.threshold]
+
+        return [i for sub in names for i in sub]
+
+    def transform_to_grid(self, point_cloud):
+        offsets = point_cloud.offsets
+        offsets = [o % self.resolution for o in offsets]
+        offsets.reverse()
+        grid = []
+        bool_array_copy = point_cloud.get_bool_array()
+        if SHOW_DEBUG:
+            bool_array_copy = bool_array_copy.astype(np.uint8) * 100
+        for x in range(offsets[0], bool_array_copy.shape[0] - self.resolution, self.resolution):
+            row = []
+            for y in range(offsets[1], bool_array_copy.shape[1] - self.resolution, self.resolution):
+                min_x = x
+                min_y = y
+                max_x = x + self.resolution
+                max_y = y + self.resolution
+                #print(min_x, min_y, max_x, max_y)
+
+                if SHOW_DEBUG:
+                    bool_array_copy = cv.rectangle(bool_array_copy, (min_y, min_x), (max_y, max_x), (255,), 1)
+                
+                val = self.get_tile_status(min_x, min_y, max_x, max_y, point_cloud.get_bool_array())
+                
+                row.append(list(val))
+            grid.append(row)
+        factor = 10
+
+        if SHOW_DEBUG:
+            cv.imshow("point_cloud_with_squares", utilities.resize_image_to_fixed_size(bool_array_copy, (600, 600)))
+        offsets = point_cloud.offsets
+        return grid, [o // self.resolution for o in offsets]
+
+
+#######################
+# FILE: fixture_detection/color_filter.py
+#######################
+
+import cv2 as cv
+import numpy as np
+
+class ColorFilter:
+    def __init__(self, lower_hsv, upper_hsv):
+        self.lower = np.array(lower_hsv)
+        self.upper = np.array(upper_hsv)
+    
+    def filter(self, img):
+        hsv_image = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+        mask = cv.inRange(hsv_image, self.lower, self.upper)
+        return mask
+
+
+#######################
+# FILE: fixture_detection/fixture_detection.py
+#######################
+
+import skimage
+
+import copy
+
+import math
+
+import numpy as np
+import cv2 as cv
+
+
+class FixtureDetector:
+    def __init__(self, pixel_grid: CompoundExpandablePixelGrid) -> None:
+        self.pixel_grid = pixel_grid
+
+        # Color filtering
+        self.colors = ("black", "white", "yellow", "red")
+        self.color_filters = {
+            "black": ColorFilter(lower_hsv=(0, 0, 0), upper_hsv=(0, 0, 0)),
+            "white": ColorFilter(lower_hsv=(0, 0, 207), upper_hsv=(0, 0, 207)),
+            "yellow": ColorFilter(lower_hsv=(25, 157, 82), upper_hsv=(30, 255, 255)),
+            "red": ColorFilter(lower_hsv=(160, 170, 127), upper_hsv=(170, 255, 255))
+        }
+
+        self.max_detection_distance = 0.12 * 5
+
+    def get_fixture_positions_and_angles(self, robot_position: Position2D, camera_image: CameraImage) -> list:
+        positions_in_image = self.get_fixture_positions_in_image(np.flip(camera_image.image, axis=1))
+
+        #debug = self.pixel_grid.get_colored_grid()
+
+        fixture_positions = []
+        fixture_angles = []
+        for position in positions_in_image:
+            relative_horizontal_angle = Angle(position[1] * (camera_image.data.horizontal_fov.radians / camera_image.data.width))
+
+            fixture_horizontal_angle = (relative_horizontal_angle - camera_image.data.horizontal_fov / 2) + camera_image.data.horizontal_orientation 
+
+            fixture_horizontal_angle.normalize()
+
+            camera_vector = Vector2D(camera_image.data.horizontal_orientation, camera_image.data.distance_from_center)
+            camera_pos = camera_vector.to_position()
+            camera_pos += robot_position
+
+            detection_vector = Vector2D(fixture_horizontal_angle, self.max_detection_distance)
+            detection_pos = detection_vector.to_position()
+
+            detection_pos += camera_pos
+
+            camera_array_index = self.pixel_grid.coordinates_to_array_index(camera_pos)
+            detection_array_index = self.pixel_grid.coordinates_to_array_index(detection_pos)
+
+            line_xx, line_yy = skimage.draw.line(camera_array_index[0], camera_array_index[1], detection_array_index[0], detection_array_index[1])
+
+            for x, y in zip(line_xx, line_yy):
+                if x >= 0 and y >= 0 and x < self.pixel_grid.array_shape[0] and y < self.pixel_grid.array_shape[1]:
+                    #debug[x, y] = (0, 255, 0)
+                    if self.pixel_grid.arrays["walls"][x, y]:
+                        fixture_positions.append(self.pixel_grid.array_index_to_coordinates(np.array([x, y])))
+                        fixture_angles.append(copy.deepcopy(fixture_horizontal_angle))
+                        break
+
+        #cv.imshow("fixture_detection_debug", debug)
+
+        return fixture_positions, fixture_angles
+    
+    def get_fixture_positions_in_image(self, image: np.ndarray) -> List[Position2D]:
+        image_sum = np.zeros(image.shape[:2], dtype=np.bool_)
+        for filter in self.color_filters.values():
+            image_sum += filter.filter(image) > 0
+
+        image_sum = image_sum.astype(np.uint8) * 255
+
+        cv.imshow("fixtures", image_sum)
+        
+        contours, _ = cv.findContours(image_sum, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+
+
+        debug = copy.deepcopy(image)
+        
+        final_victims = []
+        for c in contours:
+            x, y, w, h = cv.boundingRect(c)
+            final_victims.append(Position2D((x + x + w) / 2, (y + y + h) / 2))
+
+        for f in final_victims:
+            debug = cv.circle(debug, np.array(f, dtype=int), 3, (255, 0, 0), -1)
+        
+        cv.imshow("victim_pos_debug", debug)
+
+        return final_victims
+
+
+
+#######################
+# FILE: mapping/mapper.py
+#######################
+
+
+import numpy as np
+import cv2 as cv
+
+
+
+
+
+
+
+class Mapper:
+    def __init__(self, tile_size, robot_diameter, camera_distance_from_center):
+        self.tile_size = tile_size
+        self.quarter_tile_size = tile_size / 2
+        self.robot_diameter = robot_diameter
+
+        self.robot_position = None
+        self.robot_orientation = None
+        self.start_position = None
+
+        self.robot_grid_index = None
+
+        # Data structures
+        pixels_per_tile = 10
+        self.pixel_grid = CompoundExpandablePixelGrid(initial_shape=np.array([1, 1]), 
+                                                      pixel_per_m=pixels_per_tile / self.quarter_tile_size, 
+                                                      robot_radius_m=(self.robot_diameter / 2) -0.008)
+        
+        self.tile_color_grid = TileColorExpandableGrid(initial_shape=np.array((1, 1)),
+                                                       tile_size=self.tile_size)
+
+        #Data processors
+        self.wall_mapper = WallMapper(self.pixel_grid, robot_diameter)
+        self.floor_mapper = FloorMapper(pixel_grid=self.pixel_grid, 
+                                        tile_resolution=pixels_per_tile * 2,
+                                        tile_size=self.tile_size,
+                                        camera_distance_from_center=camera_distance_from_center)
+        
+        self.robot_mapper = RobotMapper(pixel_grid=self.pixel_grid,
+                                        robot_diameter=self.robot_diameter,
+                                        pixels_per_m=pixels_per_tile / self.quarter_tile_size)
+        
+
+        # Data extractors
+        self.point_cloud_extractor = PointCloudExtarctor(resolution=6)
+        self.floor_color_extractor = FloorColorExtractor(tile_resolution=50)
+
+        self.fixture_detector = FixtureDetector(self.pixel_grid)
+
+    def update(self, in_bounds_point_cloud: list = None, 
+               out_of_bounds_point_cloud: list = None,
+               lidar_detections: list = None,
+               camera_images: list = None, 
+               robot_position: Position2D = None, 
+               robot_orientation: Angle = None):
+        
+        if robot_position is None or robot_orientation is None:
+            return
+        
+        self.robot_position = robot_position
+        self.robot_orientation = robot_orientation
+
+        self.robot_grid_index = self.pixel_grid.coordinates_to_grid_index(self.robot_position)
+
+        # Load walls and obstacles (Lidar detections)
+        if in_bounds_point_cloud is not None and out_of_bounds_point_cloud is not None:
+            self.wall_mapper.load_point_cloud(in_bounds_point_cloud, out_of_bounds_point_cloud, robot_position)
+        
+        self.robot_mapper.map_traversed_by_robot(self.robot_grid_index)
+        self.robot_mapper.map_seen_by_camera(self.robot_grid_index, self.robot_orientation)
+        self.robot_mapper.map_discovered_by_robot(self.robot_grid_index, self.robot_orientation)
+
+        # Load floor colors
+        if camera_images is not None:
+            self.floor_mapper.map_floor(camera_images, self.pixel_grid.coordinates_to_grid_index(self.robot_position))
+
+
+        
+        if camera_images is not None and lidar_detections is not None:
+            #debug_grid = self.pixel_grid.get_colored_grid()
+            for i in camera_images:
+                positions, angles = self.fixture_detector.get_fixture_positions_and_angles(self.robot_position, i)
+                for pos, angle in zip(positions, angles):
+                    index = self.pixel_grid.coordinates_to_array_index(pos)
+                    self.pixel_grid.arrays["victims"][index[0], index[1]] = True
+                    self.pixel_grid.arrays["victim_angles"][index[0], index[1]] = angle.radians
+                    #debug_grid = cv.circle(debug_grid, (index[1], index[0]), 3, (0, 255, 0), -1)
+
+            #robot_array_index = self.pixel_grid.coordinates_to_array_index(self.robot_position)
+            #debug_grid = cv.circle(debug_grid, (robot_array_index[1], robot_array_index[0]), 5, (255, 0, 255), -1)
+
+            #cv.imshow("fixture_debug_grid", debug_grid)
+        
+        """
+        if lidar_detections is not None:
+            debug_grid = self.pixel_grid.get_colored_grid()
+            for l in lidar_detections:
+                l.direction.normalize()
+                pos = l.to_position()
+                pos += self.robot_position
+                index = self.pixel_grid.coordinates_to_array_index(pos)
+                debug_grid = cv.circle(debug_grid, (index[1], index[0]), 1, (0, 255, 0), -1)
+
+            cv.imshow("lidar_debug_grid", debug_grid)
+        """
+
+        #DEBUG
+        if DO_WAIT_KEY:
+            cv.waitKey(1)
+
+    
+    def register_start(self, robot_position):
+        self.start_position = deepcopy(robot_position)
+        print("registered start position:", self.start_position)
+
+    
+    # Grids
+    def get_grid_for_bonus(self):
+        """
+        final_grid = []
+        for row in self.get_node_grid().grid:
+            final_row = []
+            for node in row:
+                final_row.append(node.get_representation())
+            final_grid.append(final_row)
+        return np.array(final_grid)
+        """
+        pass # TODO
+    
+
+    def __lidar_to_node_grid(self):
+        """
+        grid, offsets = self.point_cloud_extractor.transform_to_grid(self.lidar_grid)
+        for y, row in enumerate(grid):
+            for x, value in enumerate(row):
+                xx = (x - offsets[0]) * 2 + 1
+                yy = (y - offsets[1]) * 2 + 1
+                #print(value)
+                for direction in value:
+                    self.node_grid.load_straight_wall((xx, yy),  direction)
+        """
+
+
+#######################
+# FILE: agents/agent.py
+#######################
+
+import random
+
+class Agent(ABC):
+    def __init__(self, mapper) -> None:
+        self.mapper = mapper
+
+    @abstractmethod
+    def update(self) -> None:
+        pass
+    
+    @abstractmethod
+    def get_target_position(self) -> Position2D:
+        pass
+
+    @abstractmethod
+    def do_end(self) -> bool:
+        pass
+
+    @abstractmethod
+    def do_report_victim(self) -> bool:
+        pass
+
+
+#######################
+# FILE: algorithms/np_bool_array/efficient_a_star.py
+#######################
+
+import numpy as np
+import cv2 as cv
+import math
+
+
+class aStarNode:
+    def __init__(self, location):
+        self.location = location
+        self.parent = None
+        self.g = float('inf')
+        self.p = 0
+        self.f = 0
+
+    def __gt__(self, other):  # make nodes comparable
+        return self.f > other.f
+
+    def __repr__(self):
+        return str(self.location)
+
+
+class aStarAlgorithm:
+    def __init__(self):
+        self.adjacents = [[0, 1], [0, -1], [-1, 0], [1, 0], ]#[1, 1], [1, -1], [-1, -1], [-1, 1]]
+        self.preference_weight = 5
+    
+    @staticmethod
+    def reconstructpath(node):
+        path = []
+        while node is not None:
+            path.append(node.location)
+            node = node.parent
+        path.reverse()
+        return path
+
+    @staticmethod
+    def heuristic(start, target):
+        # optimistic score, assuming all cells are friendly
+        dy = abs(start[0] - target[0])
+        dx = abs(start[1] - target[1])
+        return min(dx, dy) * 15 + abs(dx - dy) * 10
+
+    @staticmethod
+    def get_preference(preference_grid, position):
+        if preference_grid is None:
+            return 0
+        elif not (position[0] >= preference_grid.shape[0] or position[1] >= preference_grid.shape[1] or position[0] < 0 or position[1] < 0):
+            return preference_grid[position[0], position[1]]
+        else:
+            return 0
+    
+    @staticmethod
+    def is_traversable(grid, position):
+        if not (position[0] >= grid.shape[0] or position[1] >= grid.shape[1] or position[0] < 0 or position[1] < 0):
+            return not grid[position[0], position[1]]
+        else:
+            return True
+
+
+        
+    # Returns a list of tuples as a path from the given start to the given end in the given maze
+    def a_star(self, grid: np.ndarray, start, end, preference_grid=None, search_limit=float('inf')):
+        debug_grid = np.zeros((grid.shape[0], grid.shape[1], 3), dtype=np.uint8)
+
+        # Create start and end node
+        start_node = aStarNode(tuple(start))
+        start_node.g = 0
+        
+        if not self.is_traversable(grid, start):
+            print("WARNING: Start position is not traversable")
+
+        end_node = aStarNode(tuple(end))
+
+        if not self.is_traversable(grid, end):
+            print("WARNING: End position is not traversable")
+            return []
+
+        end_node.g = end_node.h = end_node.f = 0
+        # Initialize open and closed list
+        openList = [start_node]
+        best_cost_for_node_lookup = {tuple(start_node.location): start_node.g}
+        closed = set()
+
+        loop_n = 0
+        # Loop until end
+        while openList:            
+            # Get the current node
+            node = heappop(openList)
+            if node.location in closed:
+                continue
+
+            closed.add(node.location)
+            # If found the goal
+            if node.location == end_node.location:
+                #print(f"Finished Astar. Took {loop_n} loops.")
+                return self.reconstructpath(node)
+            
+            # Generate children
+            for adj in self.adjacents:  # Adjacent squares
+                # Get node position
+                child_location = (node.location[0] + adj[0], node.location[1] + adj[1])
+                # Make sure walkable terrain
+                if not self.is_traversable(grid, child_location):
+                    continue
+                # Create new node
+                new_child = aStarNode(child_location)
+                new_child.parent = node
+
+                new_child.g = node.g + 1
+                new_child.h =  self.heuristic(new_child.location, end_node.location)
+                
+                new_child.p = self.get_preference(preference_grid, new_child.location) * self.preference_weight
+                
+                new_child.f = new_child.g + new_child.h + new_child.p
+
+                if child_location in best_cost_for_node_lookup.keys():
+                    if new_child.g + new_child.p < best_cost_for_node_lookup[child_location]:
+                        best_cost_for_node_lookup[child_location] = new_child.g + new_child.p
+                        heappush(openList, new_child)
+                        
+                else:
+                    best_cost_for_node_lookup[child_location] = new_child.g + new_child.p
+                    heappush(openList, new_child)
+
+            loop_n += 1
+            if loop_n > search_limit:
+                break
+            
+            """
+            for o in openList:
+                debug_grid[o.location[0], o.location[1]] = [0, 0, 255]
+
+            cv.imshow("debug", debug_grid)
+
+            cv.waitKey(1)
+            """
+            
+        return []
+
+
+#######################
+# FILE: algorithms/np_bool_array/bfs.py
+#######################
+
+import numpy as np
+
+class BFSAlgorithm:
+    def __init__(self, found_function) -> None:
+        self.found_function = found_function
+        self.adjacents = [[0, 1], [0, -1], [-1, 0], [1, 0], ]
+
+    def get_neighbours(self, node):
+        for a in self.adjacents:
+            yield [node[0] + a[0], node[1] + a[1]]
+    
+    def bfs(self, array, start_node):
+        open_list = []
+        open_list.append(start_node)
+
+        while len(open_list) > 0:
+            node = open_list.pop(0)
+
+            value = array[node[0], node[1]]
+
+            if self.found_function(value):
+                return node
+
+            for n in self.get_neighbours(node):
+                if not n in open_list:
+                    open_list.append(n)
+
+
+class NavigatingBFSAlgorithm:
+    def __init__(self, found_function, traversable_function, max_result_number=1) -> None:
+        self.found_function = found_function
+        self.traversable_function = traversable_function
+        self.adjacents = ((0, 1), (0, -1), (-1, 0), (1, 0))
+        self.max_result_number = max_result_number
+
+    def get_neighbours(self, node):
+        for a in self.adjacents:
+            yield (node[0] + a[0], node[1] + a[1])
+    
+    def bfs(self, found_array, traversable_array, start_node):
+        open_list = []
+        open_list.append(tuple(start_node))
+
+        closed_set = set()
+        closed_set.add(tuple(start_node))
+
+        results = []
+
+        while len(open_list) > 0:
+            node = open_list.pop(0)
+
+            if traversable_array[node[0], node[1]]:
+                continue
+
+            value = found_array[node[0], node[1]]
+
+            if not value:
+                results.append(node)
+                if len(results) >= self.max_result_number:
+                    return results
+
+            for n in self.get_neighbours(node):
+                if n not in closed_set:
+                    open_list.append(n)
+                    closed_set.add(n)    
+        
+        return results
+
+
+
+
+#######################
+# FILE: algorithms/np_bool_array/a_star.py
+#######################
+
+import numpy as np
+import cv2 as cv
+import math
+
+# aStarNode class for A* pathfinding 
+class aStarNode():
+    def __init__(self, parent=None, position=None):
+        self.parent = parent
+        self.position = position
+        self.g = 0
+        self.h = 0
+        self.p = 0
+        self.f = 0
+
+    def __eq__(self, other):
+        return self.position == other.position
+    
+    def __repr__(self):
+        return str(self.position)
+
+class aStarAlgorithm:
+    def __init__(self):
+        self.adjacents = [[0, 1], [0, -1], [-1, 0], [1, 0], ]#[1, 1], [1, -1], [-1, -1], [-1, 1]]
+        self.preference_weight = 50
+
+    def get_preference(self, preference_grid, position):
+        if preference_grid is None:
+            return 0
+        elif not (position[0] >= preference_grid.shape[0] or position[1] >= preference_grid.shape[1] or position[0] < 0 or position[1] < 0):
+            return preference_grid[position[0], position[1]]
+        else:
+            return 0
+        
+    # Returns a list of tuples as a path from the given start to the given end in the given maze
+    def a_star(self, grid: np.ndarray, start, end, preference_grid=None):
+        debug_grid = np.zeros((grid.shape[0], grid.shape[1], 3), dtype=np.uint8)
+
+        # Create start and end node
+        startNode = aStarNode(None, list(start))
+        startNode.g = startNode.h = startNode.f = 0
+        
+        if grid[start[0], start[1]]:
+            print("WARNING: Start position is not traversable")
+
+        endNode = aStarNode(None, list(end))
+
+        if grid[end[0], end[1]]:
+            print("WARNING: End position is not traversable")
+            return []
+
+        endNode.g = endNode.h = endNode.f = 0
+        # Initialize open and closed list
+        openList = []
+        closedList = []
+
+        # Add the start node
+        openList.append(startNode)
+
+        
+        # Loop until end
+        while len(openList) > 0:            
+            # Get the current node
+            currentNode = openList[0]
+            currentIndex = 0
+            for index, item in enumerate(openList):
+                if item.f < currentNode.f:
+                    currentNode = item
+                    currentIndex = index
+            # Pop current off open list, add to closed list
+            openList.pop(currentIndex)
+            
+            closedList.append(currentNode)
+            # If found the goal
+            if currentNode == endNode:
+                path = []
+                current = currentNode
+                while current is not None:
+                    path.append(current.position)
+                    current = current.parent
+                return path[::-1]  # Return reversed path
+            
+            # Generate children
+            children = []
+            for adj in self.adjacents:  # Adjacent squares
+                # Get node position
+                nodePosition = [currentNode.position[0] + adj[0], currentNode.position[1] + adj[1]]
+                # Make sure walkable terrain
+                if not (nodePosition[0] >= grid.shape[0] or nodePosition[1] >= grid.shape[1] or nodePosition[0] < 0 or nodePosition[1] < 0):
+                    #print("OUT OF BOUNDS")
+                    if grid[nodePosition[0], nodePosition[1]]:
+                        #print("NOT TRAVERSABLE")
+                        continue
+                # Create new node
+                newNode = aStarNode(currentNode, nodePosition)
+                # Append
+                children.append(newNode)
+            
+            # Loop through children
+            for child in children:
+                continueLoop = False
+                # Child is on the closed list
+                for closedChild in closedList:
+                    if child == closedChild:
+                        continueLoop = True
+                        break
+                # Create the f, g, and h values
+                child.g = currentNode.g + 1
+                child.h =  ((child.position[0] - endNode.position[0]) ** 2) + (
+                           (child.position[1] - endNode.position[1]) ** 2)
+                
+                child.p = self.get_preference(preference_grid, child.position) * self.preference_weight
+                
+                child.f = child.g + child.h + child.p
+                # Child is already in the open list
+                for index, openNode in enumerate(openList):
+                    if child == openNode:
+                        if child.p + child.g > openNode.p + openNode.g:
+                            continueLoop = True
+                            break
+
+
+
+                if continueLoop:
+                    continue
+                # Add the child to the open list
+                openList.append(child)
+            
+            
+            for o in openList:
+                debug_grid[o.position[0], o.position[1]] = [0, 0, 255]
+
+            cv.imshow("debug", debug_grid)
+
+            cv.waitKey(1)
+            
+        return []
+
+
+#######################
+# FILE: agents/granular_navigation_agent/path_smoothing.py
+#######################
+
+class PathSmoother:
+    def __init__(self, strenght) -> None:
+        self.strenght = strenght
+
+    def smooth(self, path):
+        new_path = []
+        for index, node in enumerate(path):
+            prior = path[max(index - 1, 0)]
+            next = path[min(index + 1, len(path) - 1)]
+
+            avg_x = (node[0] + prior[0] * self.strenght + next[0] * self.strenght) / (1 + self.strenght * 2)
+            avg_y = (node[1] + prior[1] * self.strenght + next[1] * self.strenght) / (1 + self.strenght * 2)
+
+            new_path.append([avg_x, avg_y])
+        
+        return new_path
+
+
+#######################
+# FILE: agents/granular_navigation_agent/path_finder.py
+#######################
+
+import numpy as np
+import cv2 as cv
+
+
+
+
+
+class PathFinder():
+    def __init__(self, mapper: Mapper):
+        self.a_star = aStarAlgorithm()
+        self.closest_free_point_finder = BFSAlgorithm(lambda x : x == 0)
+
+        self.a_star_path_smoother = PathSmoother(1)
+
+        self.robot_grid_index = np.array([0, 0])
+        self.target_position = np.array([0, 0])
+
+        self.a_star_path = []
+        self.smooth_astar_path = []
+        self.a_star_index = 0
+
+        self.mapper = mapper
+
+        self.path_not_found = False
+    
+    def update(self, target_position: np.ndarray = None) -> None:
+        if target_position is not None:
+            self.target_position = target_position
+
+        self.robot_grid_index = self.mapper.pixel_grid.coordinates_to_grid_index(self.mapper.robot_position) # Get robot position grid index
+        self.mapper.pixel_grid.expand_to_grid_index(self.robot_grid_index) # Expand grid to robot position
+
+        if SHOW_PATHFINDING_DEBUG: 
+            if self.is_path_finished(): print("FINISHED PATH")
+            if self.is_path_obstructed(): print("PATH OBSTRUCTED")
+
+        if self.is_path_finished() or self.is_path_obstructed():
+            self.calculate_path()
+            
+        self.calculate_path_index()
+
+        #DEBUG
+        if SHOW_GRANULAR_NAVIGATION_GRID:
+            debug_grid = self.mapper.pixel_grid.get_colored_grid()
+            for node in self.a_star_path:
+                n = np.array(self.mapper.pixel_grid.grid_index_to_array_index(node))
+                try:
+                    debug_grid[n[0], n[1]] = [0, 0, 255]
+                except IndexError:
+                    pass
+
+            cv.imshow("granular_grid", debug_grid)
+        
+
+
+    def calculate_path(self):
+        # Get start array index (if robot index occupied, get closest unoccupied point)
+        start_array_index = self.mapper.pixel_grid.coordinates_to_array_index(self.mapper.robot_position)
+        start_array_index = self.get_closest_traversable_array_index(start_array_index)
+
+        # Expand grid to target index
+        target_grid_index = self.mapper.pixel_grid.coordinates_to_grid_index(self.target_position)
+        self.mapper.pixel_grid.expand_to_grid_index(target_grid_index)
+
+        # Get target array index (if target index occupied, get closest unoccupied point)
+        target_array_index = self.mapper.pixel_grid.coordinates_to_array_index(self.target_position)
+        target_array_index = self.get_closest_traversable_array_index(target_array_index)
+
+        # Calculate path
+        best_path = self.a_star.a_star(self.mapper.pixel_grid.arrays["traversable"], 
+                                        start_array_index,
+                                        target_array_index,
+                                        self.mapper.pixel_grid.arrays["navigation_preference"])
+
+        # If path was successfully calculated, transform all indexes to grid indexes
+        if len(best_path) > 1:
+            self.a_star_path = []
+            for array_index in best_path:
+                self.a_star_path.append(self.mapper.pixel_grid.array_index_to_grid_index(array_index))
+
+            self.a_star_path = self.a_star_path[1:]
+            self.a_star_index = 0
+            self.path_not_found = False
+        else:
+            if SHOW_PATHFINDING_DEBUG: print("PATH NOT FOUND")
+            self.path_not_found = True
+        
+        self.a_star_path = self.dither_path(self.a_star_path) # Remove every second positon of the path
+        self.smooth_astar_path = self.a_star_path_smoother.smooth(self.a_star_path) # Smooth the path
+
+    def calculate_path_index(self):
+        self.a_star_index = min(self.a_star_index, len(self.a_star_path) - 1)   
+        if len(self.a_star_path) > 0:
+            next_node = self.a_star_path[self.a_star_index]
+            next_node = Position2D(next_node)
+
+            current_grid_index = self.mapper.pixel_grid.coordinates_to_grid_index(self.mapper.robot_position)
+            current_node = Position2D(current_grid_index[0], current_grid_index[1])
+
+            if abs(current_node.get_distance_to(next_node)) < 3:
+                self.a_star_index += 1
+
+    def dither_path(self, path):
+        final_path = []
+        dither_interval = 2
+        for index, value in enumerate(path):
+            if index % dither_interval == 0:
+                final_path.append(value)
+        if len(final_path):
+            return final_path
+        else:
+            return path
+    
+    def get_next_position(self) -> Position2D:
+        self.a_star_index = min(self.a_star_index, len(self.a_star_path) -1)
+        if len(self.smooth_astar_path):
+            pos = self.mapper.pixel_grid.grid_index_to_coordinates(np.array(self.smooth_astar_path[self.a_star_index]))
+            pos = Position2D(pos[0], pos[1])
+            return pos
+        
+        else:
+            return self.mapper.robot_position
+    
+    def is_path_obstructed(self):
+        """
+        Is current Astar path obstructed?
+        """
+        array_index_path = []
+        for n in self.a_star_path:
+            array_index_path.append(self.mapper.pixel_grid.grid_index_to_array_index(n))
+            
+        for position in array_index_path:
+            if position[0] >= self.mapper.pixel_grid.arrays["traversable"].shape[0] or \
+               position[1] >=  self.mapper.pixel_grid.arrays["traversable"].shape[1]:
+                continue
+
+            if position[0] < 0 or position[1] < 0:
+                continue
+
+            if self.mapper.pixel_grid.arrays["traversable"][position[0], position[1]]:
+                return True
+            
+        return False
+    
+    def is_path_finished(self):
+        return len(self.a_star_path) - 1 <= self.a_star_index
+    
+
+    def get_closest_traversable_array_index(self, array_index):
+        if self.mapper.pixel_grid.arrays["traversable"][array_index[0], array_index[1]]:
+            return  self.closest_free_point_finder.bfs(array=self.mapper.pixel_grid.arrays["traversable"],
+                                                       start_node=array_index)
+        else:
+            return array_index
+
+
+#######################
+# FILE: agents/granular_navigation_agent/best_position_finder.py
+#######################
+
+
+import numpy as np
+import cv2 as cv
+import math
+import skimage
+
+class BestPositionFinder:
+    """
+    Finds the best position for the robot to go to, with the objective of exploring the maze.
+    """
+    def __init__(self, mapper: Mapper) -> None:
+        self.mapper = mapper
+        self.closest_unseen_finder = NavigatingBFSAlgorithm(found_function=lambda x: x == False, 
+                                                            traversable_function=lambda x: x == False,
+                                                            max_result_number=1)
+        
+        self.closest_free_point_finder = BFSAlgorithm(lambda x : x == 0)
+        
+        self.closest_unseen_grid_index = None
+        
+
+    def calculate_best_position(self, finished_path):
+        """
+        Calculate closest unseen position only when the robot has reached the previous one or if the objective
+        is no longer traversable.
+        """
+        if self.is_objective_untraversable() or finished_path:
+            self.closest_unseen_grid_index = self.get_closest_unseen_grid_index()
+
+        # DEBUG
+        if SHOW_BEST_POSITION_FINDER_DEBUG:
+            debug_grid = self.mapper.pixel_grid.get_colored_grid()  
+            if self.closest_unseen_grid_index is not None:
+                closest_unseen_array_index = self.mapper.pixel_grid.grid_index_to_array_index(self.closest_unseen_grid_index)
             else:
-                self.analyst.stoppedMoving = False
+                closest_unseen_array_index = self.mapper.pixel_grid.coordinates_to_array_index(self.mapper.start_position)
+            cv.circle(debug_grid, (closest_unseen_array_index[1], closest_unseen_array_index[0]), 4, (0, 255, 100), -1)
+            cv.imshow("closest_position_finder_debug", debug_grid)
 
-            pointCloud = self.robot.getDetectionPointCloud()
+    def is_objective_untraversable(self):
+        if self.closest_unseen_grid_index is None: return False
 
-            """
-            for point in pointCloud:
+        closest_unseen_array_index = self.mapper.pixel_grid.grid_index_to_array_index(self.closest_unseen_grid_index)
+        return self.mapper.pixel_grid.arrays["traversable"][closest_unseen_array_index[0], closest_unseen_array_index[1]]
+    
+    def get_closest_unseen_grid_index(self):
+        robot_array_index = self.mapper.pixel_grid.coordinates_to_array_index(self.mapper.robot_position)
 
-                if self.gridPlotter.getPoint(point) < 250:
-                    self.gridPlotter.plotPoint(point, self.gridPlotter.getPoint(point) + 5)
-            """
-            # tileType = self.robot.get
-            self.analyst.loadPointCloud(pointCloud)
+        start_node = self.get_closest_traversable_array_index(robot_array_index)
 
-        colorPos, self.actualTileType = self.robot.getColorDetection()
-        #print("Tile type: ", self.actualTileType)
-        self.analyst.loadColorDetection(colorPos, self.actualTileType)
-        trapsAtSides = self.robot.trapsAtSides()
-        for trap in trapsAtSides:
-            self.analyst.loadColorDetection(trap, "hole")
-        self.isTrap = len(trapsAtSides) or self.actualTileType == "hole"
-        self.analyst.update(self.position, self.rotation)
+        closest_unseen_array_indexes = self.closest_unseen_finder.bfs(found_array=self.mapper.pixel_grid.arrays["discovered"],
+                                                                      traversable_array=self.mapper.pixel_grid.arrays["traversable"],
+                                                                      start_node=start_node)
+        if len(closest_unseen_array_indexes):
+            return self.mapper.pixel_grid.array_index_to_grid_index(closest_unseen_array_indexes[0])
+        else:
+            return None
 
-        self.gridPlotter.reset()
-        for point in self.analyst.converter.totalPointCloud:
-            if point[2] > 20:
-                ppoint = [point[0] / 100, point[1] / 100]
-                self.gridPlotter.plotPoint(ppoint, 100)
+    def get_best_position(self):
+        if self.closest_unseen_grid_index is None:
+            return self.mapper.start_position
+        else:
+            coords = self.mapper.pixel_grid.grid_index_to_coordinates(self.closest_unseen_grid_index)
+            return Position2D(coords)
+    
 
-        bestPos = self.analyst.getStartRawNodePos()
-        if bestPos is not None:
-            self.gridPlotter.plotPoint(bestPos, 255)
+    def __get_line(self, point1, point2):
+        xx, yy = skimage.draw.line(point1[0], point1[1], point2[0], point2[1])
+        indexes = [[x, y] for x, y in zip(xx, yy)]
 
-        bestPos = self.analyst.getBestPosToMove()
-        if bestPos is not None:
-            self.gridPlotter.plotPoint(bestPos, 200)
+    def __has_line_of_sight(self, point1, point2, matrix):
+        xx, yy = skimage.draw.line(point1[0], point1[1], point2[0], point2[1])
+        for x, y in zip(xx[1:-1], yy[1:-1]):
+            if matrix[x, y]:
+                return False
+        return True
+    
+    def __get_seen_circle(self, radius, center_point, matrix):
+        xx, yy = skimage.draw.circle(center_point, radius)
+        indexes = [[x, y] for x, y in zip(xx, yy)]
 
-            # self.gridPlotter.plotPoint(self.position, 150)
+        farthest_points = deepcopy(indexes)
 
-        bestPoses = self.analyst.getBestPoses()
-        for bestPos in bestPoses:
-            self.gridPlotter.plotPoint(bestPos, 255)
-
-        self.analyst.showGrid()
-
-        # cv.imshow("raw detections", cv.resize(self.gridPlotter.gridPlottingArray, (600, 600), interpolation=cv.INTER_NEAREST))
-        # cv.waitKey(1)
-
-
-# File: "FinalCode.py"
-
-
-
-
-
-
-
-
-
-timeStep = 16 * 2
-stMg = StateManager("init")
-r = AbstractionLayer()
-
-isOptimised = cv.useOptimized()
-
-# While the simulation is running
-while r.doLoop():
-    #e1 = cv.getTickCount()
-    # Update the robot
-    r.update()
-    #print("rotation: " + str(r.rotation))
-    #print("position: " + str(r.position))
-    #print("State:", stMg.state)
+        for index, current_farthest_point in enumerate(indexes):
+            for possible_farthest_point in self.get_line(current_farthest_point, center_point):
+                if self.__has_line_of_sight(possible_farthest_point, center_point, matrix):
+                    farthest_points[index] = possible_farthest_point
+                    break
+        
+        return farthest_points
+    
 
 
-    if not stMg.checkState("init"):
-        if r.isEnded():
-            r.seqResetSequence()
-            stMg.changeState("end")
+    def get_closest_traversable_array_index(self, array_index):
+        if self.mapper.pixel_grid.arrays["traversable"][array_index[0], array_index[1]]:
+            return  self.closest_free_point_finder.bfs(array=self.mapper.pixel_grid.arrays["traversable"],
+                                                       start_node=array_index)
+        else:
+            return array_index
 
-        elif r.isVictims():
-            r.seqResetSequence()
-            stMg.changeState("victim")
+
+        
+
+
+    
 
 
 
-    if stMg.checkState("init"):
-        if r.calibrate():
-            stMg.changeState("followBest")
+#######################
+# FILE: agents/granular_navigation_agent/victim_position_finder.py
+#######################
 
-    if stMg.checkState("stop"):
-        r.seqMg.startSequence()
-        r.seqMoveWheels(0, 0)
-
-    if stMg.checkState("moveForward"):
-        r.seqMg.startSequence()
-        r.seqMoveWheels(0.5, -0.5)
-        r.seqDelaySec(0.1)
-        r.seqMoveWheels(-0.5, 0.5)
-        r.seqDelaySec(0.1)
-        r.seqResetSequence()
+import numpy as np
+import cv2 as cv
 
 
-    if stMg.checkState("followBest"):
-        r.seqMg.startSequence()
-        bestPos = r.getBestPos()
-        if bestPos is not None:
-            r.seqMoveToCoords(bestPos)
-        r.seqResetSequence()
+class VictimPositionFinder:
+    def __init__(self, mapper: Mapper) -> None:
+        self.mapper = mapper
+        self.fixture_normal_template = self.get_fixture_normal_template(radius=3)
 
-        if r.isTrap:
-            r.seqResetSequence()
-            stMg.changeState("hole")
+    def update(self):
+        pass
+        
+        debug = self.mapper.pixel_grid.get_colored_grid()
+        fixture_indexes = np.nonzero(self.mapper.pixel_grid.arrays["victims"])
+        for fixture_x, fixture_y in zip(fixture_indexes[0], fixture_indexes[1]):
+            pos1 = Position2D(fixture_x, fixture_y)
+
+            angle = self.mapper.pixel_grid.arrays["victim_angles"][fixture_x, fixture_y]
+            angle = Angle(angle)
+            angle = Angle(180, unit=Angle.DEGREES) + angle
+            angle.normalize()
+
+            fixture_square = self.get_fixture_normal_detection_square(np.array(pos1))
+            
+
+            vec = Vector2D(Angle(angle), 10)
+            pos2 = vec.to_position()
+            pos2 = Position2D(pos2.y, pos2.x) + pos1
+            pos2 = pos2.astype(int)
+
+            debug = cv.line(debug, (pos1[1], pos1[0]), (pos2[1], pos2[0]), (0, 255, 0), 1)
+        
+        cv.imshow("victim_normal_debug", debug)
+        
 
 
-    if stMg.checkState("hole"):
-        r.seqMg.startSequence()
-        r.seqMoveWheels(-0.5, -0.5)
-        r.seqDelaySec(0.5)
-        r.seqMoveWheels(0, 0)
-        if r.seqMg.simpleSeqEvent(): r.recalculatePath()
-        r.seqResetSequence()
-        stMg.changeState("followBest")
+    def find_victim_position(self):
+        pass
 
-    if stMg.checkState("victim"):
-        #print("Victim mode!!")
-        r.seqMg.startSequence()
-        r.seqMoveWheels(0, 0)
-        r.seqPrint("stopping")
-        r.seqDelaySec(3.2)
-        r.seqPrint("reporting")
-        if r.seqMg.simpleSeqEvent(): r.reportVictims()
-        r.seqPrint("Victim reported")
-        r.seqResetSequence()
-        stMg.changeState("followBest")
+    def get_victim_position(self):
+        pass
 
-    if stMg.checkState("end"):
-        r.seqMg.startSequence()
-        if r.seqMg.simpleSeqEvent(): r.endGame()
-        r.seqMoveWheels(0, 0)
+    def is_there_victims(self):
+        pass
 
-    #print("--------------------------------------------------------------------")
 
-    #e2 = cv.getTickCount()
+    def get_fixture_normal_detection_square(self, victim_array_index: np.ndarray):
+        vns_min_x = victim_array_index[0] - (self.fixture_normal_template.shape[0] // 2)
+        vns_min_y = victim_array_index[1] - (self.fixture_normal_template.shape[1] // 2)
+        vns_max_x = vns_min_x + self.fixture_normal_template.shape[0]
+        vns_max_y = vns_min_y + self.fixture_normal_template.shape[1]
 
-    #time = (e2 - e1)/ cv.getTickFrequency()
-    #print(f"Tick time is {time}")
-    #print(f"Is it optimised? {isOptimised}")
+        self.mapper.pixel_grid.expand_to_grid_index(np.array((vns_min_x, vns_min_y)))
+        self.mapper.pixel_grid.expand_to_grid_index(np.array((vns_max_x, vns_max_y)))
+        return self.mapper.pixel_grid.arrays["walls"][vns_min_x:vns_max_x, vns_min_y:vns_max_y]
 
-    #print("--------------------------------------------------------------------")
+
+    def get_fixture_normal_angle(self, victim_array_index: np.ndarray):
+        vns_min_x = victim_array_index[0] - (self.fixture_normal_template.shape[0] // 2)
+        vns_min_y = victim_array_index[1] - (self.fixture_normal_template.shape[1] // 2)
+        vns_max_x = vns_min_x + self.fixture_normal_template.shape[0]
+        vns_max_y = vns_min_y + self.fixture_normal_template.shape[1]
+
+        self.mapper.pixel_grid.expand_to_grid_index(np.array((vns_min_x, vns_min_y)))
+        self.mapper.pixel_grid.expand_to_grid_index(np.array((vns_max_x, vns_max_y)))
+
+        victim_normal_square = np.zeros_like(self.fixture_normal_template)
+        victim_normal_square[self.fixture_normal_template] = self.mapper.pixel_grid.arrays["walls"][vns_min_x:vns_max_x, vns_min_y:vns_max_y][self.fixture_normal_template]
+
+        cv.imshow("normal_sqaure", victim_normal_square.astype(np.uint8) * 255)
+
+        moments = cv.moments(victim_normal_square.astype(np.uint8)) # calculate moments of binary image
+        centroid = Position2D(moments["m10"] / moments["m00"], moments["m01"] / moments["m00"]) # calculate x,y coordinate of center
+        normal_pos =  Position2D(victim_normal_square.shape) + centroid * -1
+
+        print("normal_pos", centroid)
+
+        center = Position2D(victim_normal_square.shape)
+        center = center / 2
+
+        return center.get_angle_to(centroid)
+
+    def get_fixture_normal_template(self, radius):
+        diameter = radius * 2 + 1
+
+        template = np.zeros((diameter, diameter), dtype=np.uint8)
+
+        template = cv.circle(template, (radius, radius), radius, 255, -1)
+
+        return template.astype(np.bool_)
+
+
+
+
+#######################
+# FILE: agents/granular_navigation_agent/granular_navigation_agent.py
+#######################
+
+import numpy as np
+import cv2 as cv
+
+
+
+
+class GranularNavigationAgent(Agent):
+    """
+    Navigates the map without any concept of 'tiles'.
+    """
+    def __init__(self, mapper: Mapper):
+        self.path_finder = PathFinder(mapper)
+        self.best_position_finder = BestPositionFinder(mapper)
+        self.victim_position_finder = VictimPositionFinder(mapper)
+        self.best_position = None
+        self.mapper = mapper
+        self.__end = False
+    
+    def update(self) -> None:
+        self.best_position_finder.calculate_best_position(finished_path=self.path_finder.is_path_finished() or self.path_finder.path_not_found)
+
+        self.best_position = self.best_position_finder.get_best_position()
+        self.path_finder.update(target_position=self.best_position)#np.array(Position2D(-0.08884384679907074, -0.01975882018000104)))
+
+        if self.path_finder.is_path_finished() and \
+           self.best_position == self.mapper.start_position and \
+           self.best_position.get_distance_to(self.mapper.robot_position) < 0.04:
+            self.__end = True
+
+        self.victim_position_finder.update()
+
+    def get_target_position(self) -> Position2D:
+        return self.path_finder.get_next_position()
+
+    def do_end(self) -> bool:
+        return self.__end
+    
+    def do_report_victim(self) -> bool:
+        return False
+        
+
+
+#######################
+# FILE: fixture_detection/victim_clasification.py
+#######################
+
+import cv2 as cv
+import numpy as np
+import random
+
+
+
+class VictimClassifier:
+    def __init__(self):
+        self.white = 255
+
+        self.victim_letter_filter = ColorFilter(lower_hsv=(0, 0, 0), upper_hsv=(5, 255, 100))
+
+        self.top_image_reduction = 1
+        self.horizontal_image_reduction = 1
+
+        
+        self.area_width = 10#20
+        self.area_height = 30
+        self.min_count_in_area = int(self.area_height * self.area_width * 0.3)
+
+        """
+        self.areas = {
+            "top": ((0, self.area_height),(50 - self.area_width // 2, 50 + self.area_width // 2)),
+            "middle": ((50 - self.area_height // 2, 50 + self.area_height // 2), (50 - self.area_width // 2, 50 + self.area_width // 2)),
+            "bottom": ((100 - self.area_height, 100), (50 - self.area_width // 2, 50 + self.area_width // 2 ))
+            }
+        """
+
+        self.areas = {
+            "top": ((0, self.area_height),                                       (self.area_width // -2, self.area_width // 2)),
+            "middle": ((50 - self.area_height // 2, 50 + self.area_height // 2), (self.area_width // -2, self.area_width // 2)),
+            "bottom": ((100 - self.area_height, 100),                            (self.area_width // -2, self.area_width // 2 ))
+            }
+        
+        self.letters = {
+            "H":{'top': False, 'middle': True, 'bottom': False},
+            "S":{'top': True, 'middle': True, 'bottom': True},
+            "U":{'top': False, 'middle': False, 'bottom': True}
+            }
+
+    def crop_white(self, binaryImg):
+        white = 255
+        rows, cols = np.where(binaryImg == white)
+        if len(rows) == 0 or len(cols) == 0:
+            # no white pixels found
+            return binaryImg
+        else:
+            minY, maxY = np.min(rows), np.max(rows)
+            minX, maxX = np.min(cols), np.max(cols)
+            return binaryImg[minY:maxY+1, minX:maxX+1]
+    
+    def isolate_victim(self, image):
+        binary = self.victim_letter_filter.filter(image)
+        letter = self.crop_white(binary)
+
+        letter = letter[self.top_image_reduction:, self.horizontal_image_reduction:letter.shape[1] - self.horizontal_image_reduction]
+        letter = self.crop_white(letter)
+        
+        if SHOW_FIXTURE_DEBUG:
+            cv.imshow("thresh", binary)
+
+        return letter
+
+    def classify_victim(self, victim):
+        letter = self.isolate_victim(victim["image"])
+
+        letter = cv.resize(letter, (100, 100), interpolation=cv.INTER_AREA)
+
+        # Calculat centroid of letter and reverse it
+        moments = cv.moments(letter)
+        center = int(letter.shape[1] - moments["m10"] / moments["m00"])
+      
+        if SHOW_FIXTURE_DEBUG:
+            cv.imshow("letra", letter)
+
+        letter_color = cv.cvtColor(letter, cv.COLOR_GRAY2BGR)
+        
+        images = {
+            "top":    letter[self.areas["top"][0][0]   :self.areas["top"][0][1],    self.areas["top"][1][0]    + center:self.areas["top"][1][1]    + center],
+            "middle": letter[self.areas["middle"][0][0]:self.areas["middle"][0][1], self.areas["middle"][1][0] + center:self.areas["middle"][1][1] + center],
+            "bottom": letter[self.areas["bottom"][0][0]:self.areas["bottom"][0][1], self.areas["bottom"][1][0] + center:self.areas["bottom"][1][1] + center]
+            }
+        
+        if SHOW_FIXTURE_DEBUG:
+            cv.rectangle(letter_color,(self.areas["top"][1][0] + center, self.areas["top"][0][0]),        (self.areas["top"][1][1] + center, self.areas["top"][0][1]     ), (0, 255, 0), 1)
+            cv.rectangle(letter_color, (self.areas["middle"][1][0] + center, self.areas["middle"][0][0]), (self.areas["middle"][1][1]+ center, self.areas["middle"][0][1]), (0, 0, 255), 1)
+            cv.rectangle(letter_color,(self.areas["bottom"][1][0] + center , self.areas["bottom"][0][0]),  (self.areas["bottom"][1][1]+ center, self.areas["bottom"][0][1]), (225, 0, 255), 1)
+            cv.imshow("letter_color", letter_color)
+
+        counts = {}
+        for key in images.keys():
+            count = 0
+            for row in images[key]:
+                for pixel in row:
+                    if pixel == self.white:
+                        count += 1
+
+            counts[key] = count > self.min_count_in_area
+
+
+        final_letter = random.choice(list(self.letters.keys()))
+        for letter_key in self.letters.keys():
+            if counts == self.letters[letter_key]:
+                final_letter = letter_key
+                break
+        
+        return final_letter
+
+
+#######################
+# FILE: fixture_detection/fixture_clasification.py
+#######################
+
+import math
+import random
+
+import numpy as np
+import cv2 as cv
+
+
+    
+class FixtureType:
+    def __init__(self, fixture_type, default_letter, ranges=None):
+        self.fixture_type = fixture_type
+        self.default_letter = default_letter
+        self.ranges = ranges
+    
+    def is_fixture(self, colour_counts: dict):
+        for color in self.ranges:
+            if not self.ranges[color][0] <= colour_counts[color] <= self.ranges[color][1]:
+                return False
+        return True
+            
+class FixtureDetector:
+    def __init__(self):
+        # Victim classification
+        self.victim_classifier = VictimClassifier()
+
+        # Color filtering
+        self.colors = ("black", "white", "yellow", "red")
+        self.color_filters = {
+            "black": ColorFilter(lower_hsv=(0, 0, 0), upper_hsv=(0, 0, 0)),
+            "white": ColorFilter(lower_hsv=(0, 0, 207), upper_hsv=(0, 0, 207)),
+            "yellow": ColorFilter(lower_hsv=(25, 157, 82), upper_hsv=(30, 255, 255)),
+            "red": ColorFilter(lower_hsv=(160, 170, 127), upper_hsv=(170, 255, 255))
+        }
+
+        # Fixture filtering
+        self.min_fixture_height = 23
+        self.min_fixture_width = 19
+    
+        # Fixture classification
+        self.possible_fixture_letters = ["P", "O", "F", "C", "S", "H", "U"]
+
+        # In order of priority
+        self.fixture_types = (
+            FixtureType("already_detected", "",  {"white": (1,    math.inf), 
+                                                  "black": (0,    0),
+                                                  "red":   (0,    0), 
+                                                  "yellow":(0,    0),}),
+
+            FixtureType("flammable", "F",        {"white": (1,    math.inf), 
+                                                  "red":   (1,    math.inf),}),
+
+            FixtureType("organic_peroxide", "O", {"red":   (1,    math.inf), 
+                                                  "yellow":(1,    math.inf),}),
+
+            FixtureType("victim",    "H",        {"white": (4000, math.inf), 
+                                                  "black": (100,  4000),}),
+
+            FixtureType("corrosive", "C",        {"white": (700,  2500), 
+                                                  "black": (1000, 2500),}),
+
+            FixtureType("poison",    "P",        {"white": (700,  4000), 
+                                                  "black": (0,    600),}),
+        )                    
+
+
+        # For tuning color filters
+        self.do_color_filter_tuning = False
+        self.filter_for_tuning = self.color_filters["white"]                       
+
+        if self.do_color_filter_tuning:
+            cv.namedWindow("trackbars")
+
+            cv.createTrackbar("min_h", "trackbars", self.filter_for_tuning.lower[0], 255, lambda x: None)
+            cv.createTrackbar("max_h", "trackbars", self.filter_for_tuning.upper[0], 255, lambda x: None)
+
+            cv.createTrackbar("min_s", "trackbars", self.filter_for_tuning.lower[1], 255, lambda x: None)
+            cv.createTrackbar("max_s", "trackbars", self.filter_for_tuning.upper[1], 255, lambda x: None)
+
+            cv.createTrackbar("min_v", "trackbars", self.filter_for_tuning.lower[2], 255, lambda x: None)
+            cv.createTrackbar("max_v", "trackbars", self.filter_for_tuning.upper[2], 255, lambda x: None)
+        
+    def tune_filter(self, image):
+        min_h = cv.getTrackbarPos("min_h", "trackbars")
+        max_h = cv.getTrackbarPos("max_h", "trackbars")
+        min_s = cv.getTrackbarPos("min_s", "trackbars")
+        max_s = cv.getTrackbarPos("max_s", "trackbars")
+        min_v = cv.getTrackbarPos("min_v", "trackbars")
+        max_v = cv.getTrackbarPos("max_v", "trackbars")
+        self.filter_for_tuning = ColorFilter((min_h, min_s, min_v), (max_h, max_s, max_v))
+        print(self.filter_for_tuning.lower, self.filter_for_tuning.upper)
+        cv.imshow("tunedImage", self.filter_for_tuning.filter(image))
+
+
+    def sum_images(self, images):
+        final_img = images[0]
+        for index, image in enumerate(images):
+            final_img += image
+            #cv.imshow(str(index), image)
+        final_img[final_img > 255] = 255
+        return final_img
+
+    def filter_fixtures(self, victims) -> list:
+        final_victims = []
+        for vic in victims:
+            if SHOW_FIXTURE_DEBUG:
+                print("victim:", vic["position"], vic["image"].shape)
+
+            if vic["image"].shape[0] > self.min_fixture_height and vic["image"].shape[1] > self.min_fixture_width:
+                final_victims.append(vic)
+
+        return final_victims
+
+    def find_fixtures(self, image) -> list:
+        """
+        Finds fixtures in the image.
+        Returns a list of dictionaries containing fixture positions and images.
+        """
+        binary_images = []
+        for f in self.color_filters.values():
+            binary_images.append(f.filter(image))
+
+        binary_image = self.sum_images(binary_images)
+        #print(binary_image)
+        if SHOW_FIXTURE_DEBUG:
+            cv.imshow("binaryImage", binary_image)
+        
+        # Encuentra los contornos, aunque se puede confundir con el contorno de la letra
+        contours, _ = cv.findContours(binary_image, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+        # Pra evitar la confusion dibuja rectangulos blancos donde estan los contornos en la imagen y despues vuelve a
+        # sacar los contornos para obtener solo los del rectangulo, no los de las letras.
+        for c0 in contours:
+            x, y, w, h = cv.boundingRect(c0)
+            cv.rectangle(binary_image, (x, y), (x + w, y + h), (225, 255, 255), -1)
+        contours, _ = cv.findContours(binary_image, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+        # saca las medidas y la posicion de los contornos y agrega a la lista de imagenes la parte esa de la imagen original
+        # Tambien anade la posicion de cada recuadro en la imagen original
+        final_victims = []
+        for c in contours:
+            x, y, w, h = cv.boundingRect(c)
+            final_victims.append({"image":image[y:y + h, x:x + w], "position":(x, y)})
+        return self.filter_fixtures(final_victims)
+            
+    def count_colors(self, image) -> dict:
+        color_point_counts = {}
+
+        for name, filter in self.color_filters.items():
+            # Filter image to get specific color
+            color_image = filter.filter(image)
+
+            # Count where the mask is true
+            color_point_counts[name] = np.count_nonzero(color_image)
+
+        return color_point_counts
+
+    def classify_fixture(self, fixture) -> str:
+        image = cv.resize(fixture["image"], (100, 100), interpolation=cv.INTER_AREA)
+
+        color_point_counts = self.count_colors(image)
+        
+        if SHOW_FIXTURE_DEBUG:
+            print(color_point_counts)
+
+        # Check all filters. Find first color counts that fit.
+        final_fixture_filter = None
+        for filter in self.fixture_types:
+            if filter.is_fixture(color_point_counts):
+                final_fixture_filter = filter
+                break
+        
+        # If nothing matches return random letter
+        if final_fixture_filter is None:
+            letter = random.choice(self.possible_fixture_letters)
+
+        # If it's a victim classify it
+        elif final_fixture_filter.fixture_type == "victim":
+            letter = self.victim_classifier.classify_victim(fixture)
+
+        # If already detected then it shouldn't be reported
+        elif final_fixture_filter.fixture_type == "already_detected":
+            letter = None
+        
+        # If it's any other type then the letter defined for it can be returned
+        else:
+            letter = final_fixture_filter.default_letter
+
+        if SHOW_FIXTURE_DEBUG:
+            print("FIXTURE: ", letter)
+
+        return letter
+
+
+#######################
+# FILE: executor/executor.py
+#######################
+
+
+
+
+
+
+
+
+
+import time
+
+class Executor:
+    def __init__(self, agent: Agent, mapper: Mapper, robot: Robot) -> None:
+        self.agent = agent # Tells the executor what to do
+        self.mapper = mapper # Maps everything
+        self.robot = robot # Low level movement and sensing
+
+        self.delay_manager = DelayManager()
+        self.stuck_detector = StuckDetector() # Detects if the wheels of the robot are moving or not
+
+        self.state_machine = StateMachine("init") # Manages states
+        self.state_machine.create_state("init", self.state_init, {"explore",}) # This state initializes and calibrates the robot
+        self.state_machine.create_state("explore", self.state_explore, {"end",}) # This state follows the position returned by the agent
+        self.state_machine.create_state("end", self.state_end)
+
+        self.sequencer = Sequencer(reset_function=self.delay_manager.reset_delay) # Allows for asynchronous programming
+
+        self.fixture_detector = FixtureDetector()
+        
+        # Flags
+        self.mapping_enabled = False
+        self.victim_reporting_enabled = False
+
+        # Sequential functions used frequently
+        self.seq_print =           self.sequencer.make_simple_event( print)
+        self.seq_move_wheels =     self.sequencer.make_simple_event( self.robot.move_wheels)
+
+        self.seq_rotate_to_angle = self.sequencer.make_complex_event(self.robot.rotate_to_angle)
+        self.seq_move_to_coords =  self.sequencer.make_complex_event(self.robot.move_to_coords)
+        self.seq_delay_seconds =   self.sequencer.make_complex_event(self.delay_manager.delay_seconds)
+
+    def run(self):
+        """Advances the simulation, updates all components and executes the state machine."""
+        
+        while self.robot.do_loop():
+            self.robot.update() # Updates robot position and rotation, sensor positions and values, etc.
+
+            self.delay_manager.update(self.robot.time)
+            self.stuck_detector.update(self.robot.position,
+                                       self.robot.previous_position,
+                                       self.robot.drive_base.get_wheel_direction())
+            
+            self.do_mapping()
+
+            self.state_machine.run()
+
+            time.sleep(0.032)
+            
+    def do_mapping(self):
+        """Updates the mapper is mapping is enabled."""
+
+        if self.mapping_enabled:
+                # Floor and lidar mapping
+                self.mapper.update(self.robot.get_point_cloud(), 
+                                   self.robot.get_out_of_bounds_point_cloud(),
+                                   self.robot.get_lidar_detections(),
+                                   self.robot.get_camera_images(), 
+                                   self.robot.position,
+                                   self.robot.orientation)
+        else:
+            # Only position and rotation
+            self.mapper.update(robot_position=self.robot.position, 
+                               robot_orientation=self.robot.orientation)
+            
+    # STATES
+    def state_init(self, change_state_function):
+        """Initializes and calibrates the robot."""
+
+        self.sequencer.start_sequence() # Starts the sequence
+        self.seq_delay_seconds(0.5)
+
+        self.sequencer.simple_event(self.calibrate_position_offsets) # Calculates offsets in the robot position, in case it doesn't start perfectly centerd
+        
+        self.sequencer.simple_event(self.mapper.register_start, self.robot.position) # Informs the mapping components of the starting position of the robot
+        
+        self.seq_calibrate_robot_rotation() # Calibrates the rotation of the robot using the gps
+
+        # Starts mapping walls
+        if self.sequencer.simple_event():
+            self.mapping_enabled = True
+            self.victim_reporting_enabled = True
+
+        self.seq_delay_seconds(0.5)
+        self.sequencer.complex_event(self.robot.rotate_to_angle, angle=Angle(90, Angle.DEGREES), direction=RotationCriteria.LEFT)
+        self.sequencer.complex_event(self.robot.rotate_to_angle, angle=Angle(180, Angle.DEGREES), direction=RotationCriteria.LEFT)
+        self.seq_delay_seconds(0.5)
+
+        self.sequencer.simple_event(change_state_function, "explore") # Changes state
+        self.sequencer.seq_reset_sequence() # Resets the sequence
+
+    def state_explore(self, change_state_function):
+        """Follows the instructions of the agent."""
+
+        self.sequencer.start_sequence() # Starts the sequence
+
+        self.agent.update()
+
+        self.seq_move_to_coords(self.agent.get_target_position())
+
+        self.sequencer.seq_reset_sequence() # Resets the sequence but doesn't change state, so it starts all over again.
+
+        if SHOW_DEBUG:
+            print("rotation:", self.robot.orientation)
+            print("position:", self.robot.position)
+        
+        if self.agent.do_end():
+            self.state_machine.change_state("end")
+    
+    def state_end(self, change_state_function):
+        self.robot.comunicator.send_end_of_play()
+
+    def calibrate_position_offsets(self):
+        """Calculates offsets in the robot position, in case it doesn't start perfectly centerd."""
+        print("robot_position:", self.robot.position)
+        self.robot.position_offsets = self.robot.position % (self.mapper.quarter_tile_size * 2)
+        print("positionOffsets: ", self.robot.position_offsets)
+        
+
+    def seq_calibrate_robot_rotation(self):
+        """ Calibrates the robot rotation using the gps."""
+
+        if self.sequencer.simple_event():
+            self.robot.auto_decide_orientation_sensor = False
+        self.seq_move_wheels(-1, -1)
+        self.seq_delay_seconds(0.1)
+        if self.sequencer.simple_event(): 
+            self.robot.orientation_sensor = self.robot.GPS
+        self.seq_move_wheels(1, 1)
+        self.seq_delay_seconds(0.1)
+        if self.sequencer.simple_event(): 
+            self.robot.orientation_sensor = self.robot.GYROSCOPE
+        self.seq_delay_seconds(0.1)
+        self.seq_move_wheels(0, 0)
+        self.seq_move_wheels(-1, -1)
+        self.seq_delay_seconds(0.1)
+        self.seq_move_wheels(0, 0)
+        if self.sequencer.simple_event():
+            self.robot.auto_decide_orientation_sensor = True
+            
+
+
+
+
+
+    
+
+
+
+
+
+#######################
+# FILE: main.py
+#######################
+
+
+def main():
+    robot = Robot(time_step=32)
+    mapper = Mapper(tile_size=0.12, robot_diameter=robot.diameter, camera_distance_from_center=robot.diameter / 2)
+    agent = GranularNavigationAgent(mapper=mapper)
+
+    executor = Executor(agent, mapper, robot)
+
+    executor.run()
+
+
+main()
