@@ -1,4 +1,10 @@
 import numpy as np
+import cv2 as cv
+import copy
+from data_structures.vectors import Position2D, Vector2D
+from data_structures.angle import Angle
+import math
+from flow_control.step_counter import StepCounter
 
 
 class CompoundExpandablePixelGrid:
