@@ -1,5 +1,5 @@
-absuloute_dir = r'/home/ale/IITA/rescate_laberinto/src'
+absolute_dir = r'C:\Programming\RoboCup_Erebus\Erebus-2023\src'
 import sys
 
-sys.path.append(absuloute_dir)
+sys.path.append(absolute_dir)
 import main
