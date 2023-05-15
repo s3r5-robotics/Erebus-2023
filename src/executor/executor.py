@@ -129,9 +129,10 @@ class Executor:
 
         self.seq_move_to_coords(self.agent.get_target_position())
 
-        # Detect if the robot is stuck, if so move back
+        # Detect if the robot is stuck
         if self.stuck_detector.is_stuck():
-            self.robot.drive_base.move_wheels(left_ratio=-50, right_ratio=-30)
+            # What do we do here :confused_emoji:
+            self.robot.drive_base.move_to_position()
 
         self.sequencer.seq_reset_sequence() # Resets the sequence but doesn't change state, so it starts all over again.
 

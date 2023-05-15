@@ -22,10 +22,10 @@ class StuckDetector:
         # Check if the robot is not moving
         if self.__is_stuck_this_step():
             self.stuck_counter += 1
-            if SHOW_DEBUG:
+            if SHOW_DEBUG or True:
                 print(f"Detecting Stuck: {self.stuck_counter}/{self.stuck_threshold}")
         else:
-            self.stuck_counter = 0    
+            self.stuck_counter = 0
 
     def is_stuck(self):
         return self.stuck_counter > self.stuck_threshold
