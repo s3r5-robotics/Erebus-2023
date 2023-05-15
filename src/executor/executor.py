@@ -1,10 +1,10 @@
 from data_structures.angle import Angle
+from executor.stuck_detector import StuckDetector
 
 from flow_control.sequencer import Sequencer
 from flow_control.state_machine import StateMachine
 from flow_control.delay import DelayManager
 
-from executor.stuck_detector import StuckDetector
 
 from robot.robot import Robot
 from robot.drive_base import Criteria as RotationCriteria
@@ -41,7 +41,7 @@ class Executor:
         
         # Flags
         self.mapping_enabled = False
-        self.victim_reporting_enabled = False
+        self.victim_reporting_enabled = True
 
         # Sequential functions used frequently
         self.seq_print =           self.sequencer.make_simple_event( print)
@@ -52,27 +52,29 @@ class Executor:
         self.seq_move_to_coords =  self.sequencer.make_complex_event(self.robot.move_to_coords)
         self.seq_delay_seconds =   self.sequencer.make_complex_event(self.delay_manager.delay_seconds)
 
+        self.__previous_position = 0
+
         self.letter_to_report = None
 
     def run(self):
         """Advances the simulation, updates all components and executes the state machine."""
         
         while self.robot.do_loop():
-            self.robot.update() # Updates robot position and rotation, sensor positions and values, etc.
+            self.robot.update()  # Updates robot position and rotation, sensor positions and values, etc.
 
             self.delay_manager.update(self.robot.time)
-            self.stuck_detector.update(self.robot.position,
-                                       self.robot.previous_position,
-                                       self.robot.drive_base.get_wheel_direction())
-            
             self.do_mapping()
-
             self.state_machine.run()
+
+            self.stuck_detector.update(self.robot.position,
+                                       self.__previous_position,
+                                       self.robot.drive_base.get_wheel_direction())
+            self.__previous_position = self.robot.position
 
             if DO_SLOW_DOWN:
                 time.sleep(SLOW_DOWN_S)
-
-            print("state:", self.state_machine.state)
+            if SHOW_DEBUG:
+                print("state:", self.state_machine.state)
             
     def do_mapping(self):
         """Updates the mapper is mapping is enabled."""
@@ -116,6 +118,7 @@ class Executor:
         self.sequencer.simple_event(change_state_function, "explore") # Changes state
         self.sequencer.seq_reset_sequence() # Resets the sequence
 
+        self.stuck_detector = StuckDetector()
 
     def state_explore(self, change_state_function):
         """Follows the instructions of the agent."""
@@ -125,6 +128,10 @@ class Executor:
         self.agent.update()
 
         self.seq_move_to_coords(self.agent.get_target_position())
+
+        # Detect if the robot is stuck, if so move back
+        if self.stuck_detector.is_stuck():
+            self.robot.drive_base.move_wheels(left_ratio=-50, right_ratio=-30)
 
         self.sequencer.seq_reset_sequence() # Resets the sequence but doesn't change state, so it starts all over again.
 

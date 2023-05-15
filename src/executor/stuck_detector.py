@@ -1,4 +1,6 @@
 from data_structures.vectors import Position2D
+from flags import SHOW_DEBUG
+
 
 class StuckDetector:
     """Checks if the robot is rotating the wheels but not actually moving."""
@@ -20,6 +22,8 @@ class StuckDetector:
         # Check if the robot is not moving
         if self.__is_stuck_this_step():
             self.stuck_counter += 1
+            if SHOW_DEBUG:
+                print(f"Detecting Stuck: {self.stuck_counter}/{self.stuck_threshold}")
         else:
             self.stuck_counter = 0    
 
