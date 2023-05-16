@@ -116,7 +116,8 @@ class Mapper:
             final_grid.append(final_row)
         return np.array(final_grid)
         """
-        pass # TODO
+        final_grid = []
+        return np.array(final_grid)
     
 
     def __lidar_to_node_grid(self):

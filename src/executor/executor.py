@@ -147,6 +147,7 @@ class Executor:
             change_state_function("detect_fixtures")
 
     def state_end(self, change_state_function):
+        self.robot.comunicator.send_map(self.mapper.get_grid_for_bonus())
         self.robot.comunicator.send_end_of_play()
 
     def state_detect_fixtures(self, change_state_function):
