@@ -1,0 +1,7 @@
+### IDE ###
+# PyCharm
+.idea/
+
+### Python ###
+# Virtual Environment
+venv/
