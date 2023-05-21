@@ -21,24 +21,29 @@
    in the previous step checks-out the correct specific version. This is useful as an occasional check for
    new releases, to be checked out and committed as a new submodule hash.
 
-3. Setup virtual environment bas``ed on Pipfile (using PyCharm or by executing `pipenv install` in this directory)
+3. Setup virtual environment based on Pipfile (using PyCharm or by executing `pipenv install` in this directory)
 
-4. Run script [`setup_environment.py`](setup_environment.py) using this virtual environment and follow
+4. Run script [`helper_scripts/setup_environment.py`](helper_scripts/setup_environment.py) using this virtual environment and follow
    its further instructions.
+
+5. Run [`helper_scripts/update_path.py`](helper_scripts/update_path.py) to update the relative path.  
 
 ## Running the Simulation
 
-1. Open one of the `.wbt` worlds located in [`erebus/game/worlds/`](erebus/game/worlds/) in Webots
+1. Open one of the `.wbt` worlds located in [`erebus/game/worlds/`](erebus/game/worlds) in Webots
 
 2. If Erebus Simulation Control web page did open automatically in the default browser, then
    in the left panel, right-click on `DEF MAINSUPERVISOR Robot` and click _Show Robot Window_.
 
-3. Click LOAD under Program icon
+3. Click "**LOAD**" under Program icon
    (<img src="erebus/game/plugins/robot_windows/MainSupervisorWindow/program.png" width="20" height="20">)
-   and load [`hello_world.py`](code/hello_world.py) script.
+   and load the [`run.py`](code/run.py) script.
 
-4. Click LOAD under robot icon
+4. Click "**LOAD**" under robot icon
    (<img src="erebus/game/plugins/robot_windows/MainSupervisorWindow/robot.png" width="20" height="20">)
    and load the [`{robot}.json`](robots).
 
-5. Click Play button to start the simulation.
+5. Click the "***Play button***" to start the simulation.  
+
+As long as you don't move the `code/` folder, you can just press the "**Reset**" and "**Play**" buttons, 
+to run the simulation again.
