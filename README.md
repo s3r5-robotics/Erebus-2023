@@ -35,7 +35,7 @@
 
 3. Click LOAD under Program icon
    (<img src="erebus/game/plugins/robot_windows/MainSupervisorWindow/program.png" width="20" height="20">)
-   and load [`hello_world.py`](hello_world.py) script.
+   and load [`hello_world.py`](code/hello_world.py) script.
 
 4. Click LOAD under robot icon
    (<img src="erebus/game/plugins/robot_windows/MainSupervisorWindow/robot.png" width="20" height="20">)
