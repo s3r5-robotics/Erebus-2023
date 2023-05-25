@@ -26,8 +26,6 @@
 4. Run script [`helper_scripts/setup_environment.py`](helper_scripts/setup_environment.py) using this virtual environment and follow
    its further instructions.
 
-5. Run [`helper_scripts/update_path.py`](helper_scripts/update_path.py) to update the relative path.  
-
 ## Running the Simulation
 
 1. Open one of the `.wbt` worlds located in [`erebus/game/worlds/`](erebus/game/worlds) in Webots
@@ -46,4 +44,4 @@
 5. Click the "***Play button***" to start the simulation.  
 
 As long as you don't move the `code/` folder, you can just press the "**Reset**" and "**Play**" buttons, 
-to run the simulation again.
+to run the simulation again - `run.py` will automatically reload `hello_world.py`.
