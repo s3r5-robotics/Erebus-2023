@@ -28,6 +28,23 @@
 
 ## Running the Simulation
 
+### Extern Robot Controller - running directly from IDE
+
+This method enables running Python script directly from IDE (PyCharm), with full debugging support.
+When Robot Controller (`class Robot`) is initialized, `wb.wb_robot_init()` call in its `__init__()`
+method ensures that the Webots simulation is running and that the controller gets connected to it.
+
+- [Erebus Remote Controller Instructions](https://docs.google.com/document/d/19yIzfaxb6fx1lw7hKTE6EkX7_Pi2NzfE_oGaks76Kgo/edit)
+- [Webots User Guide - Running Extern Robot Controllers](https://cyberbotics.com/doc/guide/running-extern-robot-controllers)
+- [Webots User Guide - Tutorial 4: More about Controllers (30 Minutes)](https://cyberbotics.com/doc/guide/tutorial-4-more-about-controllers?tab-language=python)
+
+1. Run [`helper_scripts/run_webots_for_external_controller.py`](helper_scripts/run_webots_for_external_controller.py).
+   This script will run Webots (or attach to already running instance) and enable Extern Robot Controllers.
+
+2. Run/Debug [`code/main.py`](code/main.py) in your preferred IDE - it will automatically connect to the Webots instance.
+ 
+### Using Robot Window upload 
+
 1. Open one of the `.wbt` worlds located in [`erebus/game/worlds/`](erebus/game/worlds) in Webots
 
 2. If Erebus Simulation Control web page did open automatically in the default browser, then
