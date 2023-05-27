@@ -44,4 +44,4 @@
 5. Click the "***Play button***" to start the simulation.  
 
 As long as you don't move the `code/` folder, you can just press the "**Reset**" and "**Play**" buttons, 
-to run the simulation again - `run.py` will automatically reload `hello_world.py`.
+to run the simulation again - `run.py` will automatically reload `main.py`.

@@ -15,7 +15,7 @@ print("Add Webots Python modules to this project to prevent unresolved reference
 
 # Cannot use `Path(__file__).parent` in the run.py file, because it is saved under different location
 # when loaded from the Robot Window. Plus, if that would be the case, relative import would work anyway.
-main_script = "hello_world.py"
+main_script = "main.py"
 main_script = Path(__file__).parent.joinpath("..", "code", main_script).resolve()
 main_script.parent.joinpath("run.py").write_text(
     "import sys\n"
