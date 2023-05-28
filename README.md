@@ -28,6 +28,10 @@
 
 ## Running the Simulation
 
+Some useful links:
+- [Erebus - Getting Started](https://erebus.rcj.cloud/docs/tutorials/getting-started/)
+- [Webots Reference Manual - Nodes and API Functions](https://cyberbotics.com/doc/reference/nodes-and-api-functions)
+
 ### Extern Robot Controller - running directly from IDE
 
 This method enables running Python script directly from IDE (PyCharm), with full debugging support.

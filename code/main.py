@@ -1,5 +1,7 @@
-from controller import Robot
+from robot import Robot
 
 robot = Robot()
 
-print(f"I am robot named '{robot.name}'")
+while robot.run():
+    # Robot simulation is running
+    pass
