@@ -1,7 +1,6 @@
 from typing import Optional
 
 import controller
-import controller.wb
 from devices import (Device, Accelerometer, Camera, ColorSensor, DistanceSensor, Emitter, GPS, LED, Lidar, Motor,
                      Receiver)
 
@@ -11,7 +10,7 @@ class Robot(controller.Robot):
     # noinspection PyTypeChecker
     def __init__(self, time_step: Optional[int] = None) -> None:
         super().__init__()
-        self.time_step = int(time_step or controller.wb.wb.wb_robot_get_basic_time_step())
+        self.time_step = round(time_step or self.basic_time_step)
         print(f"Robot {self.name} running with time step: {self.time_step}")
 
         # Sensors

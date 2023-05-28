@@ -93,6 +93,9 @@ class Motor(InstanceSubclass, Device, controller.Motor):
         Device.__init__(self, time_step)
         # Prefer integrated sensor if available
         self.sensor = PositionSensor(self.position_sensor or sensor, time_step)
+        # Enable velocity control instead of position control
+        self.target_position = float("inf")
+        self.target_velocity = 0
 
 
 # endregion Wheels
