@@ -58,6 +58,11 @@ class InertialUnit(InstanceSubclass, Sensor, controller.InertialUnit):
         r, p, y = map(math.degrees, self.roll_pitch_yaw)
         return y, p, r
 
+    @property
+    def yaw_dg(self) -> float:
+        """Get yaw in degrees"""
+        return math.degrees(self.roll_pitch_yaw[2])
+
 
 class GPS(InstanceSubclass, Sensor, controller.GPS):
 
