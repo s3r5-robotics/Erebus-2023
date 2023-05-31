@@ -115,6 +115,26 @@ class Angle(float):
     >>> assert Angle(math.pi / 2) + Angle(deg=90) == Angle(deg=180)
     >>> assert Angle(math.pi / 2) + Angle(deg=90) == math.pi
     >>> assert Angle(2 * math.pi) + Angle(2 * math.pi) == 0
+
+    >>> def assert_rotation(from_deg: float, to_deg: float, result_deg: float):
+    ...     diff = Angle(deg=from_deg).rotation_to(Angle(deg=to_deg)).deg
+    ...     assert abs(diff - result_deg) < 1e-10, f"Angle({from_deg}°).rotation_to({to_deg}°)={diff}° != {result_deg}°"
+    ...     # Also test the reverse rotation - the result should be opposite, except for 180° which is always positive
+    ...     if result_deg != 180:
+    ...         result_deg = -result_deg
+    ...     diff = Angle(deg=to_deg).rotation_to(Angle(deg=from_deg)).deg
+    ...     assert abs(diff - result_deg) < 1e-10, f"Angle({to_deg}°).rotation_to({from_deg}°)={diff}° != {result_deg}°"
+
+    >>> assert_rotation(0, 0, 0)
+    >>> assert_rotation(0, 170, 170)
+    >>> assert_rotation(0, 180, 180)
+    >>> assert_rotation(0, 190, -170)
+    >>> assert_rotation(0, 350, -10)
+    >>> assert_rotation(0, 360, 0)
+    >>> assert_rotation(0, 370, 10)
+    >>> assert_rotation(-10, 10, 20)
+    >>> assert_rotation(540, -720, 180)
+    >>> assert_rotation(-720, 730, 10)
     """
 
     def __new__(cls: Type[_T], rad: SupportsFloat = None, deg: SupportsFloat = None,
@@ -152,3 +172,15 @@ class Angle(float):
     def deg(self) -> float:
         """Get this angle in degrees"""
         return math.degrees(self)
+
+    def rotation_to(self, other: float) -> 'Angle':
+        """
+        Get the shortest rotation to other angle (maximum 180 degrees)
+
+        :param other: Target angle to which we want to rotate, in radians.
+
+        :return: Angle in (-π, π] radians, where positive angle means counter-clockwise rotation
+                 and negative angle means clockwise rotation (math convention).
+        """
+        # If the difference is more than 180 degrees, then the shortest rotation is the other way around
+        return Angle(other - self, normalize='-pi')

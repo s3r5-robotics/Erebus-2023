@@ -4,9 +4,10 @@ from types import NoneType
 from typing import Optional, Type
 
 import controller
-from devices import (DeviceType, Accelerometer, Camera, ColorSensor, DistanceSensor, Emitter, GPS, Gyro, InertialUnit,
-                     LED, Lidar, Motor, Receiver)
 import debug
+from devices import (DeviceType, Camera, ColorSensor, DistanceSensor, Emitter, GPS, InertialUnit,
+                     LED, Lidar, Motor, Receiver)
+from movement import Drivetrain
 
 
 class Robot(controller.Robot):
@@ -17,25 +18,22 @@ class Robot(controller.Robot):
         self.time_step = round(time_step or self.basic_time_step)
         print(f"Robot {self.name} running with time step: {self.time_step}")
 
-        # Sensors (Optional[] devices may not be present on all versions of SERSy-1)
-        self.gyro = self._get_device("gyro", Optional[Gyro])
+        # Sensors
         self.imu = self._get_device("inertial_unit", InertialUnit)
         self.gps = self._get_device("gps", GPS)
         self.camera_l = self._get_device("camera_left", Camera)
-        self.camera_f = self._get_device("camera_front", Optional[Camera])
         self.camera_r = self._get_device("camera_right", Camera)
         self.color_sensor = self._get_device("colour_sensor", ColorSensor)
-        self.accel = self._get_device("accelerometer", Optional[Accelerometer])
         self.lidar = self._get_device("lidar", Lidar)
         # Distance sensors
         self.distance_l = self._get_device("distance_sensor_left", DistanceSensor)
         self.distance_f = self._get_device("distance_sensor_front", DistanceSensor)
         self.distance_r = self._get_device("distance_sensor_right", DistanceSensor)
         # Wheels
-        self.ml = Motor(self._get_device("wheel1 motor", controller.Motor),
+        motor_l = Motor(self._get_device("wheel1 motor", controller.Motor),
                         self._get_device("wheel1 sensor", controller.PositionSensor),
                         self.time_step)
-        self.mr = Motor(self._get_device("wheel2 motor", controller.Motor),
+        motor_r = Motor(self._get_device("wheel2 motor", controller.Motor),
                         self._get_device("wheel2 sensor", controller.PositionSensor),
                         self.time_step)
         # Other, built-in
@@ -50,6 +48,12 @@ class Robot(controller.Robot):
         if self.imu.noise:
             warnings.warn(f"{type(self.imu).__name__} '{self.imu.name}' is noisy - {self.imu.noise}!"
                           " Consider adding some filtering or implement sensor fusion.")
+
+        # Higher level combined devices using peripheral devices retrieved above
+        self.drive = Drivetrain(motor_l, motor_r, self.imu, self.gps)
+
+        # States
+        self.step_counter = 0
 
     def _get_device(self, name: str, cls: Type[DeviceType]) -> DeviceType:
         """
@@ -85,17 +89,30 @@ class Robot(controller.Robot):
         return cls(device, time_step=self.time_step)
 
     def run(self) -> bool:
-        """Run one simulation step, process all sensors and actuators"""
+        """
+        Run one simulation step, process all sensors and actuators
+
+        :return: True if the simulation should continue, False if Webots is about to terminate the controller.
+        """
         if self.step(self.time_step) == -1:  # -1 indicates that Webots is about to terminate the controller
             return False
+        self.step_counter += 1
+
+        if debug.ANY:
+            print(f"{self.step_counter}", end="    ")
 
         # TODO: Main loop
 
-        yaw, pitch, roll = self.imu.yaw_pitch_roll
-        if debug.MEASUREMENTS:
-            print(f"L|F|R   {self.distance_l.value:.3f} | {self.distance_f.value:.3f} | {self.distance_r.value:.3f}    "
-                  f"Y|P|R   {yaw.deg:.3f} | {pitch.deg:.3f} | {roll.deg:.3f}")
-        self.ml.target_velocity = 0.4
-        self.mr.target_velocity = 0.5
+        if self.step_counter == 1:
+            self.drive.forward(0.1)
+
+        if debug.DISTANCE:
+            print(f"L|F|R  {self.distance_l.value:.3f} | {self.distance_f.value:.3f} | {self.distance_r.value:.3f}",
+                  end="    ")
+
+        self.drive.update()
+
+        if debug.ANY:
+            print(flush=True)
 
         return True
