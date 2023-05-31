@@ -1,6 +1,10 @@
 import inspect
+import math
 import sys
+import typing
+from typing import Tuple
 
+import controller.device
 import controller.sensor
 from utils import InstanceSubclass
 
@@ -24,6 +28,18 @@ class Sensor(Device, controller.sensor.Sensor):
         self.enable(time_step)
 
 
+DeviceType = typing.TypeVar("DeviceType", Device, controller.device.Device)
+"""
+Type alias for any type which is subclass of Device or controller.Device
+
+TypeVar is used in function typing instead of just the base-class to enable static type checking of the return type
+of a function, based on the arguments.
+https://medium.com/@steveYeah/using-generics-in-python-99010e5056eb
+https://stackoverflow.com/questions/69184577/return-type-based-on-type-argument
+https://stackoverflow.com/questions/68650071/type-annotations-for-base-and-inherited-classes-is-generic-and-typevar-the-rig
+"""
+
+
 # region Sensors
 
 class Gyro(InstanceSubclass, Sensor, controller.Gyro):
@@ -34,6 +50,13 @@ class Gyro(InstanceSubclass, Sensor, controller.Gyro):
 class InertialUnit(InstanceSubclass, Sensor, controller.InertialUnit):
     def __init__(self, _: controller.InertialUnit, time_step: int):
         Sensor.__init__(self, time_step)
+
+    @property
+    def yaw_pitch_roll_dg(self) -> Tuple[float, float, float]:
+        """Get yaw, pitch, roll in degrees"""
+        # The same as (v * 180 / math.pi for v in self.roll_pitch_yaw) but better/shorter looking
+        r, p, y = map(math.degrees, self.roll_pitch_yaw)
+        return y, p, r
 
 
 class GPS(InstanceSubclass, Sensor, controller.GPS):

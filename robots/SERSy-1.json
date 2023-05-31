@@ -116,19 +116,6 @@
 		"rz": 0,
 		"a": 1.57
 	},
-	"acc": {
-		"dictName": "acc",
-		"name": "Accelerometer",
-		"customName": "accelerometer",
-		"type": "add",
-		"x": 0,
-		"y": 0,
-		"z": 0,
-		"rx": -0.5858,
-		"ry": 0.5858,
-		"rz": 0.5858,
-		"a": 2.09
-	},
 	"Distance Sensor 3": {
 		"dictName": "Distance Sensor 3",
 		"name": "Distance Sensor",
@@ -141,5 +128,18 @@
 		"ry": 0.58,
 		"rz": 0.58,
 		"a": 2.09
+	},
+	"iu": {
+		"dictName": "iu",
+		"name": "InertialUnit",
+		"customName": "inertial_unit",
+		"type": "add",
+		"x": 0,
+		"y": 0,
+		"z": 0,
+		"rx": 1,
+		"ry": 0,
+		"rz": 0,
+		"a": 0
 	}
 }
