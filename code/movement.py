@@ -83,10 +83,12 @@ class PID:
 
     # PID implementation based on
     # http://en.wikipedia.org/wiki/PID_controller
+    # http://brettbeauregard.com/blog/category/pid/ (very good explanation from the author of the Arduino PID library)
     # https://github.com/br3ttb/Arduino-PID-Library
     # https://www.reddit.com/r/Python/comments/1qxp5d/pid_tuning_library/
 
-    def __init__(self, time_step: float, output_range: Tuple[float, float], kp: float, ki: float, kd: float) -> None:
+    def __init__(self, time_step: float, output_range: Tuple[float, float], kp: float, ki: float, kd: float,
+                 d_on_measurement: bool = True) -> None:
         """
         Initialize P, PI, PD or PID controller with given coefficients and output range.
 
@@ -95,6 +97,9 @@ class PID:
         :param kp:               Proportional coefficient for P, PI, PD and PID controllers.
         :param ki:               Integral coefficient for PI and PID controllers.
         :param kd:               Derivative coefficient for PD and PID controllers.
+        :param d_on_measurement: If True, then the derivative term is calculated on the input directly instead
+                                 of on the error (which is the classic way). Read more on:
+                                 http://brettbeauregard.com/blog/2011/04/improving-the-beginner%e2%80%99s-pid-derivative-kick/
         """
         assert kp is not None, "Proportional coefficient (kp) is mandatory"
         assert output_range[0] < output_range[1], "Output range must be a tuple (min, max) with min < max"
@@ -105,11 +110,13 @@ class PID:
         self._kp = kp
         self._ki = ki * time_step
         self._kd = kd / time_step
+        self._d_on_measurement = d_on_measurement
 
         # Internal state
         self._i = 0  # Integral
 
-        self._error: Optional[float] = None  # Last error value (for derivative calculation)
+        self._input: Optional[float] = None  # Last input value (for derivative calculation if d_on_measurement)
+        self._error: Optional[float] = None  # Last error value (for derivative calculation if not d_on_measurement)
 
     def _limit(self, value: float) -> float:
         return min(self._out_max, max(self._out_min, value))
@@ -122,9 +129,11 @@ class PID:
         """
         # Calculate error terms
         error = target_value - measured_value
+        d_input = (measured_value - self._input) if (self._input is not None) else 0
         d_error = (error - self._error) if (self._error is not None) else 0
 
         # Store variables for next calculation
+        self._input = measured_value
         self._error = error
 
         # Calculate the proportional term (always present)
@@ -138,7 +147,7 @@ class PID:
         self._i = self._limit(self._i)
 
         # Calculate the derivative term in case of PD or PID controller
-        d = self._kd * d_error
+        d = -(self._kd * d_input) if self._d_on_measurement else (self._kd * d_error)
 
         # Compute PID Output
         return self._limit(p + self._i + d)
@@ -147,4 +156,5 @@ class PID:
         """Reset internal state"""
         self._i = 0
 
+        self._input = None
         self._error = None
