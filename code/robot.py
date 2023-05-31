@@ -4,6 +4,8 @@ from types import NoneType
 from typing import Optional, Type
 
 import controller
+
+from flow.state_machine import StateMachine
 from devices import (DeviceType, Accelerometer, Camera, ColorSensor, DistanceSensor, Emitter, GPS, Gyro, InertialUnit,
                      LED, Lidar, Motor, Receiver)
 
@@ -16,6 +18,14 @@ class Robot(controller.Robot):
         self.time_step = round(time_step or self.basic_time_step)
         print(f"Robot {self.name} running with time step: {self.time_step}")
 
+        self.__init_devices()
+        self.__init_state()
+
+        if self.imu.noise:
+            warnings.warn(f"{type(self.imu).__name__} '{self.imu.name}' is noisy - {self.imu.noise}!"
+                          " Consider adding some filtering or implement sensor fusion.")
+
+    def __init_devices(self):
         # Sensors (Optional[] devices may not be present on all versions of SERSy-1)
         self.gyro = self._get_device("gyro", Optional[Gyro])
         self.imu = self._get_device("inertial_unit", InertialUnit)
@@ -46,9 +56,10 @@ class Robot(controller.Robot):
         if self.devices:
             print("Unused devices:\n" + "\n".join(f"- {name}: {type(device)}" for name, device in self.devices.items()))
 
-        if self.imu.noise:
-            warnings.warn(f"{type(self.imu).__name__} '{self.imu.name}' is noisy - {self.imu.noise}!"
-                          " Consider adding some filtering or implement sensor fusion.")
+    def __init_state(self):
+        self.state = StateMachine("init")
+
+        self.state.create_state("init", self.state_init)
 
     def _get_device(self, name: str, cls: Type[DeviceType]) -> DeviceType:
         """
@@ -83,18 +94,25 @@ class Robot(controller.Robot):
             return device
         return cls(device, time_step=self.time_step)
 
-    def run(self) -> bool:
+    def _should_run(self):
         """Run one simulation step, process all sensors and actuators"""
         if self.step(self.time_step) == -1:  # -1 indicates that Webots is about to terminate the controller
             return False
 
-        # TODO: Main loop
-
-        yaw, pitch, roll = self.imu.yaw_pitch_roll_dg
-
-        print(f"L|F|R   {self.distance_l.value:.3f} | {self.distance_f.value:.3f} | {self.distance_r.value:.3f}    "
-              f"Y|P|R   {yaw:.3f} | {pitch:.3f} | {roll:.3f}")
-        self.ml.target_velocity = 0.4
-        self.mr.target_velocity = 0.5
+        # TODO: main loop condition logic
 
         return True
+
+    def state_init(self):
+        pass
+
+    def run(self) -> bool:
+        while self._should_run():
+            yaw, pitch, roll = self.imu.yaw_pitch_roll_dg
+
+            print(f"L|F|R   {self.distance_l.value:.3f} | {self.distance_f.value:.3f} | {self.distance_r.value:.3f}    "
+                  f"Y|P|R   {yaw:.3f} | {pitch:.3f} | {roll:.3f}")
+            self.ml.target_velocity = 0.4
+            self.mr.target_velocity = 0.5
+
+            self.state.run()
