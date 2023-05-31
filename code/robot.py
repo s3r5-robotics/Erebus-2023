@@ -6,6 +6,7 @@ from typing import Optional, Type
 import controller
 from devices import (DeviceType, Accelerometer, Camera, ColorSensor, DistanceSensor, Emitter, GPS, Gyro, InertialUnit,
                      LED, Lidar, Motor, Receiver)
+import debug
 
 
 class Robot(controller.Robot):
@@ -91,9 +92,9 @@ class Robot(controller.Robot):
         # TODO: Main loop
 
         yaw, pitch, roll = self.imu.yaw_pitch_roll_dg
-
-        print(f"L|F|R   {self.distance_l.value:.3f} | {self.distance_f.value:.3f} | {self.distance_r.value:.3f}    "
-              f"Y|P|R   {yaw:.3f} | {pitch:.3f} | {roll:.3f}")
+        if debug.MEASUREMENTS:
+            print(f"L|F|R   {self.distance_l.value:.3f} | {self.distance_f.value:.3f} | {self.distance_r.value:.3f}    "
+                  f"Y|P|R   {yaw:.3f} | {pitch:.3f} | {roll:.3f}")
         self.ml.target_velocity = 0.4
         self.mr.target_velocity = 0.5
 

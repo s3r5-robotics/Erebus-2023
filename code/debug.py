@@ -9,3 +9,4 @@ if debugging.POSITION:
 """
 
 CAMERA: bool = True
+MEASUREMENTS: bool = True
