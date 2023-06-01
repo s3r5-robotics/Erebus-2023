@@ -65,14 +65,15 @@ def _webots_uses_correct_python_executable() -> None:
 
 def _webots_home_to_content_roots() -> None:
     try:
-        ensure_webots_home_environment_variable()
+        wbh = ensure_webots_home_environment_variable()
     except EnvironmentError as e:
         exit(f"Invalid {WB_HOME_VAR} environment variable - it shall point to the Webots installation directory ({e})")
 
+    wbh = wbh.joinpath("lib", "controller", "python")
     print("Add Webots Python modules to this project to prevent unresolved reference errors:\n"
           "1. In PyCharm, open Settings...\n"
           "2. Navigate to Project: ... -> Project Structure\n"
-          f"3. Click + Add Content Root, enter '{os.environ[WB_HOME_VAR]}' (without quotes) and press OK\n")
+          f"3. Click + Add Content Root, enter '{wbh}' (without quotes) and press OK\n")
 
 
 def _generate_run_py_script_with_correct_path(main_script_name: str) -> None:
