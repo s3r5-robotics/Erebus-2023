@@ -1,11 +1,11 @@
 import inspect
-import math
 import sys
 import typing
 from typing import Tuple
 
 import controller.device
 import controller.sensor
+from utils import Angle
 from utils import InstanceSubclass
 
 
@@ -52,11 +52,25 @@ class InertialUnit(InstanceSubclass, Sensor, controller.InertialUnit):
         Sensor.__init__(self, time_step)
 
     @property
-    def yaw_pitch_roll_dg(self) -> Tuple[float, float, float]:
-        """Get yaw, pitch, roll in degrees"""
-        # The same as (v * 180 / math.pi for v in self.roll_pitch_yaw) but better/shorter looking
-        r, p, y = map(math.degrees, self.roll_pitch_yaw)
+    def yaw_pitch_roll(self) -> Tuple[Angle, Angle, Angle]:
+        """Get yaw, pitch, roll"""
+        r, p, y = map(Angle, self.roll_pitch_yaw)
         return y, p, r
+
+    @property
+    def yaw(self) -> Angle:
+        """Get yaw/heading/rotation"""
+        return Angle(self.roll_pitch_yaw[2])
+
+    @property
+    def pitch(self) -> Angle:
+        """Get pitch/inclination/front-tilt"""
+        return Angle(self.roll_pitch_yaw[1])
+
+    @property
+    def roll(self) -> Angle:
+        """Get roll/side-tilt"""
+        return Angle(self.roll_pitch_yaw[0])
 
 
 class GPS(InstanceSubclass, Sensor, controller.GPS):

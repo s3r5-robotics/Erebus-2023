@@ -91,10 +91,10 @@ class Robot(controller.Robot):
 
         # TODO: Main loop
 
-        yaw, pitch, roll = self.imu.yaw_pitch_roll_dg
+        yaw, pitch, roll = self.imu.yaw_pitch_roll
         if debug.MEASUREMENTS:
             print(f"L|F|R   {self.distance_l.value:.3f} | {self.distance_f.value:.3f} | {self.distance_r.value:.3f}    "
-                  f"Y|P|R   {yaw:.3f} | {pitch:.3f} | {roll:.3f}")
+                  f"Y|P|R   {yaw.deg:.3f} | {pitch.deg:.3f} | {roll.deg:.3f}")
         self.ml.target_velocity = 0.4
         self.mr.target_velocity = 0.5
 
