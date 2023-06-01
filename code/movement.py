@@ -88,7 +88,7 @@ class PID:
     # https://www.reddit.com/r/Python/comments/1qxp5d/pid_tuning_library/
 
     def __init__(self, time_step: float, output_range: Tuple[float, float], kp: float, ki: float, kd: float,
-                 d_on_measurement: bool = True) -> None:
+                 d_on_measurement: bool = True, p_on_measurement: bool = False) -> None:
         """
         Initialize P, PI, PD or PID controller with given coefficients and output range.
 
@@ -100,6 +100,11 @@ class PID:
         :param d_on_measurement: If True, then the derivative term is calculated on the input directly instead
                                  of on the error (which is the classic way). Read more on:
                                  http://brettbeauregard.com/blog/2011/04/improving-the-beginner%e2%80%99s-pid-derivative-kick/
+        :param p_on_measurement: If True, then the proportional term is calculated on the input directly instead of
+                                 on the error (which is the classic way). Using proportional on measurement avoids
+                                 overshoot for some types of systems.
+                                 http://brettbeauregard.com/blog/2017/06/introducing-proportional-on-measurement/
+                                 http://brettbeauregard.com/blog/2017/06/proportional-on-measurement-the-code/
         """
         assert kp is not None, "Proportional coefficient (kp) is mandatory"
         assert output_range[0] < output_range[1], "Output range must be a tuple (min, max) with min < max"
@@ -110,10 +115,12 @@ class PID:
         self._kp = kp
         self._ki = ki * time_step
         self._kd = kd / time_step
+        self._p_on_measurement = p_on_measurement
         self._d_on_measurement = d_on_measurement
 
         # Internal state
-        self._i = 0  # Integral
+        self._p = 0  # Proportional (saved state is required only if p_on_measurement)
+        self._i = 0  # Integral (saved state is required by definition)
 
         self._input: Optional[float] = None  # Last input value (for derivative calculation if d_on_measurement)
         self._error: Optional[float] = None  # Last error value (for derivative calculation if not d_on_measurement)
@@ -137,7 +144,7 @@ class PID:
         self._error = error
 
         # Calculate the proportional term (always present)
-        p = self._kp * error
+        self._p = (self._p - self._kp * d_input) if self._p_on_measurement else (self._kp * error)
 
         # Calculate the integral term in case of PI or PID controller
         self._i += self._ki * error
@@ -150,10 +157,11 @@ class PID:
         d = -(self._kd * d_input) if self._d_on_measurement else (self._kd * d_error)
 
         # Compute PID Output
-        return self._limit(p + self._i + d)
+        return self._limit(self._p + self._i + d)
 
     def reset(self) -> None:
         """Reset internal state"""
+        self._p = 0
         self._i = 0
 
         self._input = None
