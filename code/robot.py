@@ -30,12 +30,12 @@ class Robot(controller.Robot):
         self.distance_f = self._get_device("distance_sensor_front", DistanceSensor)
         self.distance_r = self._get_device("distance_sensor_right", DistanceSensor)
         # Wheels
-        motor_l = Motor(self._get_device("wheel1 motor", controller.Motor),
-                        self._get_device("wheel1 sensor", controller.PositionSensor),
-                        self.time_step)
-        motor_r = Motor(self._get_device("wheel2 motor", controller.Motor),
-                        self._get_device("wheel2 sensor", controller.PositionSensor),
-                        self.time_step)
+        self.motor_l = Motor(self._get_device("wheel1 motor", controller.Motor),
+                             self._get_device("wheel1 sensor", controller.PositionSensor),
+                             self.time_step)
+        self.motor_r = Motor(self._get_device("wheel2 motor", controller.Motor),
+                             self._get_device("wheel2 sensor", controller.PositionSensor),
+                             self.time_step)
         # Other, built-in
         self.led0 = self._get_device("led8", LED)
         self.led1 = self._get_device("led9", LED)
@@ -50,7 +50,7 @@ class Robot(controller.Robot):
                           " Consider adding some filtering or implement sensor fusion.")
 
         # Higher level combined devices using peripheral devices retrieved above
-        self.drive = Drivetrain(motor_l, motor_r, self.imu, self.gps)
+        self.drive = Drivetrain(self.motor_l, self.motor_r, self.imu, self.gps)
 
         # States
         self.step_counter = 0
@@ -88,15 +88,26 @@ class Robot(controller.Robot):
             return device
         return cls(device, time_step=self.time_step)
 
-    def run(self) -> bool:
+    def step(self, _=None) -> bool:
         """
-        Run one simulation step, process all sensors and actuators
+        Run one simulation step and increase the step counter, nothing else
+
+        :param _:  Ignored argument to satisfy PyMethodOverriding inspection.
 
         :return: True if the simulation should continue, False if Webots is about to terminate the controller.
         """
-        if self.step(self.time_step) == -1:  # -1 indicates that Webots is about to terminate the controller
-            return False
         self.step_counter += 1
+        # -1 indicates that Webots is about to terminate the controller
+        return super().step(self.time_step) != -1
+
+    def run(self) -> bool:
+        """
+        Run one simulation step and process all sensors and actuators
+
+        :return: True if the simulation should continue, False if Webots is about to terminate the controller.
+        """
+        if not self.step():
+            return False
 
         if debug.ANY:
             print(f"{self.step_counter}", end="    ")
