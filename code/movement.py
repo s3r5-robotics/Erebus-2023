@@ -1,15 +1,8 @@
-import enum
 from typing import Tuple, Optional
 
 import debug
 from devices import GPS, InertialUnit, Motor
-
-
-class State(enum.Enum):
-    """Robot state"""
-    IDLE = enum.auto()
-    MOVING = enum.auto()
-    ROTATING = enum.auto()
+from utils import Angle
 
 
 class Drivetrain:
@@ -22,60 +15,81 @@ class Drivetrain:
         assert self._ml.time_step == self._mr.time_step == self._imu.time_step == self._gps.time_step
         self._dt = self._ml.time_step
 
-        self.state = State.IDLE
-        self.target_rotation = 0
-        self.target_speed = 0
+        self.target_rotation: Optional[Angle] = None
+        self.target_velocity = 0
 
         # Limit PID output to maximum allowed motor velocity
-        max_velocity = min(self._ml.max_velocity, self._mr.max_velocity)
-
+        self._max_motor_velocity = min(self._ml.max_velocity, self._mr.max_velocity)
+        pid_range = (-self._max_motor_velocity, self._max_motor_velocity)
         # TODO: Tune PID coefficients
-        self._pid_rotating = PID(self._dt, (-max_velocity, max_velocity), kp=0.5, ki=0.1, kd=0.1)
-        self._pid_moving = PID(self._dt, (-max_velocity, max_velocity), kp=0.5, ki=0.1, kd=0.1)
+        self._pid_rotating = PID(self._dt, pid_range, kp=0.5, ki=0.1, kd=0.1)
+        self._pid_moving = PID(self._dt, pid_range, kp=10, ki=2, kd=1)
 
-    def update(self) -> None:
+    def __call__(self) -> None:
         """Update internal states - shall be called once every timestep"""
+
+        velocity = self.velocity
+        rotation = self.rotation
+
+        if self.target_rotation is None:  # Fix for the first call (rotation cannot be retrieved in __init__)
+            self.target_rotation = rotation
+
+        # Calculater motor angular velocities (rotating speed)
+        mv_moving = Angle(deg=180)  # self._pid_moving(velocity, self.target_velocity)
+        mv_rotating = 0  # self._pid_rotating(rotation, self.target_rotation)
+
+        # Calculate motor velocities
+        # Because math angle convention is used, rotating in the positive angle direction means rotating
+        # counter-clockwise - left motor rotates with negative velocity, right motor with positive.
+        mv_l = mv_moving - mv_rotating
+        mv_r = mv_moving + mv_rotating
+        self.set_motor_velocity(mv_l, mv_r)
+
+        # TODO: Detect being stuck, do not just bluntly increase speed
+
         if debug.MOVEMENT:
             yaw, pitch, roll = self._imu.yaw_pitch_roll
             print(f"Y|P|R  {yaw.deg:.3f} | {pitch.deg:.3f} | {roll.deg:.3f}", end="    ")
-            print(self.state.name, end="    ")
+            print(f"av|tv|nms  {velocity:.6f} | {self.target_velocity:.3f} | {mv_moving:.3f}", end="    ")
+            print(f"ar|tr|nrs  {rotation.deg:.3f} | {self.target_rotation.deg:.3f} | {mv_rotating:.3f}", end="    ")
+            print(f"mm|mr  {mv_moving:.3f}/{Angle(mv_moving).deg:.3f} | {mv_rotating:.3f}/{Angle(mv_rotating).deg:.3f}"
+                  f"  ml|mr  {mv_l:.3f}/{Angle(mv_l).deg:.3f} | {mv_r:.3f}/{Angle(mv_r).deg:.3f}", end="    ")
 
-        if self.state == State.IDLE:
-            return
+    # region Low-level control
 
-        elif self.state == State.MOVING:
-            # TODO: Detect being stuck, do not just bluntly increase speed
-            actual_speed = self._gps.speed
-            new_speed = self._pid_moving(actual_speed, self.target_speed)
-            self._ml.target_velocity = new_speed
-            self._mr.target_velocity = new_speed
+    def _clamp_motor_velocity(self, velocity: float) -> float:
+        return min(max(velocity, -self._max_motor_velocity), self._max_motor_velocity)
 
-            if debug.MOVEMENT:
-                print(f"as|ts|ns  {actual_speed:.3f} | {self.target_speed:.3f} | {new_speed:.3f}", end="    ")
+    def set_motor_velocity(self, left: float, right: float) -> None:
+        """Set target rotational velocity for each wheel (radians/s)"""
+        self._ml.target_velocity = self._clamp_motor_velocity(left)
+        self._mr.target_velocity = self._clamp_motor_velocity(right)
 
-        elif self.state == State.ROTATING:
-            actual_rotation = self._imu.yaw
-            new_speed = self._pid_rotating(actual_rotation.deg, self.target_rotation)
-            # If error is positive (rotated more clockwise), then decrease left and increase right wheel speed
-            self._ml.target_velocity = -new_speed
-            self._mr.target_velocity = +new_speed
+    @property
+    def velocity(self) -> float:
+        """Current velocity (m/s)"""
+        return self._gps.speed
 
-            if debug.MOVEMENT:
-                print(f"ar|tr|ns  {actual_rotation.deg:.3f} | {self.target_speed:.3f} | {new_speed:.3f}", end="    ")
+    @velocity.setter
+    def velocity(self, velocity: float) -> None:
+        """Set new target velocity (m/s)"""
+        self.target_velocity = velocity
 
-        else:
-            raise ValueError(f"Unknown state {self.state}")
+    @property
+    def rotation(self) -> Angle:
+        """Current rotation"""
+        return self._imu.yaw
 
-        if debug.MOVEMENT:
-            print(f"ML|MR  {self._ml.target_velocity:.3f} | {self._ml.target_velocity:.3f}", end="    ")
+    @rotation.setter
+    def rotation(self, rotation: Angle) -> None:
+        """Set new target rotation angle"""
+        self.target_rotation = rotation
+
+    # endregion Low-level control
 
     def forward(self, speed: float) -> None:
         """Move forward at given speed (m/s)"""
-        # TODO: If currently rotating, then we should enqueue this command (wait to stop rotating first), or what?
-        self.state = State.MOVING
-        self.target_speed = speed
-        # TODO: Reset PID only if we were not already moving?
-        self._pid_moving.reset()
+        self.target_velocity = speed
 
 
 class PID:

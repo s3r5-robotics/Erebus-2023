@@ -110,7 +110,7 @@ class Robot(controller.Robot):
             print(f"L|F|R  {self.distance_l.value:.3f} | {self.distance_f.value:.3f} | {self.distance_r.value:.3f}",
                   end="    ")
 
-        self.drive.update()
+        self.drive()
 
         if debug.ANY:
             print(flush=True)
