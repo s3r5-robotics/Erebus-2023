@@ -1,7 +1,7 @@
 import debug
 from flow.state_machine import StateMachine, State
 from robot import Robot
-from utils import Angle
+from utils import Angle, static_vars
 
 robot = Robot()
 states = StateMachine("init")
@@ -19,10 +19,11 @@ def drive():
     return True
 
 
+@static_vars(num_turns=0)
 def turn():
-    turn.num_turns = getattr(turn, "num_turns", 0) + 1
+    turn.num_turns += 1
 
-    robot.drive.rotation = robot.drive.rotation + Angle(deg=90)
+    robot.drive.rotation = robot.drive.rotation + Angle(deg=180)
     states.change_state("drive")
 
     if turn.num_turns > 4:

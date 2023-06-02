@@ -184,3 +184,29 @@ class Angle(float):
         """
         # If the difference is more than 180 degrees, then the shortest rotation is the other way around
         return Angle(other - self, normalize='-pi')
+
+
+def static_vars(**kwargs):
+    """
+    Decorator to add static variables ("local" variables which store their state) to a function or any other object
+
+    See https://stackoverflow.com/a/279586/5616255
+
+    >>> @static_vars(a=1, b=10)
+    ... def foo():
+    ...     foo.a += 1
+    ...     foo.b -= 1
+    ...     return foo.a, foo.b
+    >>> assert foo() == (2, 9)
+    >>> assert foo() == (3, 8)
+    """
+
+    # https://stackoverflow.com/a/279586/5616255
+
+    def wrapper(func):
+        for k, v in kwargs.items():
+            assert not hasattr(func, k), f"'{func}' already has attribute '{k}'"
+            setattr(func, k, v)
+        return func
+
+    return wrapper
