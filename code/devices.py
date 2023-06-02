@@ -134,6 +134,16 @@ class Motor(InstanceSubclass, Device, controller.Motor):
         self.target_position = float("inf")
         self.target_velocity = 0
 
+    @property
+    def velocity(self) -> Angle:
+        """Get angular velocity (ω, omega) in radians/s"""
+        return Angle(self.target_velocity, normalize=None)
+
+    @velocity.setter
+    def velocity(self, omega: Angle) -> None:
+        """Set angular velocity (ω, omega) in radians/s"""
+        self.target_velocity = omega
+
 
 # endregion Wheels
 

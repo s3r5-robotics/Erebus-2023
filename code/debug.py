@@ -3,10 +3,13 @@
 
 # Debugging example:
 """
-import debug
-if debugging.POSITION:
-    print(robot.getPosition())
+>>> import debug
+>>> if debug.POSITION:
+>>>     print(robot.getPosition())
 """
 
 CAMERA: bool = True
-MEASUREMENTS: bool = True
+DISTANCE: bool = True
+MOVEMENT: bool = True
+
+ANY = CAMERA or DISTANCE or MOVEMENT
