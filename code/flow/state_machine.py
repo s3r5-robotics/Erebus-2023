@@ -1,45 +1,76 @@
-from typing import Callable
+from typing import Callable, Dict, Set, NamedTuple
+
+import debug
+
+_StateName = str  # Type alias if we want to change to e.g. enum later
+_StateFunction = Callable[[], bool]
+
+
+class State(NamedTuple):
+    name: _StateName
+    function: _StateFunction
+    """Main state function - returns False if the state machine should stop execution"""
+    possible_changes: Set[_StateName]
+
+    def __eq__(self, other) -> bool:
+        return isinstance(other, self.__class__) and (self.name == other.name)
+
+    @classmethod
+    def for_function(cls, function: _StateFunction, *possible_changes: _StateFunction) -> 'State':
+        """Create new State instance with the same name as function name and the given functions as possible changes"""
+        return cls(function.__name__, function, {f.__name__ for f in possible_changes})
+
 
 class StateMachine:
     """
     A simple state machine.
     """
-    def __init__(self, initial_state, function_on_change_state=lambda:None):
-        self.state = initial_state
-        self.current_function = lambda:None
 
-        self.change_state_function = function_on_change_state
+    def __init__(self, initial_state: _StateName, on_state_change: Callable[[_StateName, _StateName], None] = None):
+        """
+        Initialize a new state machine
 
-        self.state_functions = {}
-        self.allowed_state_changes = {}
-        self.possible_states = set()
+        :param initial_state:   The initial state of the state machine (can be registered later).
+        :param on_state_change: A function (current_state, new_state) that is called when the state changes.
+        """
+        self._on_state_change = on_state_change
+        self._current_state: _StateName = initial_state
+        self._states: Dict[_StateName, State] = {}
 
-    def create_state(self, name: str, function: Callable, possible_changes = set()):
-        if name in self.possible_states:
-            raise ValueError("Failed to create new state. State already exists.")
-        self.possible_states.add(name)
-        self.state_functions[name] = function
-        self.allowed_state_changes[name] = possible_changes
-        if name == self.state:
-            self.current_function = self.state_functions[self.state]
+        if debug.STATES:
+            print(f"\n{self.__class__.__name__}: Initial state '{self._current_state}'")
 
-    def change_state(self, new_state):
+    def __iadd__(self, state: State) -> 'StateMachine':
+        """Add a state to the state machine using += operator."""
+        assert state.name not in self._states, f"State '{state.name}' already exists: {self._states[state.name]}"
+
+        self._states[state.name] = state
+
+        return self
+
+    def register_state(self, name: _StateName, function: _StateFunction, possible_changes: Set[_StateName]) -> None:
+        self.__iadd__(State(name, function, possible_changes))
+
+    @property
+    def state(self) -> State:
+        return self._states[self._current_state]
+
+    def change_state(self, new_state: _StateName) -> None:
         """Sets the state the specified value."""
-        if new_state not in self.possible_states:
-            raise ValueError("Can't change state. New state doesn't exist.")
-        
-        if new_state in self.allowed_state_changes[self.state]:
-            self.change_state_function()
-            self.state = new_state
-            self.current_function = self.state_functions[self.state]
+        if new_state == self._current_state:
+            return
 
-        else:
-            raise RuntimeWarning("Can't change state. New state is not in the possible changes for old state.")
-        return True
+        assert new_state in self._states, \
+            f"State '{new_state}' does not exist in {self._states}"
+        assert new_state in self.state.possible_changes, \
+            f"State '{new_state}' is not in the possible changes for current state '{self.state}'"
 
-    def check_state(self, state):
-        """Checks if the state corresponds the specified value."""
-        return self.state == state
-    
-    def run(self):
-        return self.current_function(self.change_state)
+        if debug.STATES:
+            print(f"\n{self.__class__.__name__}: Changing state from '{self._current_state}' to '{new_state}'")
+
+        if self._on_state_change:
+            self._on_state_change(self._current_state, new_state)
+        self._current_state = new_state
+
+    def run(self) -> bool:
+        return self.state.function()

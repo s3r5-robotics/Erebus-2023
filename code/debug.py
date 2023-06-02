@@ -11,5 +11,6 @@
 CAMERA: bool = True
 DISTANCE: bool = True
 MOVEMENT: bool = True
+STATES: bool = True
 
-ANY = CAMERA or DISTANCE or MOVEMENT
+ANY = CAMERA or DISTANCE or MOVEMENT or STATES
