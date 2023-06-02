@@ -21,6 +21,11 @@ class Drivetrain:
         # Motor velocity is set in angular velocity (rotation speed in radians per second), in limited range
         self._max_motor_velocity = Angle(min(self._ml.max_velocity, self._mr.max_velocity), normalize=None)
 
+        # Erebus robot is very simple from the real-physics perspective and do not require the
+        # use of PID controllers - moreover, motors have built-in angular velocity control.
+        self._k_omega_to_velocity = 5  # Ratio (motor rad/s) / (robot m/s)
+        self._k_omega_to_rotation = 5  # Ratio (motor rad/s) / (robot rad/s)
+
     def _clamp_motor_velocity(self, velocity: Angle) -> Angle:
         return Angle(min(max(velocity, -self._max_motor_velocity), self._max_motor_velocity), normalize=None)
 
@@ -45,9 +50,9 @@ class Drivetrain:
         return self._imu.yaw
 
     @rotation.setter
-    def rotation(self, rotation: Angle) -> None:
+    def rotation(self, rotation: float) -> None:
         """Set new target rotation angle"""
-        self.target_rotation = rotation
+        self.target_rotation = Angle(rotation)  # Wrap in angle to normalize
 
     def __call__(self) -> None:
         """Update internal states - shall be called once every timestep"""
@@ -58,12 +63,26 @@ class Drivetrain:
         if self.target_rotation is None:
             self.target_rotation = rotation
 
-        # TODO: Calculate motor angular velocities (rotating speed) and set them
+        # Calculate error
+        er = self.target_rotation.rotation_to(rotation)
+
+        # Calculater motor omega
+        mv_moving = Angle(self.target_velocity * self._k_omega_to_velocity, normalize=None)
+        mv_rotating = Angle(er * self._k_omega_to_rotation, normalize=None)
+
+        # Because math angle convention is used, rotating in the positive angle direction means rotating
+        # counter-clockwise - left motor rotates with negative velocity, right motor with positive.
+        mvl = Angle(mv_moving - mv_rotating, normalize=None)
+        mvr = Angle(mv_moving + mv_rotating, normalize=None)
+
+        self.set_motor_velocity(mvl, mvr)
+
+        # TODO: Detect being stuck, do not just bluntly increase speed
 
         if debug.MOVEMENT:
             yaw, pitch, roll = self._imu.yaw_pitch_roll
-            mlv, mrv = self._ml.velocity, self._mr.velocity
             print(f"Y|P|R  {yaw.deg:.3f} | {pitch.deg:.3f} | {roll.deg:.3f}", end="    ")
-            print(f"av|tv  {velocity:.6f} | {self.target_velocity:.3f}", end="    ")
-            print(f"ar|tr  {rotation.deg:.3f} | {self.target_rotation.deg:.3f}", end="    ")
-            print(f"ml|mr  {mlv:.3f}/{mlv.deg:.3f} | {mrv:.3f}/{mrv.deg:.3f}", end="    ")
+            print(f"av|tv|nms  {velocity:.6f} | {self.target_velocity:.3f} | {mv_moving:.3f}", end="    ")
+            print(f"ar|tr|dr|nrs  {rotation.deg:.3f} | {self.target_rotation.deg:.3f}  | {er.deg:.3f}"
+                  f" | {mv_rotating:.3f}", end="    ")
+            print(f"ml|mr  {mvl:.3f}/{mvl.deg:.3f} | {mvr:.3f}/{mvr.deg:.3f}", end="    ")
