@@ -4,11 +4,9 @@ from types import NoneType
 from typing import Optional, Type
 
 import controller
-import debug
 from devices import (DeviceType, Camera, ColorSensor, DistanceSensor, Emitter, GPS, InertialUnit,
                      LED, Lidar, Motor, Receiver)
 from movement import Drivetrain
-from utils import Angle
 
 
 class Robot(controller.Robot):
@@ -89,7 +87,7 @@ class Robot(controller.Robot):
             return device
         return cls(device, time_step=self.time_step)
 
-    def run(self) -> bool:
+    def __call__(self) -> bool:
         """
         Run one simulation step, process all sensors and actuators
 
@@ -99,21 +97,6 @@ class Robot(controller.Robot):
             return False
         self.step_counter += 1
 
-        if debug.ANY:
-            print(f"{self.step_counter}", end="    ")
-
-        # TODO: Main loop
-
-        if self.step_counter == 1:
-            self.drive.set_motor_velocity(Angle(deg=180))
-
-        if debug.DISTANCE:
-            print(f"L|F|R  {self.distance_l.value:.3f} | {self.distance_f.value:.3f} | {self.distance_r.value:.3f}",
-                  end="    ")
-
         self.drive()
-
-        if debug.ANY:
-            print(flush=True)
 
         return True
