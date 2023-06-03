@@ -31,7 +31,11 @@
 		"customName": "gps",
 		"type": "add",
 		"x": 0,
+<<<<<<< main_new:robots/SERSy-la.json
 		"y": 90,
+=======
+		"y": 80,
+>>>>>>> Adjust SERSy-1 robot JSON to have IMU and GPS aligned with the robot:robots/SERSy-1.json
 		"z": 0,
 		"rx": -0.5858,
 		"ry": 0.5858,
