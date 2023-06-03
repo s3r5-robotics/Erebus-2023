@@ -88,16 +88,23 @@ class Robot(controller.Robot):
             return device
         return cls(device, time_step=self.time_step)
 
-    def __call__(self) -> bool:
+    def step(self, _=None) -> bool:
         """
-        Run one simulation step, process all sensors and actuators
+        Run one simulation step and increase the step counter
+
+        :param _:  Ignored argument to satisfy PyMethodOverriding inspection.
 
         :return: True if the simulation should continue, False if Webots is about to terminate the controller.
         """
-        if self.step(self.time_step) == -1:  # -1 indicates that Webots is about to terminate the controller
-            return False
         self.step_counter += 1
+        # -1 indicates that Webots is about to terminate the controller
+        return super().step(self.time_step) != -1
 
+    def __call__(self) -> bool:
+        """
+        Run one simulation step and process all sensors and actuators
+
+        :return: True if the simulation should continue, False if Webots is about to terminate the controller.
+        """
         self.drive()
-
         return True

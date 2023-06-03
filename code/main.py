@@ -41,9 +41,11 @@ states += State.for_function(drive, turn, end_run)
 states += State.for_function(turn, drive, end_run)
 states += State.for_function(end_run)
 
-while robot():
+while robot.step():
     if debug.ANY:
         print(f"{robot.step_counter}", end="    ")
+
+    robot()
 
     if debug.DISTANCE:
         print(f"L|F|R  {robot.distance_l.value:.3f} | {robot.distance_f.value:.3f} | {robot.distance_r.value:.3f}",
