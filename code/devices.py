@@ -230,6 +230,11 @@ class DistanceSensor(InstanceSubclass, Sensor, controller.DistanceSensor):
     def __init__(self, _: controller.DistanceSensor, time_step: int):
         Sensor.__init__(self, time_step)
 
+    @property
+    def mm(self) -> int:
+        """Get distance in millimeters"""
+        return round(self.value * 1000)
+
 
 # endregion Distance Sensors
 

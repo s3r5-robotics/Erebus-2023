@@ -24,7 +24,7 @@ class Drivetrain:
         # Erebus robot is very simple from the real-physics perspective and do not require the
         # use of PID controllers - moreover, motors have built-in angular velocity control.
         self._k_omega_to_velocity = 5  # Ratio (motor rad/s) / (robot m/s)
-        self._k_omega_to_rotation = 5  # Ratio (motor rad/s) / (robot rad/s)
+        self._k_omega_to_rotation = 1  # Ratio (motor rad/s) / (robot rad/s)
 
     def _clamp_motor_velocity(self, velocity: Angle) -> Angle:
         return Angle(min(max(velocity, -self._max_motor_velocity), self._max_motor_velocity), normalize=None)
@@ -53,6 +53,11 @@ class Drivetrain:
     def rotation(self, rotation: float) -> None:
         """Set new target rotation angle"""
         self.target_rotation = Angle(rotation)  # Wrap in angle to normalize
+
+    @property
+    def rotated(self) -> bool:
+        """Check if target rotation has been reached"""
+        return abs(self.rotation.rotation_to(self.target_rotation).deg) < 1
 
     def __call__(self) -> None:
         """Update internal states - shall be called once every timestep"""
