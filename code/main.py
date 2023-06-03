@@ -51,6 +51,8 @@ while robot.step():
         dl, df, dr = robot.distances
         print(f"L|F|R  {dl:.3f} | {df:.3f} | {dr:.3f}", end="    ")
 
+    robot()
+
     if not states.run():
         print("State machine complete")
         break
