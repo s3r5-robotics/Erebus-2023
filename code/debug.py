@@ -12,5 +12,6 @@ CAMERA: bool = True
 DISTANCE: bool = True
 MOVEMENT: bool = True
 STATES: bool = True
+LIDAR: bool = False
 
-ANY = CAMERA or DISTANCE or MOVEMENT or STATES
+ANY = CAMERA or DISTANCE or MOVEMENT or STATES or LIDAR

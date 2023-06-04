@@ -48,8 +48,8 @@ while robot.step():
     robot()
 
     if debug.DISTANCE:
-        print(f"L|F|R  {robot.distance_l.value:.3f} | {robot.distance_f.value:.3f} | {robot.distance_r.value:.3f}",
-              end="    ")
+        dl, df, dr = robot.distances
+        print(f"L|F|R  {dl:.3f} | {df:.3f} | {dr:.3f}", end="    ")
 
     if not states.run():
         print("State machine complete")

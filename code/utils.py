@@ -215,9 +215,15 @@ class Point:
             x_or_xyz, y, z = x_or_xyz
         return cls(x_or_xyz, z)  # NUE coordinate system orientation
 
+    @property
+    def distance(self) -> float:
+        """Get the distance from the origin"""
+        # The same as math.sqrt(self.x**2 + self.y**2)
+        return math.hypot(self.x, self.y)
+
     def distance_to(self, other: 'Point') -> float:
         """Get the distance to another point"""
-        # The same as math.sqrt(((self.x - other.x)**2 + (self.y - other.y)**2))
+        # The same as math.sqrt((self.x - other.x)**2 + (self.y - other.y)**2)
         return math.dist((self.x, self.y), (other.x, other.y))
 
 
