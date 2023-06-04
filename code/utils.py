@@ -1,5 +1,7 @@
+import dataclasses
 import math
-from typing import Type, SupportsFloat, TypeVar, Literal
+from numbers import Number
+from typing import Type, SupportsFloat, TypeVar, Literal, Union, Iterable
 
 
 class InstanceSubclass:
@@ -184,6 +186,39 @@ class Angle(float):
         """
         # If the difference is more than 180 degrees, then the shortest rotation is the other way around
         return Angle(other - self, normalize='-pi')
+
+
+# https://towardsdatascience.com/battle-of-the-data-containers-which-python-typed-structure-is-the-best-6d28fde824e
+@dataclasses.dataclass(slots=True)
+class Point:
+    """
+    A point in 2D space
+
+    This class uses RUB (Right-Up-Back) and NUE (North-Up-East) coordinate systems, however the points
+    are named x,y instead of x,z for less confusion - we are used to ENU (East-North-Up).
+    https://gitlab.com/rcj-rescue-tc/erebus/erebus/-/blob/master/CHANGELOG.md#release-v2200-2022-09-07
+    https://github.com/cyberbotics/webots/wiki/How-to-adapt-your-world-or-PROTO-to-Webots-R2022a
+    """
+    x: float  # x in both NUE and ENU
+    y: float  # z in NUE, -y in ENU
+
+    @classmethod
+    def from_xyz(cls, x_or_xyz: Union[Number, Iterable[Number]], y: Number = None, z: Number = None) -> 'Point':
+        """
+        Create a new Point object from given 3D coordinates
+
+        :param x_or_xyz:  X coordinate or 3-element array containing the X,Y,Z coordinates.
+        :param y:         Y coordinate, if `x` is a number.
+        :param z:         Z coordinate, if `x` is a number.
+        """
+        if y is None:
+            x_or_xyz, y, z = x_or_xyz
+        return cls(x_or_xyz, z)  # NUE coordinate system orientation
+
+    def distance_to(self, other: 'Point') -> float:
+        """Get the distance to another point"""
+        # The same as math.sqrt(((self.x - other.x)**2 + (self.y - other.y)**2))
+        return math.dist((self.x, self.y), (other.x, other.y))
 
 
 def static_vars(**kwargs):

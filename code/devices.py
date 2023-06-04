@@ -5,7 +5,7 @@ from typing import Tuple
 
 import controller.device
 import controller.sensor
-from utils import Angle
+from utils import Angle, Point
 from utils import InstanceSubclass
 
 
@@ -77,6 +77,11 @@ class GPS(InstanceSubclass, Sensor, controller.GPS):
 
     def __init__(self, _: controller.GPS, time_step: int):
         Sensor.__init__(self, time_step)
+
+    @property
+    def position(self) -> Point:
+        """Get current position"""
+        return Point.from_xyz(self.value)
 
 
 class Camera(InstanceSubclass, Sensor, controller.Camera):

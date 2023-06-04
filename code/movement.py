@@ -81,6 +81,8 @@ class Drivetrain:
 
         if debug.MOVEMENT:
             yaw, pitch, roll = self._imu.yaw_pitch_roll
+            pos = self._gps.position
+            print(f"X|Y  {pos.x:.4f} | {pos.y:.4f}", end="    ")
             print(f"Y|P|R  {yaw.deg:.3f} | {pitch.deg:.3f} | {roll.deg:.3f}", end="    ")
             print(f"av|tv|nms  {velocity:.6f} | {self.target_velocity:.3f} | {mv_moving:.3f}", end="    ")
             print(f"ar|tr|dr|nrs  {rotation.deg:.3f} | {self.target_rotation.deg:.3f}  | {er.deg:.3f}"
