@@ -21,13 +21,14 @@ class Robot(controller.Robot):
         self.imu = self._get_device("inertial_unit", InertialUnit)
         self.gps = self._get_device("gps", GPS)
         self.camera_l = self._get_device("camera_left", Camera)
+        self.camera_f = self._get_device("camera_front", Camera)
         self.camera_r = self._get_device("camera_right", Camera)
-        self.color_sensor = self._get_device("colour_sensor", ColorSensor)
+        self.color_sensor = self._get_device("colour_sensor", Optional[ColorSensor])
         self.lidar = self._get_device("lidar", Lidar)
         # Distance sensors
-        self.distance_l = self._get_device("distance_sensor_left", DistanceSensor)
-        self.distance_f = self._get_device("distance_sensor_front", DistanceSensor)
-        self.distance_r = self._get_device("distance_sensor_right", DistanceSensor)
+        self.distance_l = self._get_device("distance_sensor_left", Optional[DistanceSensor])
+        self.distance_f = self._get_device("distance_sensor_front", Optional[DistanceSensor])
+        self.distance_r = self._get_device("distance_sensor_right", Optional[DistanceSensor])
         # Wheels
         motor_l = Motor(self._get_device("wheel1 motor", controller.Motor),
                         self._get_device("wheel1 sensor", controller.PositionSensor),
