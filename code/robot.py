@@ -30,11 +30,11 @@ class Robot(controller.Robot):
         self.distance_f = self._get_device("distance_sensor_front", Optional[DistanceSensor])
         self.distance_r = self._get_device("distance_sensor_right", Optional[DistanceSensor])
         # Wheels
-        motor_l = Motor(self._get_device("wheel1 motor", controller.Motor),
-                        self._get_device("wheel1 sensor", controller.PositionSensor),
+        motor_l = Motor(self._get_device("wheel_left motor", controller.Motor),
+                        self._get_device("wheel_left sensor", controller.PositionSensor),
                         self.time_step)
-        motor_r = Motor(self._get_device("wheel2 motor", controller.Motor),
-                        self._get_device("wheel2 sensor", controller.PositionSensor),
+        motor_r = Motor(self._get_device("wheel_right motor", controller.Motor),
+                        self._get_device("wheel_right sensor", controller.PositionSensor),
                         self.time_step)
         # Other, built-in
         self.led0 = self._get_device("led8", LED)

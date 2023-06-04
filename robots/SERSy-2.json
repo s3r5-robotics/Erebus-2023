@@ -2,7 +2,7 @@
 	"Wheel 1": {
 		"dictName": "Wheel 1",
 		"name": "Wheel",
-		"customName": "wheel1",
+		"customName": "wheel_right",
 		"type": "",
 		"x": 260,
 		"y": 15,
@@ -15,7 +15,7 @@
 	"Wheel 2": {
 		"dictName": "Wheel 2",
 		"name": "Wheel",
-		"customName": "wheel2",
+		"customName": "wheel_left",
 		"type": "",
 		"x": -260,
 		"y": 15,
