@@ -43,26 +43,26 @@
 		"name": "Camera",
 		"customName": "camera_right",
 		"type": "add",
-		"x": 370,
-		"y": 192,
+		"x": 300,
+		"y": 302,
 		"z": 0,
-		"rx": -1,
-		"ry": 0,
-		"rz": 0,
-		"a": 1.57
+		"rx": -0.98,
+		"ry": -0.15,
+		"rz": 0.15,
+		"a": 1.61
 	},
 	"camera2": {
 		"dictName": "camera2",
 		"name": "Camera",
 		"customName": "camera_left",
 		"type": "add",
-		"x": -370,
-		"y": 192,
+		"x": -300,
+		"y": 302,
 		"z": 0,
-		"rx": 0,
+		"rx": -0.11,
 		"ry": 0.71,
-		"rz": 0.71,
-		"a": 3.14
+		"rz": 0.7,
+		"a": 3.35
 	},
 	"colsensor": {
 		"dictName": "colsensor",
