@@ -1,5 +1,3 @@
-import numpy as np
-
 class BFSAlgorithm:
     def __init__(self, found_function) -> None:
         self.found_function = found_function
@@ -8,7 +6,7 @@ class BFSAlgorithm:
     def get_neighbours(self, node):
         for a in self.adjacents:
             yield [node[0] + a[0], node[1] + a[1]]
-    
+
     def bfs(self, array, start_node):
         open_list = []
         open_list.append(start_node)
@@ -36,7 +34,7 @@ class NavigatingBFSAlgorithm:
     def get_neighbours(self, node):
         for a in self.adjacents:
             yield (node[0] + a[0], node[1] + a[1])
-    
+
     def bfs(self, found_array, traversable_array, start_node):
         open_list = []
         open_list.append(tuple(start_node))
@@ -49,7 +47,8 @@ class NavigatingBFSAlgorithm:
         while len(open_list) > 0:
             node = open_list.pop(0)
 
-            if node[0] < 0 or node[1] < 0 or node[0] >= traversable_array.shape[0] or node[1] >= traversable_array.shape[1]:
+            if node[0] < 0 or node[1] < 0 or node[0] >= traversable_array.shape[0] or node[1] >= \
+                    traversable_array.shape[1]:
                 continue
 
             if not self.traversable_function(traversable_array[node[0], node[1]]):
@@ -65,7 +64,6 @@ class NavigatingBFSAlgorithm:
             for n in self.get_neighbours(node):
                 if n not in closed_set:
                     open_list.append(n)
-                    closed_set.add(n)    
-        
-        return results
+                    closed_set.add(n)
 
+        return results
