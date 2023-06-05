@@ -46,7 +46,9 @@ method ensures that the Webots simulation is running and that the controller get
    This script will run Webots (or attach to already running instance) and enable Extern Robot Controllers.
 
 2. Run/Debug [`code/main.py`](code/main.py) in your preferred IDE - it will automatically connect to the Webots instance.
- 
+
+**NOTE:** You still need to load the robot definition file at least once, as described in the next section point 4.
+
 ### Using Robot Window upload 
 
 1. Open one of the `.wbt` worlds located in [`erebus/game/worlds/`](erebus/game/worlds) in Webots
@@ -60,7 +62,7 @@ method ensures that the Webots simulation is running and that the controller get
 
 4. Click "**LOAD**" under robot icon
    (<img src="erebus/game/plugins/robot_windows/MainSupervisorWindow/robot.png" width="20" height="20">)
-   and load the [`{robot}.json`](robots).
+   and load the [`SERSy.json`](robots/SERSy.json) robot definition file.
 
 5. Click the "***Play button***" to start the simulation.  
 

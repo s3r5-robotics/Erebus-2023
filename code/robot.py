@@ -22,7 +22,6 @@ class Robot(controller.Robot):
         self.imu = self._get_device("inertial_unit", InertialUnit)
         self.gps = self._get_device("gps", GPS)
         self.camera_l = self._get_device("camera_left", Camera)
-        self.camera_f = self._get_device("camera_front", Optional[Camera])
         self.camera_r = self._get_device("camera_right", Camera)
         self.color_sensor = self._get_device("colour_sensor", ColorSensor)
         # Lidar has vertical field of view of 0.2 rad (11.5 degrees), separated into 4 layers:
