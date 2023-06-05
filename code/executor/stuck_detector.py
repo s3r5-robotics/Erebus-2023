@@ -1,7 +1,9 @@
 from data_structures.vectors import Position2D
 
+
 class StuckDetector:
     """Checks if the robot is rotating the wheels but not actually moving."""
+
     def __init__(self) -> None:
         self.stuck_counter = 0
 
@@ -21,15 +23,12 @@ class StuckDetector:
         if self.__is_stuck_this_step():
             self.stuck_counter += 1
         else:
-            self.stuck_counter = 0    
+            self.stuck_counter = 0
 
     def is_stuck(self):
         return self.stuck_counter > self.stuck_threshold
-    
+
     def __is_stuck_this_step(self):
         distance_traveled = self.__position.get_distance_to(self.__previous_position)
         is_rotating_wheels = self.__wheel_direction > 0
         return is_rotating_wheels and distance_traveled < self.minimum_distance_traveled
-
-
-   

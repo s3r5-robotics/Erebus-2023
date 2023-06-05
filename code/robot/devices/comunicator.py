@@ -1,7 +1,8 @@
-import utilities
 import struct
 
+import utilities
 from robot.devices.sensor import Sensor
+
 
 class Comunicator(Sensor):
     def __init__(self, emmiter, receiver, timeStep):
@@ -61,14 +62,14 @@ class Comunicator(Sensor):
     def update(self):
         if self.do_get_world_info:
             self.request_game_data()
-            if self.receiver.getQueueLength() > 0: # If receiver queue is not empty
+            if self.receiver.getQueueLength() > 0:  # If receiver queue is not empty
                 received_data = self.receiver.getBytes()
                 if len(received_data) > 2:
-                    tup = struct.unpack('c f i', received_data) # Parse data into char, float, int
+                    tup = struct.unpack('c f i', received_data)  # Parse data into char, float, int
                     if tup[0].decode("utf-8") == 'G':
                         self.game_score = tup[1]
                         self.remaining_time = tup[2]
-                        self.receiver.nextPacket() # Discard the current data packet
+                        self.receiver.nextPacket()  # Discard the current data packet
 
             self.lack_of_progress = False
             if self.receiver.getQueueLength() > 0:  # If receiver queue is not empty
