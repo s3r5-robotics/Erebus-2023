@@ -13,7 +13,6 @@ import numpy as np
 import cv2 as cv
 
 from data_structures.compound_pixel_grid import CompoundExpandablePixelGrid
-from flags import SHOW_FIXTURE_DEBUG
 
 class FixtureDetector:
     def __init__(self, pixel_grid: CompoundExpandablePixelGrid) -> None:
@@ -82,9 +81,6 @@ class FixtureDetector:
             image_sum += filter.filter(image) > 0
 
         image_sum = image_sum.astype(np.uint8) * 255
-
-        if SHOW_FIXTURE_DEBUG:
-            cv.imshow("fixtures", image_sum)
         
         contours, _ = cv.findContours(image_sum, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
 
@@ -94,13 +90,6 @@ class FixtureDetector:
         for c in contours:
             x, y, w, h = cv.boundingRect(c)
             final_victims.append(Position2D((x + x + w) / 2, (y + y + h) / 2))
-
-        if SHOW_FIXTURE_DEBUG:
-            debug = copy.deepcopy(image)
-            for f in final_victims:
-                debug = cv.circle(debug, np.array(f, dtype=int), 3, (255, 0, 0), -1)
-            
-            cv.imshow("victim_pos_debug", debug)
 
         return final_victims
     

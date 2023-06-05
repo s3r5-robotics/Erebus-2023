@@ -7,8 +7,6 @@ import cv2 as cv
 from fixture_detection.victim_clasification import VictimClassifier
 from fixture_detection.color_filter import ColorFilter
 
-from flags import SHOW_FIXTURE_DEBUG
-    
 class FixtureType:
     def __init__(self, fixture_type, default_letter, ranges=None):
         self.fixture_type = fixture_type
@@ -102,16 +100,12 @@ class FixtureClasiffier:
         final_img = images[0]
         for index, image in enumerate(images):
             final_img += image
-            #cv.imshow(str(index), image)
         final_img[final_img > 255] = 255
         return final_img
 
     def filter_fixtures(self, victims) -> list:
         final_victims = []
         for vic in victims:
-            if SHOW_FIXTURE_DEBUG:
-                print("victim:", vic["position"], vic["image"].shape)
-
             if vic["image"].shape[0] > self.min_fixture_height and vic["image"].shape[1] > self.min_fixture_width:
                 final_victims.append(vic)
 
@@ -120,8 +114,6 @@ class FixtureClasiffier:
     def find_fixtures(self, image) -> list:
         
         image = np.rot90(image, k=3)
-        if SHOW_FIXTURE_DEBUG:
-            cv.imshow("image", image)
         """
         Finds fixtures in the image.
         Returns a list of dictionaries containing fixture positions and images.
@@ -131,9 +123,6 @@ class FixtureClasiffier:
             binary_images.append(f.filter(image))
 
         binary_image = self.sum_images(binary_images)
-        #print(binary_image)
-        if SHOW_FIXTURE_DEBUG:
-            cv.imshow("binaryImage", binary_image)
         
         # Encuentra los contornos, aunque se puede confundir con el contorno de la letra
         contours, _ = cv.findContours(binary_image, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
@@ -169,9 +158,6 @@ class FixtureClasiffier:
         image = cv.resize(fixture["image"], (100, 100), interpolation=cv.INTER_AREA)
 
         color_point_counts = self.count_colors(image)
-        
-        if SHOW_FIXTURE_DEBUG:
-            print(color_point_counts)
 
         # Check all filters. Find first color counts that fit.
         final_fixture_filter = None
@@ -195,8 +181,5 @@ class FixtureClasiffier:
         # If it's any other type then the letter defined for it can be returned
         else:
             letter = final_fixture_filter.default_letter
-
-        if SHOW_FIXTURE_DEBUG:
-            print("FIXTURE: ", letter)
 
         return letter

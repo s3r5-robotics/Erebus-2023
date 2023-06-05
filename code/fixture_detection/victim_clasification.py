@@ -1,4 +1,3 @@
-from flags import SHOW_FIXTURE_DEBUG
 import cv2 as cv
 import numpy as np
 import random
@@ -62,9 +61,6 @@ class VictimClassifier:
 
         letter = letter[self.top_image_reduction:, self.horizontal_image_reduction:letter.shape[1] - self.horizontal_image_reduction]
         letter = self.crop_white(letter)
-        
-        if SHOW_FIXTURE_DEBUG:
-            cv.imshow("thresh", binary)
 
         return letter
 
@@ -76,9 +72,6 @@ class VictimClassifier:
         # Calculat centroid of letter and reverse it
         moments = cv.moments(letter)
         center = int(letter.shape[1] - moments["m10"] / moments["m00"])
-      
-        if SHOW_FIXTURE_DEBUG:
-            cv.imshow("letra", letter)
 
         letter_color = cv.cvtColor(letter, cv.COLOR_GRAY2BGR)
         
@@ -87,12 +80,6 @@ class VictimClassifier:
             "middle": letter[self.areas["middle"][0][0]:self.areas["middle"][0][1], self.areas["middle"][1][0] + center:self.areas["middle"][1][1] + center],
             "bottom": letter[self.areas["bottom"][0][0]:self.areas["bottom"][0][1], self.areas["bottom"][1][0] + center:self.areas["bottom"][1][1] + center]
             }
-        
-        if SHOW_FIXTURE_DEBUG:
-            cv.rectangle(letter_color,(self.areas["top"][1][0] + center, self.areas["top"][0][0]),        (self.areas["top"][1][1] + center, self.areas["top"][0][1]     ), (0, 255, 0), 1)
-            cv.rectangle(letter_color, (self.areas["middle"][1][0] + center, self.areas["middle"][0][0]), (self.areas["middle"][1][1]+ center, self.areas["middle"][0][1]), (0, 0, 255), 1)
-            cv.rectangle(letter_color,(self.areas["bottom"][1][0] + center , self.areas["bottom"][0][0]),  (self.areas["bottom"][1][1]+ center, self.areas["bottom"][0][1]), (225, 0, 255), 1)
-            cv.imshow("letter_color", letter_color)
 
         counts = {}
         for key in images.keys():
