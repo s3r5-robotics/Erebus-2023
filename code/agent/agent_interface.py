@@ -1,6 +1,7 @@
-import random
-from data_structures.vectors import Position2D
 from abc import ABC, abstractmethod
+
+from data_structures.vectors import Position2D
+
 
 class AgentInterface(ABC):
     def __init__(self, mapper) -> None:
@@ -9,7 +10,7 @@ class AgentInterface(ABC):
     @abstractmethod
     def update(self) -> None:
         pass
-    
+
     @abstractmethod
     def get_target_position(self) -> Position2D:
         pass
@@ -18,6 +19,7 @@ class AgentInterface(ABC):
     def do_end(self) -> bool:
         pass
 
+
 class SubagentInterface(ABC):
     def __init__(self, mapper) -> None:
         self.mapper = mapper
@@ -25,7 +27,7 @@ class SubagentInterface(ABC):
     @abstractmethod
     def update(self, force_calculation=False) -> None:
         pass
-    
+
     @abstractmethod
     def get_target_position(self) -> Position2D:
         pass
@@ -33,6 +35,7 @@ class SubagentInterface(ABC):
     @abstractmethod
     def target_position_exists(self) -> bool:
         pass
+
 
 class PositionFinderInterface(ABC):
     @abstractmethod

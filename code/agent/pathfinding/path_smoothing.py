@@ -12,5 +12,5 @@ class PathSmoother:
             avg_y = (node[1] + prior[1] * self.strenght + next[1] * self.strenght) / (1 + self.strenght * 2)
 
             new_path.append([avg_x, avg_y])
-        
+
         return new_path

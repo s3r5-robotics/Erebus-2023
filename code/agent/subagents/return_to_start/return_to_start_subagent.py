@@ -1,11 +1,8 @@
 import numpy as np
-
-from data_structures.vectors import Position2D
-
 from agent.agent_interface import SubagentInterface
-from mapping.mapper import Mapper
-
 from agent.pathfinding.pathfinder import PathFinder
+from data_structures.vectors import Position2D
+from mapping.mapper import Mapper
 
 
 class ReturnToStartAgent(SubagentInterface):
