@@ -4,7 +4,6 @@ from agent.pathfinding.path_smoothing import PathSmoother
 from algorithms.np_bool_array.bfs import NavigatingBFSAlgorithm
 from algorithms.np_bool_array.efficient_a_star import aStarAlgorithm
 from data_structures.vectors import Position2D
-from flags import SHOW_PATHFINDING_DEBUG
 from mapping.mapper import Mapper
 
 
@@ -35,10 +34,6 @@ class PathFinder():
         self.__robot_grid_index = self.__mapper.pixel_grid.coordinates_to_grid_index(
             self.__mapper.robot_position)  # Get robot position grid index
         self.__mapper.pixel_grid.expand_to_grid_index(self.__robot_grid_index)  # Expand grid to robot position
-
-        if SHOW_PATHFINDING_DEBUG:
-            if self.is_path_finished(): print("FINISHED PATH")
-            if self.__is_path_obstructed(): print("PATH OBSTRUCTED")
 
         if self.is_path_finished() or self.__is_path_obstructed() or self.__position_changed or force_calculation:
             self.__calculate_path()
@@ -74,7 +69,6 @@ class PathFinder():
             self.__a_star_index = 0
             self.path_not_found = False
         else:
-            if SHOW_PATHFINDING_DEBUG: print("PATH NOT FOUND")
             print("PATH NOT FOUND")
             self.path_not_found = True
 
