@@ -1,4 +1,3 @@
-import cv2 as cv
 import numpy as np
 from agent.pathfinding.path_smoothing import PathSmoother
 from algorithms.np_bool_array.bfs import NavigatingBFSAlgorithm

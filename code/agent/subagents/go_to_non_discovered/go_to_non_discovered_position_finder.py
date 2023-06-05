@@ -1,4 +1,3 @@
-import cv2 as cv
 from agent.agent_interface import PositionFinderInterface
 from algorithms.np_bool_array.bfs import BFSAlgorithm, NavigatingBFSAlgorithm
 from data_structures.vectors import Position2D

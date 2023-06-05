@@ -1,9 +1,9 @@
-import cv2 as cv
-import numpy as np
 import random
 
-
+import cv2 as cv
+import numpy as np
 from fixture_detection.color_filter import ColorFilter
+
 
 class VictimClassifier:
     def __init__(self):
@@ -14,8 +14,7 @@ class VictimClassifier:
         self.top_image_reduction = 1
         self.horizontal_image_reduction = 1
 
-        
-        self.area_width = 10#20
+        self.area_width = 10  # 20
         self.area_height = 30
         self.min_count_in_area = int(self.area_height * self.area_width * 0.3)
 
@@ -28,21 +27,22 @@ class VictimClassifier:
         """
 
         self.areas = {
-            "top": ((0, self.area_height),                                       (self.area_width // -2, self.area_width // 2)),
-            "middle": ((50 - self.area_height // 2, 50 + self.area_height // 2), (self.area_width // -2, self.area_width // 2)),
-            "bottom": ((100 - self.area_height, 100),                            (self.area_width // -2, self.area_width // 2 ))
-            }
-        
+            "top": ((0, self.area_height), (self.area_width // -2, self.area_width // 2)),
+            "middle": (
+            (50 - self.area_height // 2, 50 + self.area_height // 2), (self.area_width // -2, self.area_width // 2)),
+            "bottom": ((100 - self.area_height, 100), (self.area_width // -2, self.area_width // 2))
+        }
+
         self.letters = {
-            "H":[{'top': False, 'middle': True, 'bottom': False}],
-            
-            "S":[{'top': True, 'middle': True, 'bottom': True},
-                 {'top': True, 'middle': False, 'bottom': True}],
+            "H": [{'top': False, 'middle': True, 'bottom': False}],
 
-            "U":[{'top': False, 'middle': False, 'bottom': True}, 
-                 {'top': False, 'middle': False, 'bottom': False}],
+            "S": [{'top': True, 'middle': True, 'bottom': True},
+                  {'top': True, 'middle': False, 'bottom': True}],
 
-            }
+            "U": [{'top': False, 'middle': False, 'bottom': True},
+                  {'top': False, 'middle': False, 'bottom': False}],
+
+        }
 
     def crop_white(self, binaryImg):
         white = 255
@@ -53,13 +53,14 @@ class VictimClassifier:
         else:
             minY, maxY = np.min(rows), np.max(rows)
             minX, maxX = np.min(cols), np.max(cols)
-            return binaryImg[minY:maxY+1, minX:maxX+1]
-    
+            return binaryImg[minY:maxY + 1, minX:maxX + 1]
+
     def isolate_victim(self, image):
         binary = self.victim_letter_filter.filter(image)
         letter = self.crop_white(binary)
 
-        letter = letter[self.top_image_reduction:, self.horizontal_image_reduction:letter.shape[1] - self.horizontal_image_reduction]
+        letter = letter[self.top_image_reduction:,
+                 self.horizontal_image_reduction:letter.shape[1] - self.horizontal_image_reduction]
         letter = self.crop_white(letter)
 
         return letter
@@ -74,12 +75,15 @@ class VictimClassifier:
         center = int(letter.shape[1] - moments["m10"] / moments["m00"])
 
         letter_color = cv.cvtColor(letter, cv.COLOR_GRAY2BGR)
-        
+
         images = {
-            "top":    letter[self.areas["top"][0][0]   :self.areas["top"][0][1],    self.areas["top"][1][0]    + center:self.areas["top"][1][1]    + center],
-            "middle": letter[self.areas["middle"][0][0]:self.areas["middle"][0][1], self.areas["middle"][1][0] + center:self.areas["middle"][1][1] + center],
-            "bottom": letter[self.areas["bottom"][0][0]:self.areas["bottom"][0][1], self.areas["bottom"][1][0] + center:self.areas["bottom"][1][1] + center]
-            }
+            "top": letter[self.areas["top"][0][0]:self.areas["top"][0][1],
+                   self.areas["top"][1][0] + center:self.areas["top"][1][1] + center],
+            "middle": letter[self.areas["middle"][0][0]:self.areas["middle"][0][1],
+                      self.areas["middle"][1][0] + center:self.areas["middle"][1][1] + center],
+            "bottom": letter[self.areas["bottom"][0][0]:self.areas["bottom"][0][1],
+                      self.areas["bottom"][1][0] + center:self.areas["bottom"][1][1] + center]
+        }
 
         counts = {}
         for key in images.keys():
@@ -91,11 +95,10 @@ class VictimClassifier:
 
             counts[key] = count > self.min_count_in_area
 
-
         for letter_key in self.letters.keys():
             for template in self.letters[letter_key]:
                 if counts == template:
                     print("Found:", letter_key)
                     return letter_key
-        
+
         return random.choice(list(self.letters.keys()))

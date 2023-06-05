@@ -22,7 +22,7 @@ class RobotMapper:
         self.__camera_pov_amplitude = Angle(25, Angle.DEGREES)  # Horizontal amplitued of the fostrum of each camera
         self.__camera_pov_lenght = int(0.12 * 2 * pixels_per_m)  # Range of each camera
         self.__camera_orientations = (
-        Angle(0, Angle.DEGREES), Angle(270, Angle.DEGREES), Angle(90, Angle.DEGREES))  # Orientation of the cameras
+            Angle(0, Angle.DEGREES), Angle(270, Angle.DEGREES), Angle(90, Angle.DEGREES))  # Orientation of the cameras
 
         self.__discovery_pov_amplitude = Angle(170, Angle.DEGREES)
         self.__discovery_pov_lenght = self.__camera_pov_lenght
@@ -77,7 +77,7 @@ class RobotMapper:
         camera_povs[1] += self.pixel_grid.offsets[1]
 
         self.pixel_grid.arrays["seen_by_camera"][camera_povs[0], camera_povs[1]] += \
-        self.pixel_grid.arrays["seen_by_lidar"][camera_povs[0], camera_povs[1]]
+            self.pixel_grid.arrays["seen_by_lidar"][camera_povs[0], camera_povs[1]]
 
     def map_discovered_by_robot(self, robot_grid_index, robot_rotation: Angle):
         global_discovered_orientation = self.__discovery_pov_orientation + robot_rotation
@@ -151,7 +151,7 @@ class RobotMapper:
                 final_template += cone_template
 
         povs_indexes = self.__get_indexes_from_template(final_template, (
-        -self.__camera_pov_lenght + robot_index[0], -self.__camera_pov_lenght + robot_index[1]))
+            -self.__camera_pov_lenght + robot_index[0], -self.__camera_pov_lenght + robot_index[1]))
 
         return povs_indexes
 

@@ -134,7 +134,7 @@ class FloorMapper:
         final_mask = seen_by_camera_mask * detection_distance_mask
 
         self.pixel_grid.arrays["floor_color_detection_distance"][start[0]:end[0], start[1]:end[1]][final_mask] = \
-        povs_gradient[final_mask]
+            povs_gradient[final_mask]
 
         self.pixel_grid.arrays["floor_color"][start[0]:end[0], start[1]:end[1]][final_mask] = povs[:, :, :3][final_mask]
 
@@ -213,9 +213,9 @@ class FloorMapper:
         image = cv.resize(image, (0, 0), fx=tile_size, fy=tile_size, interpolation=cv.INTER_NEAREST)
 
         final_x = image.shape[0] if image.shape[0] + offsets[0] < self.pixel_grid.array_shape[0] else \
-        self.pixel_grid.array_shape[0] - offsets[0]
+            self.pixel_grid.array_shape[0] - offsets[0]
         final_y = image.shape[1] if image.shape[1] + offsets[1] < self.pixel_grid.array_shape[1] else \
-        self.pixel_grid.array_shape[1] - offsets[1]
+            self.pixel_grid.array_shape[1] - offsets[1]
 
         # self.pixel_grid.arrays["average_floor_color"] = np.zeros((final_x, final_y, 3), dtype=np.uint8)
 

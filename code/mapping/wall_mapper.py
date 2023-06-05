@@ -2,7 +2,6 @@ import cv2 as cv
 import numpy as np
 import skimage
 from data_structures.compound_pixel_grid import CompoundExpandablePixelGrid
-from data_structures.vectors import Position2D
 
 
 class WallMapper:
@@ -95,7 +94,7 @@ class WallMapper:
         Filters out noise from the 'detected_points' array.
         """
         self.grid.arrays["detected_points"] = self.grid.arrays["detected_points"] * (
-                    self.grid.arrays["detected_points"] > self.delete_threshold)
+                self.grid.arrays["detected_points"] > self.delete_threshold)
 
     # Initialization methods
     def __generate_quadratic_circle_gradient(self, min_radius, max_radius):

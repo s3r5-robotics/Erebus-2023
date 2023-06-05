@@ -5,6 +5,7 @@ class Sequencer:
     a sensor that must run continously. 
     This functions basically as an alternative to multithreading or multiprocessing.
     """
+
     def __init__(self, reset_function=None):
         self.line_identifier = 0
         self.line_pointer = 1
@@ -22,7 +23,7 @@ class Sequencer:
     def seq_reset_sequence(self):
         if self.check():
             self.reset_sequence()
-            
+
             return True
         return False
 
@@ -32,7 +33,6 @@ class Sequencer:
         """
         self.line_identifier = 0
         self.done = False
-
 
     def check(self):
         """
@@ -76,27 +76,31 @@ class Sequencer:
                 self.next_seq()
                 return True
         return False
-    
+
     def make_simple_event(self, function):
         """
         When inpuuted any function it returns a sequential version of it that can be used in a sequence.
         """
+
         def event(*args, **kwargs):
             if self.check():
                 function(*args, **kwargs)
                 self.next_seq()
                 return True
             return False
+
         return event
 
     def make_complex_event(self, function):
         """
         When inputted a function that returns True when it ends returns a sequential version of it that can be used in a sequence.
         """
+
         def event(*args, **kwargs):
             if self.check():
                 if function(*args, **kwargs):
                     self.next_seq()
                     return True
             return False
+
         return event
