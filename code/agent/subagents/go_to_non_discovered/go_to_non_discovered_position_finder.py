@@ -2,7 +2,6 @@ import cv2 as cv
 from agent.agent_interface import PositionFinderInterface
 from algorithms.np_bool_array.bfs import BFSAlgorithm, NavigatingBFSAlgorithm
 from data_structures.vectors import Position2D
-from flags import SHOW_BEST_POSITION_FINDER_DEBUG
 from mapping.mapper import Mapper
 
 
@@ -27,16 +26,6 @@ class PositionFinder(PositionFinderInterface):
         """
         if self.__is_objective_untraversable() or force_calculation:
             self.closest_unseen_grid_index = self.__get_closest_unseen_grid_index()
-
-        # DEBUG
-        if SHOW_BEST_POSITION_FINDER_DEBUG:
-            debug_grid = self.mapper.pixel_grid.get_colored_grid()
-            if self.target_position_exists():
-                closest_unseen_array_index = self.mapper.pixel_grid.grid_index_to_array_index(
-                    self.closest_unseen_grid_index)
-                cv.circle(debug_grid, (closest_unseen_array_index[1], closest_unseen_array_index[0]), 4, (0, 255, 100),
-                          -1)
-                cv.imshow("closest_position_finder_debug", debug_grid)
 
     def get_target_position(self):
         if self.target_position_exists():
