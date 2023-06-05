@@ -4,7 +4,7 @@ from agent.pathfinding.path_smoothing import PathSmoother
 from algorithms.np_bool_array.bfs import NavigatingBFSAlgorithm
 from algorithms.np_bool_array.efficient_a_star import aStarAlgorithm
 from data_structures.vectors import Position2D
-from flags import SHOW_PATHFINDING_DEBUG, SHOW_GRANULAR_NAVIGATION_GRID
+from flags import SHOW_PATHFINDING_DEBUG
 from mapping.mapper import Mapper
 
 
@@ -44,18 +44,6 @@ class PathFinder():
             self.__calculate_path()
 
         self.__calculate_path_index()
-
-        # DEBUG
-        if SHOW_GRANULAR_NAVIGATION_GRID:
-            debug_grid = self.__mapper.pixel_grid.get_colored_grid()
-            for node in self.__a_star_path:
-                n = np.array(self.__mapper.pixel_grid.grid_index_to_array_index(node))
-                try:
-                    debug_grid[n[0], n[1]] = [0, 0, 255]
-                except IndexError:
-                    pass
-
-            cv.imshow("granular_grid", debug_grid)
 
     def __calculate_path(self):
         # Get start array index (if robot index occupied, get closest unoccupied point)

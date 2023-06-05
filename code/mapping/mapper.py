@@ -7,7 +7,7 @@ from data_structures.compound_pixel_grid import CompoundExpandablePixelGrid
 from data_structures.tile_color_grid import TileColorExpandableGrid
 from data_structures.vectors import Position2D
 from fixture_detection.fixture_detection import FixtureDetector
-from flags import SHOW_GRANULAR_NAVIGATION_GRID, DO_WAIT_KEY
+from flags import DO_WAIT_KEY
 from mapping.array_filtering import ArrayFilterer
 from mapping.data_extractor import PointCloudExtarctor, FloorColorExtractor
 from mapping.fixture_mapper import FixtureMapper
