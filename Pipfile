@@ -1,10 +1,10 @@
 [[source]]
 url = "https://pypi.org/simple"
-verify_ssl = true
 name = "pypi"
+verify_ssl = true
 
 [packages]
-psutil = "*"
-websockets = "*"
-
-[dev-packages]
+opencv-python = "*"
+numpy = "*"
+imutils = "*"
+scikit-image = "*"
