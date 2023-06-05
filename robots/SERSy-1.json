@@ -70,12 +70,12 @@
 		"customName": "colour_sensor",
 		"type": "add",
 		"x": 0,
-		"y": -100,
-		"z": -370,
-		"rx": -0.71,
-		"ry": 0,
-		"rz": 0.71,
-		"a": 3.14
+		"y": 40,
+		"z": -365,
+		"rx": -0.7,
+		"ry": 0.11,
+		"rz": 0.7,
+		"a": 2.97
 	},
 	"lidar": {
 		"dictName": "lidar",
