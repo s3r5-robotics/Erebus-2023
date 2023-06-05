@@ -2,7 +2,7 @@
 	"Wheel 1": {
 		"dictName": "Wheel 1",
 		"name": "Wheel",
-		"customName": "wheel_right",
+		"customName": "wheel1",
 		"type": "",
 		"x": 260,
 		"y": 15,
@@ -15,7 +15,7 @@
 	"Wheel 2": {
 		"dictName": "Wheel 2",
 		"name": "Wheel",
-		"customName": "wheel_left",
+		"customName": "wheel2",
 		"type": "",
 		"x": -260,
 		"y": 15,
@@ -25,13 +25,26 @@
 		"rz": 0,
 		"a": 1.57
 	},
+	"gyro": {
+		"dictName": "gyro",
+		"name": "Gyro",
+		"customName": "gyro",
+		"type": "add",
+		"x": 0,
+		"y": 0,
+		"z": 0,
+		"rx": -0.5858,
+		"ry": 0.5858,
+		"rz": 0.5858,
+		"a": 2.09
+	},
 	"gps": {
 		"dictName": "gps",
 		"name": "GPS",
 		"customName": "gps",
 		"type": "add",
 		"x": 0,
-		"y": 90,
+		"y": 0,
 		"z": 0,
 		"rx": -0.5858,
 		"ry": 0.5858,
@@ -41,41 +54,41 @@
 	"camera1": {
 		"dictName": "camera1",
 		"name": "Camera",
-		"customName": "camera_right",
+		"customName": "camera1",
 		"type": "add",
-		"x": 295,
-		"y": 150,
-		"z": 0,
-		"rx": -1,
-		"ry": 0,
-		"rz": 0,
-		"a": 1.59
+		"x": 0,
+		"y": 310,
+		"z": -295,
+		"rx": -0.22,
+		"ry": -0.22,
+		"rz": 0.95,
+		"a": 1.62
 	},
 	"camera2": {
 		"dictName": "camera2",
 		"name": "Camera",
-		"customName": "camera_left",
+		"customName": "camera2",
 		"type": "add",
-		"x": -295,
-		"y": 150,
+		"x": 295,
+		"y": 310,
 		"z": 0,
 		"rx": 0,
-		"ry": 0.71,
-		"rz": 0.7,
-		"a": 3.14
+		"ry": -1,
+		"rz": 0,
+		"a": 0.45
 	},
-	"colsensor": {
-		"dictName": "colsensor",
-		"name": "Colour sensor",
-		"customName": "colour_sensor",
+	"camera3": {
+		"dictName": "camera3",
+		"name": "Camera",
+		"customName": "camera3",
 		"type": "add",
-		"x": 0,
-		"y": 40,
-		"z": -365,
-		"rx": -0.7,
-		"ry": 0.11,
-		"rz": 0.7,
-		"a": 2.97
+		"x": -295,
+		"y": 310,
+		"z": 0,
+		"rx": 0,
+		"ry": -1,
+		"rz": 0,
+		"a": 2.69
 	},
 	"lidar": {
 		"dictName": "lidar",
@@ -85,22 +98,9 @@
 		"x": 0,
 		"y": 370,
 		"z": 0,
-		"rx": -0.5858,
-		"ry": 0.5858,
-		"rz": 0.5858,
-		"a": 2.09
-	},
-	"iu": {
-		"dictName": "iu",
-		"name": "InertialUnit",
-		"customName": "inertial_unit",
-		"type": "add",
-		"x": 0,
-		"y": -10,
-		"z": 0,
-		"rx": -0.5858,
-		"ry": 0.5858,
-		"rz": 0.5858,
+		"rx": -0.58,
+		"ry": -0.58,
+		"rz": -0.58,
 		"a": 2.09
 	}
 }
