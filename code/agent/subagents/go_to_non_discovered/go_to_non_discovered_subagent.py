@@ -1,4 +1,5 @@
 import numpy as np
+
 from agent.agent_interface import SubagentInterface
 from agent.pathfinding.pathfinder import PathFinder
 from agent.subagents.go_to_non_discovered.go_to_non_discovered_position_finder import PositionFinder

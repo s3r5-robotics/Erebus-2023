@@ -1,4 +1,5 @@
 import numpy as np
+
 from agent.agent_interface import SubagentInterface
 from agent.pathfinding.pathfinder import PathFinder
 from agent.subagents.follow_walls.follow_walls_position_finder import PositionFinder

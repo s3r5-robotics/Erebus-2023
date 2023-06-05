@@ -1,4 +1,5 @@
 import numpy as np
+
 from agent.agent_interface import SubagentInterface
 from agent.pathfinding.pathfinder import PathFinder
 from data_structures.vectors import Position2D

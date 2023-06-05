@@ -8,7 +8,9 @@ from mapping.mapper import Mapper
 
 
 class SubagentPriorityCombiner(SubagentInterface):
-    """Tries different startegies succesively until one returns a position."""
+    """
+    Tries different strategies until one returns a position.
+    """
 
     def __init__(self, agents: list) -> None:
         self.__agent_list = agents
@@ -68,7 +70,8 @@ class Agent(AgentInterface):
         self.__navigation_agent.update(force_calculation=self.do_force_calculation)
         self.do_force_calculation = False
 
-        if not self.__navigation_agent.target_position_exists() or self.__little_time_left():
+        if not self.__navigation_agent.target_position_exists():
+            # If there's no target position, we've explored the whole map, thus we should return to start
             change_state_function("return_to_start")
 
         else:
@@ -80,9 +83,6 @@ class Agent(AgentInterface):
 
         if self.__return_to_start_agent.target_position_exists():
             self.__target_position = self.__return_to_start_agent.get_target_position()
-
-    def __little_time_left(self) -> bool:
-        return False
 
     def __set_force_calculation(self):
         self.do_force_calculation = True

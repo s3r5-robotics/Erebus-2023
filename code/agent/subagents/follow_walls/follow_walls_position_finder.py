@@ -1,4 +1,5 @@
 import numpy as np
+
 from agent.agent_interface import PositionFinderInterface
 from algorithms.np_bool_array.bfs import NavigatingBFSAlgorithm
 from data_structures.vectors import Position2D
@@ -31,10 +32,8 @@ class PositionFinder(PositionFinderInterface):
         self.__dither_array(possible_targets_array, dither_interval=2)
         possible_targets_array[self.__mapper.pixel_grid.arrays["robot_center_traversed"]] = False
 
-        # cv.imshow("possible wall targets", possible_targets_array.astype(np.uint8) * 255)
-
         if not np.any(possible_targets_array):
-            print("no tragets")
+            print("No targets to traverse to found. ")
             return
 
         robot_array_index = self.__mapper.pixel_grid.grid_index_to_array_index(self.__mapper.robot_grid_index)
@@ -66,7 +65,5 @@ class PositionFinder(PositionFinderInterface):
         mask[::dither_interval, ::dither_interval] = False
 
         mask[dither_interval // 2::dither_interval, dither_interval // 2::dither_interval] = False
-
-        # cv.imshow("dither_mask", (mask == False).astype(np.uint8) * 255)
 
         possible_targets_array[mask] = False

@@ -21,7 +21,8 @@ class PositionFinder(PositionFinderInterface):
 
     def update(self, force_calculation=False):
         """
-        Calculate closest unseen position if the objective is no longer traversable or if it's told to do it with the 'force' parameter.
+        Calculate the closest unseen position if the objective is no longer traversable
+        or if it's told to do it with the 'force' parameter.
         """
         if self.__is_objective_untraversable() or force_calculation:
             self.closest_unseen_grid_index = self.__get_closest_unseen_grid_index()
@@ -53,11 +54,10 @@ class PositionFinder(PositionFinderInterface):
             start_node=start_node)
 
         if len(closest_unseen_array_indexes):
-            print("found not discovered")
+            print("Found undiscovered area.")
             return self.mapper.pixel_grid.array_index_to_grid_index(closest_unseen_array_indexes[0])
-
         else:
-            print("Ain't found no nothin'")
+            print("No undiscovered area found.")
             return None
 
     def __get_closest_traversable_array_index(self, array_index):
