@@ -1,8 +1,8 @@
 import time
 
+import flags
 from agent.agent import Agent
 from data_structures.angle import Angle
-from executor.stuck_detector import StuckDetector
 from final_matrix_creation.final_matrix_creator import FinalMatrixCreator
 from fixture_detection.fixture_clasification import FixtureClasiffier
 from flags import DO_SLOW_DOWN, SLOW_DOWN_S
@@ -12,6 +12,7 @@ from flow_control.state_machine import StateMachine
 from mapping.mapper import Mapper
 from robot.drive_base import Criteria as RotationCriteria
 from robot.robot import Robot
+from executor.stuck_detector import StuckDetector
 
 
 class Executor:
@@ -21,15 +22,16 @@ class Executor:
         self.robot = robot  # Low level movement and sensing
 
         self.delay_manager = DelayManager()
-        self.stuck_detector = StuckDetector()  # Detects if the wheels of the robot are moving or not
+        self.stuck_detector = StuckDetector()  # Detects if the wheels of the robot are moving while the robot isn't
 
-        self.state_machine = StateMachine("init")  # Manages states
-        self.state_machine.create_state("init", self.state_init,
-                                        {"explore", })  # This state initializes and calibrates the robot
-        self.state_machine.create_state("explore", self.state_explore, {"end",
-                                                                        "report_fixture"})  # This state follows the position returned by the agent
+        self.state_machine = StateMachine("init")  # Manager of states
+
+        # This state initializes and calibrates the robot
+        self.state_machine.create_state("init", self.state_init, {"explore", })
+
+        # This state follows the position returned by the agent
+        self.state_machine.create_state("explore", self.state_explore, {"end", "report_fixture"})
         self.state_machine.create_state("end", self.state_end)
-        # self.state_machine.create_state("detect_fixtures", self.state_detect_fixtures, {"explore", "report_fixture"})
         self.state_machine.create_state("report_fixture", self.state_report_fixture, {"explore"})
 
         self.sequencer = Sequencer(reset_function=self.delay_manager.reset_delay)  # Allows for asynchronous programming
@@ -69,19 +71,18 @@ class Executor:
 
             self.state_machine.run()
 
-            # self.final_matrix_creator.pixel_grid_to_final_grid(self.mapper.pixel_grid, self.mapper.start_position)
-
             if DO_SLOW_DOWN:
                 time.sleep(SLOW_DOWN_S)
 
-            # final_matrix = self.final_matrix_creator.pixel_grid_to_final_grid(self.mapper.pixel_grid, self.mapper.start_position)
+            final_matrix = self.final_matrix_creator.pixel_grid_to_final_grid(self.mapper.pixel_grid, self.mapper.start_position)
+            if flags.PRINT_MATRIX:
+                print(final_matrix)
 
-            # print(final_matrix)
-
-            # print("state:", self.state_machine.state)
+            if flags.PRINT_STATE:
+                print("state:", self.state_machine.state)
 
     def do_mapping(self):
-        """Updates the mapper is mapping is enabled."""
+        """Updates the mapper if mapping is enabled."""
 
         if self.mapping_enabled:
             # Floor and lidar mapping
@@ -113,8 +114,8 @@ class Executor:
 
         # Starts mapping walls
         if self.sequencer.simple_event():
-            self.mapping_enabled = True
-            self.victim_reporting_enabled = True
+            self.mapping_enabled = flags.DO_MAPPING
+            self.victim_reporting_enabled = flags.DO_VICTIM_REPORTING
 
         self.seq_delay_seconds(0.5)
         self.sequencer.complex_event(self.robot.rotate_to_angle, angle=Angle(90, Angle.DEGREES),
@@ -135,7 +136,7 @@ class Executor:
 
         self.seq_move_to_coords(self.agent.get_target_position())
 
-        self.sequencer.seq_reset_sequence()  # Resets the sequence but doesn't change state, so it starts all over again.
+        self.sequencer.seq_reset_sequence()  # Resets the sequence but doesn't change state, so it starts all over again
 
         if self.agent.do_end():
             self.state_machine.change_state("end")
@@ -183,9 +184,10 @@ class Executor:
 
     def calibrate_position_offsets(self):
         """Calculates offsets in the robot position, in case it doesn't start perfectly centerd."""
-        print("robot_position:", self.robot.position)
         self.robot.position_offsets = self.robot.position % (self.mapper.quarter_tile_size * 2)
-        print("positionOffsets: ", self.robot.position_offsets)
+        if flags.PRINT_ROBOT_POSITION_OFFSET:
+            print("robot_position:", self.robot.position)
+            print("positionOffsets: ", self.robot.position_offsets)
 
     def seq_calibrate_robot_rotation(self):
         """ Calibrates the robot rotation using the gps."""

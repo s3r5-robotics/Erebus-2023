@@ -2,6 +2,8 @@ from copy import deepcopy
 
 import cv2 as cv
 import numpy as np
+
+import flags
 from data_structures.angle import Angle
 from data_structures.compound_pixel_grid import CompoundExpandablePixelGrid
 from data_structures.tile_color_grid import TileColorExpandableGrid
@@ -102,7 +104,8 @@ class Mapper:
 
     def register_start(self, robot_position):
         self.start_position = deepcopy(robot_position)
-        print("registered start position:", self.start_position)
+        if flags.PRINT_REGISTERED_START_POS:
+            print("registered start position:", self.start_position)
 
     # Grids
     def get_grid_for_bonus(self):
