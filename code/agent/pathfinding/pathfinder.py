@@ -1,4 +1,5 @@
 import numpy as np
+
 from agent.pathfinding.path_smoothing import PathSmoother
 from algorithms.np_bool_array.bfs import NavigatingBFSAlgorithm
 from algorithms.np_bool_array.efficient_a_star import aStarAlgorithm
@@ -40,7 +41,7 @@ class PathFinder():
         self.__calculate_path_index()
 
     def __calculate_path(self):
-        # Get start array index (if robot index occupied, get closest unoccupied point)
+        # Get start array index (if robot index occupied, get the closest unoccupied point)
         start_array_index = self.__mapper.pixel_grid.coordinates_to_array_index(self.__mapper.robot_position)
         start_array_index = self.__get_closest_traversable_array_index(start_array_index)
 
