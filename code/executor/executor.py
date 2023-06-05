@@ -5,7 +5,7 @@ from data_structures.angle import Angle
 from executor.stuck_detector import StuckDetector
 from final_matrix_creation.final_matrix_creator import FinalMatrixCreator
 from fixture_detection.fixture_clasification import FixtureClasiffier
-from flags import SHOW_DEBUG, DO_SLOW_DOWN, SLOW_DOWN_S
+from flags import DO_SLOW_DOWN, SLOW_DOWN_S
 from flow_control.delay import DelayManager
 from flow_control.sequencer import Sequencer
 from flow_control.state_machine import StateMachine
@@ -131,18 +131,11 @@ class Executor:
 
         self.sequencer.start_sequence()  # Starts the sequence
 
-        if SHOW_DEBUG and self.agent_changed():
-            print("CHANGING AGENT")
-
         self.agent.update()
 
         self.seq_move_to_coords(self.agent.get_target_position())
 
         self.sequencer.seq_reset_sequence()  # Resets the sequence but doesn't change state, so it starts all over again.
-
-        if SHOW_DEBUG:
-            print("rotation:", self.robot.orientation)
-            print("position:", self.robot.position)
 
         if self.agent.do_end():
             self.state_machine.change_state("end")

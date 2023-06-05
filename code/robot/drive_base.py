@@ -2,7 +2,6 @@ from enum import Enum
 
 from data_structures.angle import Angle
 from data_structures.vectors import Position2D
-from flags import SHOW_DEBUG
 from utilities import mapVals
 
 
@@ -179,11 +178,7 @@ class MovementToCoordinatesManager:
 
         dist = abs(self.current_position.get_distance_to(target_position))
 
-        if SHOW_DEBUG: print("Dist: " + str(dist))
-
         if dist < self.error_margin:
-            # self.robot.move(0,0)
-            if SHOW_DEBUG: print("FinisehedMove")
             self.finished_moving = True
         else:
             self.finished_moving = False
@@ -231,11 +226,7 @@ class SmoothMovementToCoordinatesManager:
     def move_to_position(self, target_position: Position2D):
         dist = abs(self.current_position.get_distance_to(target_position))
 
-        if SHOW_DEBUG: print("Dist: " + str(dist))
-
         if dist < self.error_margin:
-            # self.robot.move(0,0)
-            if SHOW_DEBUG: print("FinisehedMove")
             self.finished_moving = True
 
 

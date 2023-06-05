@@ -1,6 +1,3 @@
-from flags import SHOW_DEBUG
-
-
 class DelayManager:
     def __init__(self) -> None:
         self.time = 0
@@ -11,8 +8,6 @@ class DelayManager:
         self.time = time
 
     def delay_seconds(self, delay):
-            if SHOW_DEBUG:
-                print("Current delay: ", delay)
             if self.delay_first_time:
                 self.delay_start = self.time
                 self.delay_first_time = False

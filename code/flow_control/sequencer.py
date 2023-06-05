@@ -1,7 +1,3 @@
-from flags import SHOW_DEBUG
-
-
-
 class Sequencer:
     """
     Makes it possible to run arbitrary code sequentially without interrupting other code that must run continuoulsy.
@@ -22,10 +18,6 @@ class Sequencer:
         if self.reset_function is not None:
             self.reset_function()
         self.line_pointer = 1
-        if SHOW_DEBUG:
-            print("----------------")
-            print("reseting sequence")
-            print("----------------")
 
     def seq_reset_sequence(self):
         if self.check():

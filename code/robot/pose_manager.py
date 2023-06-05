@@ -1,6 +1,5 @@
 from data_structures.angle import Angle
 from data_structures.vectors import Position2D
-from flags import SHOW_DEBUG
 from robot.devices.gps import Gps
 from robot.devices.gyroscope import Gyroscope
 
@@ -61,11 +60,9 @@ class PoseManager:
 
         if self.orientation_sensor == self.GYROSCOPE or gps_orientation is None:
             self.orientation = self.gyroscope.get_orientation()
-            if SHOW_DEBUG: print("USING GYRO")
         else:
             self.orientation = gps_orientation
             self.gyroscope.set_orientation(self.orientation)
-            if SHOW_DEBUG: print("USING GPS")
 
     @property
     def position(self):

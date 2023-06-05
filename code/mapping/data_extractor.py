@@ -3,7 +3,6 @@ import copy
 import cv2 as cv
 import numpy as np
 import utilities
-from flags import SHOW_DEBUG
 
 
 class FloorColorExtractor:
@@ -110,15 +109,8 @@ class FloorColorExtractor:
                 tile = utilities.divideLists(tile, [self.tile_resolution, self.tile_resolution])
                 tile = [int(t) for t in tile]
                 if color_key != "nothing":
-                    if SHOW_DEBUG:
-                        print(tile, color_key)
                     color_tiles.append((tile, color_key))
 
-        if SHOW_DEBUG:
-            drawing_image = floor_image.copy()  # self.final_image.copy()
-            utilities.draw_grid(drawing_image, self.tile_resolution, offset=grid_offsets)
-            cv.circle(drawing_image, (350 - offsets[0], 350 - offsets[1]), 10, (255, 0, 0), -1)
-            cv.imshow("final_floor_image", utilities.resize_image_to_fixed_size(drawing_image, (600, 600)))
         return color_tiles
 
 
@@ -184,8 +176,6 @@ class PointCloudExtarctor:
         offsets.reverse()
         grid = []
         bool_array_copy = point_cloud.get_bool_array()
-        if SHOW_DEBUG:
-            bool_array_copy = bool_array_copy.astype(np.uint8) * 100
         for x in range(offsets[0], bool_array_copy.shape[0] - self.resolution, self.resolution):
             row = []
             for y in range(offsets[1], bool_array_copy.shape[1] - self.resolution, self.resolution):
@@ -195,16 +185,10 @@ class PointCloudExtarctor:
                 max_y = y + self.resolution
                 # print(min_x, min_y, max_x, max_y)
 
-                if SHOW_DEBUG:
-                    bool_array_copy = cv.rectangle(bool_array_copy, (min_y, min_x), (max_y, max_x), (255,), 1)
-
                 val = self.get_tile_status(min_x, min_y, max_x, max_y, point_cloud.get_bool_array())
 
                 row.append(list(val))
             grid.append(row)
-        factor = 10
 
-        if SHOW_DEBUG:
-            cv.imshow("point_cloud_with_squares", utilities.resize_image_to_fixed_size(bool_array_copy, (600, 600)))
         offsets = point_cloud.offsets
         return grid, [o // self.resolution for o in offsets]

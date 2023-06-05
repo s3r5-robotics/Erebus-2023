@@ -7,7 +7,7 @@ import cv2 as cv
 from fixture_detection.victim_clasification import VictimClassifier
 from fixture_detection.color_filter import ColorFilter
 
-from flags import SHOW_DEBUG, SHOW_FIXTURE_DEBUG
+from flags import SHOW_FIXTURE_DEBUG
     
 class FixtureType:
     def __init__(self, fixture_type, default_letter, ranges=None):
