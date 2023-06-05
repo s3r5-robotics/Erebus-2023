@@ -43,12 +43,12 @@ class aStarAlgorithm:
         startNode.g = startNode.h = startNode.f = 0
 
         if grid[start[0], start[1]]:
-            print("WARNING: Start position is not traversable")
+            print("Start position is not traversable")
 
         endNode = aStarNode(None, list(end))
 
         if grid[end[0], end[1]]:
-            print("WARNING: End position is not traversable")
+            print("End position is not traversable")
             return []
 
         endNode.g = endNode.h = endNode.f = 0
@@ -86,12 +86,10 @@ class aStarAlgorithm:
             for adj in self.adjacents:  # Adjacent squares
                 # Get node position
                 nodePosition = [currentNode.position[0] + adj[0], currentNode.position[1] + adj[1]]
-                # Make sure walkable terrain
+                # Make sure the terrain is traversable
                 if not (nodePosition[0] >= grid.shape[0] or nodePosition[1] >= grid.shape[1] or nodePosition[0] < 0 or
                         nodePosition[1] < 0):
-                    # print("OUT OF BOUNDS")
                     if grid[nodePosition[0], nodePosition[1]]:
-                        # print("NOT TRAVERSABLE")
                         continue
                 # Create new node
                 newNode = aStarNode(currentNode, nodePosition)
@@ -129,8 +127,9 @@ class aStarAlgorithm:
             for o in openList:
                 debug_grid[o.position[0], o.position[1]] = [0, 0, 255]
 
-            cv.imshow("debug", debug_grid)
-
-            cv.waitKey(1)
+                import flags
+                if flags.SHOW_ASTAR_DEBUG_GRID:
+                    cv.imshow("debug", debug_grid)
+                    cv.waitKey(1)
 
         return []

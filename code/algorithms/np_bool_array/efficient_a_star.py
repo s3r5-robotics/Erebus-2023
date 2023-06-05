@@ -1,6 +1,9 @@
 from heapq import heappop, heappush
 
+import cv2 as cv
 import numpy as np
+
+import flags
 
 
 class aStarNode:
@@ -126,13 +129,11 @@ class aStarAlgorithm:
             if loop_n > search_limit:
                 break
 
-            """
             for o in openList:
                 debug_grid[o.location[0], o.location[1]] = [0, 0, 255]
 
-            cv.imshow("debug", debug_grid)
-
-            cv.waitKey(1)
-            """
+            if flags.SHOW_ASTAR_DEBUG_GRID:
+                cv.imshow("A* Debug Grid", debug_grid)
+                cv.waitKey(1)
 
         return []
