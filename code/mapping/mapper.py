@@ -105,32 +105,7 @@ class Mapper:
     def register_start(self, robot_position):
         self.start_position = deepcopy(robot_position)
         if flags.PRINT_REGISTERED_START_POS:
-            print("registered start position:", self.start_position)
-
-    # Grids
-    def get_grid_for_bonus(self):
-        """
-        final_grid = []
-        for row in self.get_node_grid().grid:
-            final_row = []
-            for node in row:
-                final_row.append(node.get_representation())
-            final_grid.append(final_row)
-        return np.array(final_grid)
-        """
-        pass  # TODO
-
-    def __lidar_to_node_grid(self):
-        """
-        grid, offsets = self.point_cloud_extractor.transform_to_grid(self.lidar_grid)
-        for y, row in enumerate(grid):
-            for x, value in enumerate(row):
-                xx = (x - offsets[0]) * 2 + 1
-                yy = (y - offsets[1]) * 2 + 1
-                #print(value)
-                for direction in value:
-                    self.node_grid.load_straight_wall((xx, yy),  direction)
-        """
+            print("Registered start position:", self.start_position)
 
     def has_detected_victim_from_position(self):
         robot_array_index = self.pixel_grid.grid_index_to_array_index(self.robot_grid_index)

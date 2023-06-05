@@ -98,7 +98,7 @@ class VictimClassifier:
         for letter_key in self.letters.keys():
             for template in self.letters[letter_key]:
                 if counts == template:
-                    print("Found:", letter_key)
+                    print("Found Fixture:", letter_key)
                     return letter_key
 
         return random.choice(list(self.letters.keys()))

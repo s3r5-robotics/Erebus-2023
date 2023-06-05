@@ -159,7 +159,7 @@ class Executor:
 
     def state_report_fixture(self, change_state_function):
         self.sequencer.start_sequence()
-        self.seq_print("entered_report_fixture")
+        self.seq_print("Reporting fixture...")
         self.seq_move_wheels(0, 0)
 
         if self.letter_to_report is not None:
@@ -172,7 +172,7 @@ class Executor:
 
         if self.sequencer.simple_event():
             if self.letter_to_report is not None:
-                print("sending letter:", self.letter_to_report)
+                print("Sending fixture letter:", self.letter_to_report)
                 self.robot.comunicator.send_victim(self.robot.raw_position, self.letter_to_report)
 
         if self.sequencer.simple_event():
@@ -183,11 +183,11 @@ class Executor:
         self.sequencer.seq_reset_sequence()  # Resets the sequence
 
     def calibrate_position_offsets(self):
-        """Calculates offsets in the robot position, in case it doesn't start perfectly centerd."""
+        """Calculates offsets in the robot position, in case it doesn't start perfectly centered."""
         self.robot.position_offsets = self.robot.position % (self.mapper.quarter_tile_size * 2)
         if flags.PRINT_ROBOT_POSITION_OFFSET:
-            print("robot_position:", self.robot.position)
-            print("positionOffsets: ", self.robot.position_offsets)
+            print("Robot Position:", self.robot.position)
+            print("Position Offsets: ", self.robot.position_offsets)
 
     def seq_calibrate_robot_rotation(self):
         """ Calibrates the robot rotation using the gps."""
