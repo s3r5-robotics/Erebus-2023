@@ -1,6 +1,8 @@
 DO_MAPPING = True  # Crashes with error if False
 DO_VICTIM_REPORTING = True  # Recognise victims
 
+SEND_RANDOM_LETTER = False  # If the hazard cannot be identified send a random letter, else None
+
 PRINT_STATE = False  # Every frame print the current state the robot is in
 PRINT_MATRIX = False  # Print the map matrix into the console
 

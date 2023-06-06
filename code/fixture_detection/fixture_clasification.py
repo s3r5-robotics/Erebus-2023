@@ -3,6 +3,8 @@ import random
 
 import cv2 as cv
 import numpy as np
+
+import flags
 from fixture_detection.color_filter import ColorFilter
 from fixture_detection.victim_clasification import VictimClassifier
 
@@ -166,7 +168,11 @@ class FixtureClasiffier:
 
         # If nothing matches return random letter
         if final_fixture_filter is None:
-            letter = random.choice(self.possible_fixture_letters)
+            if flags.SEND_RANDOM_LETTER:
+                letter = random.choice(self.possible_fixture_letters)
+            else:
+                print("Victim could not be identified.")
+                letter = None
 
         # If it's a victim classify it
         elif final_fixture_filter.fixture_type == "victim":
