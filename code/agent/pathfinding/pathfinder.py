@@ -1,8 +1,8 @@
 import numpy as np
 
 from agent.pathfinding.path_smoothing import PathSmoother
-from algorithms.np_bool_array.bfs import NavigatingBFSAlgorithm
-from algorithms.np_bool_array.efficient_a_star import aStarAlgorithm
+from algorithms.bfs import NavigatingBFSAlgorithm
+from algorithms.efficient_a_star import aStarAlgorithm
 from data_structures.vectors import Position2D
 from mapping.mapper import Mapper
 

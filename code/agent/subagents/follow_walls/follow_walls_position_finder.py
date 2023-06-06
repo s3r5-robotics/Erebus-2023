@@ -1,7 +1,7 @@
 import numpy as np
 
 from agent.agent_interface import PositionFinderInterface
-from algorithms.np_bool_array.bfs import NavigatingBFSAlgorithm
+from algorithms.bfs import NavigatingBFSAlgorithm
 from data_structures.vectors import Position2D
 from mapping.mapper import Mapper
 

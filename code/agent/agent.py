@@ -1,7 +1,7 @@
 from agent.agent_interface import AgentInterface, SubagentInterface
 from agent.subagents.follow_walls.follow_walls_subagent import FollowWallsAgent
 from agent.subagents.go_to_non_discovered.go_to_non_discovered_subagent import GoToNonDiscoveredAgent
-from agent.subagents.return_to_start.return_to_start_subagent import ReturnToStartAgent
+from agent.subagents.return_to_start_subagent import ReturnToStartAgent
 from data_structures.vectors import Position2D
 from flow_control.state_machine import StateMachine
 from mapping.mapper import Mapper
