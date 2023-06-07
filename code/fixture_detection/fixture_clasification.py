@@ -123,16 +123,11 @@ class FixtureClasiffier:
 
         binary_image = self.sum_images(binary_images)
 
-        # Encuentra los contornos, aunque se puede confundir con el contorno de la letra
         contours, _ = cv.findContours(binary_image, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-        # Pra evitar la confusion dibuja rectangulos blancos donde estan los contornos en la imagen y despues vuelve a
-        # sacar los contornos para obtener solo los del rectangulo, no los de las letras.
         for c0 in contours:
             x, y, w, h = cv.boundingRect(c0)
             cv.rectangle(binary_image, (x, y), (x + w, y + h), (225, 255, 255), -1)
         contours, _ = cv.findContours(binary_image, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-        # saca las medidas y la posicion de los contornos y agrega a la lista de imagenes la parte esa de la imagen original
-        # Tambien anade la posicion de cada recuadro en la imagen original
         final_victims = []
         for c in contours:
             x, y, w, h = cv.boundingRect(c)

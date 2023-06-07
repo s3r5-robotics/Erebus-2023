@@ -159,7 +159,6 @@ class Executor:
 
     def state_report_fixture(self, change_state_function):
         self.sequencer.start_sequence()
-        self.seq_print("Reporting fixture...")
         self.seq_move_wheels(0, 0)
 
         if self.letter_to_report is not None:
@@ -172,8 +171,6 @@ class Executor:
 
         if self.sequencer.simple_event():
             if self.letter_to_report is not None:
-                # print("Sending fixture letter:", self.letter_to_report)
-                self.seq_print("Sending fixture letter:", self.letter_to_report)
                 self.robot.comunicator.send_victim(self.robot.raw_position, self.letter_to_report)
 
         if self.sequencer.simple_event():

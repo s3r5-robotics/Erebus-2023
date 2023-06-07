@@ -49,7 +49,7 @@ class VictimClassifier:
         white = 255
         rows, cols = np.where(binaryImg == white)
         if len(rows) == 0 or len(cols) == 0:
-            # no white pixels found
+            # No white pixels found
             return binaryImg
         else:
             minY, maxY = np.min(rows), np.max(rows)
@@ -71,7 +71,6 @@ class VictimClassifier:
 
         letter = cv.resize(letter, (100, 100), interpolation=cv.INTER_AREA)
 
-        # Calculat centroid of letter and reverse it
         moments = cv.moments(letter)
         center = int(letter.shape[1] - moments["m10"] / moments["m00"])
 
