@@ -7,7 +7,7 @@ PRINT_STATE = False # Zastavica PRINT_STATE nadzoruje, ali se izpisuje stanje pr
 PRINT_MATRIX = False # Zastavica PRINT_MATRIX nadzoruje, ali se izpisuje matrika.
 
 SHOW_DETAILED_MAP = False # Zastavica SHOW_DETAILED_MAP nadzoruje, ali se prikazuje podroben zemljevid.
-
+SHOW_FINAL_GRID = False
 SHOW_ASTAR_DEBUG_GRID = False # Zastavica SHOW_ASTAR_DEBUG_GRID nadzoruje, ali se prikazuje A* iskalna mreža.
 SHOW_POINT_CLOUD_WITH_GRID = False # Zastavica SHOW_POINT_CLOUD_WITH_GRID nadzoruje, ali se prikazuje oblak točk z mrežo.
 
