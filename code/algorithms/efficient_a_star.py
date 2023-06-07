@@ -1,9 +1,8 @@
 from heapq import heappop, heappush
 
 import cv2 as cv
-import numpy as np
-
 import flags
+import numpy as np
 
 
 class aStarNode:

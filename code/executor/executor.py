@@ -3,6 +3,7 @@ import time
 import flags
 from agent.agent import Agent
 from data_structures.angle import Angle
+from executor.stuck_detector import StuckDetector
 from final_matrix_creation.final_matrix_creator import FinalMatrixCreator
 from fixture_detection.fixture_clasification import FixtureClasiffier
 from flags import DO_SLOW_DOWN, SLOW_DOWN_S
@@ -12,7 +13,6 @@ from flow_control.state_machine import StateMachine
 from mapping.mapper import Mapper
 from robot.drive_base import Criteria as RotationCriteria
 from robot.robot import Robot
-from executor.stuck_detector import StuckDetector
 
 
 class Executor:
@@ -75,7 +75,8 @@ class Executor:
                 time.sleep(SLOW_DOWN_S)
 
             if flags.PRINT_MATRIX:
-                print(self.final_matrix_creator.pixel_grid_to_final_grid(self.mapper.pixel_grid, self.mapper.start_position))
+                print(self.final_matrix_creator.pixel_grid_to_final_grid(self.mapper.pixel_grid,
+                                                                         self.mapper.start_position))
 
             if flags.PRINT_STATE:
                 print("state:", self.state_machine.state)

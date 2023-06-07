@@ -1,7 +1,6 @@
 import math
 
 import numpy as np
-
 from data_structures.angle import Angle
 
 

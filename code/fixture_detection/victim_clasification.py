@@ -29,7 +29,8 @@ class VictimClassifier:
         self.areas = {
             "top": ((0, self.area_height), (self.area_width // -2, self.area_width // 2)),
             "middle": (
-            (50 - self.area_height // 2, 50 + self.area_height // 2), (self.area_width // -2, self.area_width // 2)),
+                (50 - self.area_height // 2, 50 + self.area_height // 2),
+                (self.area_width // -2, self.area_width // 2)),
             "bottom": ((100 - self.area_height, 100), (self.area_width // -2, self.area_width // 2))
         }
 

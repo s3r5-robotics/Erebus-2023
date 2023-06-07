@@ -2,9 +2,8 @@ import math
 import random
 
 import cv2 as cv
-import numpy as np
-
 import flags
+import numpy as np
 from fixture_detection.color_filter import ColorFilter
 from fixture_detection.victim_clasification import VictimClassifier
 

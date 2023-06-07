@@ -1,9 +1,8 @@
 import copy
 
 import cv2 as cv
-import numpy as np
-
 import flags
+import numpy as np
 from data_structures.compound_pixel_grid import CompoundExpandablePixelGrid
 
 

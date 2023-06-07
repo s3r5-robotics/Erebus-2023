@@ -38,7 +38,7 @@ class FixtureDetector:
                 position[1] * (camera_image.data.horizontal_fov.radians / camera_image.data.width))
 
             fixture_horizontal_angle = (
-                                                   relative_horizontal_angle - camera_image.data.horizontal_fov / 2) + camera_image.data.horizontal_orientation
+                                               relative_horizontal_angle - camera_image.data.horizontal_fov / 2) + camera_image.data.horizontal_orientation
 
             fixture_horizontal_angle.normalize()
 
