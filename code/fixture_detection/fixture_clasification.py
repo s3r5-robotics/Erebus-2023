@@ -8,12 +8,15 @@ from fixture_detection.color_filter import ColorFilter
 from fixture_detection.victim_clasification import VictimClassifier
 
 
+# Razred FixtureType uporablja za določanje tipa elementa (fixtures)
+# Fixture tip se identificira z uporabo barvnih obsegov
 class FixtureType:
     def __init__(self, fixture_type, default_letter, ranges=None):
-        self.fixture_type = fixture_type
-        self.default_letter = default_letter
-        self.ranges = ranges
+        self.fixture_type = fixture_type  # Tip elementa
+        self.default_letter = default_letter  # Privzeta črka, ki predstavlja tip elementa
+        self.ranges = ranges  # Obseg barv, ki se uporablja za identifikacijo tipa
 
+    # Metoda, ki preverja, ali je določen element določenega tipa
     def is_fixture(self, colour_counts: dict):
         for color in self.ranges:
             if not self.ranges[color][0] <= colour_counts[color] <= self.ranges[color][1]:
@@ -66,6 +69,10 @@ class FixtureClasiffier:
 
             FixtureType("poison", "P", {"white": (700, 4000),
                                         "black": (0, 600), }),
+
+            # Vsebuje različne tipe elementov, ki jih je mogoče zaznati
+            # Vsak tip je predstavljen z razredom FixtureType, ki vsebuje
+            # ime tipa, privzeto črko in obseg barv, ki se uporabljajo za identifikacijo tipa
         )
 
         # For tuning color filters
@@ -174,6 +181,7 @@ class FixtureClasiffier:
 
         # If already detected then it shouldn't be reported
         elif final_fixture_filter.fixture_type == "already_detected":
+            print("Already detected victim.")
             letter = None
 
         # If it's any other type then the letter defined for it can be returned
