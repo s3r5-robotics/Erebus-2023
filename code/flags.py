@@ -1,22 +1,22 @@
-DO_MAPPING = True  # Crashes with error if False
-DO_VICTIM_REPORTING = True  # Recognise victims
+DO_MAPPING = True # Zastavica DO_MAPPING nadzoruje, ali se izvaja kartiranje okolice.
+DO_VICTIM_REPORTING = True # Zastavica DO_VICTIM_REPORTING nadzoruje, ali se poroča o žrtvah.
 
-SEND_RANDOM_LETTER = False  # If the hazard cannot be identified send a random letter, else None
+SEND_RANDOM_LETTER = False # Zastavica SEND_RANDOM_LETTER nadzoruje, ali se pošilja naključno izbrano črko.
 
-PRINT_STATE = False  # Every frame print the current state the robot is in
-PRINT_MATRIX = False  # Print the map matrix into the console
+PRINT_STATE = False # Zastavica PRINT_STATE nadzoruje, ali se izpisuje stanje programa.
+PRINT_MATRIX = False # Zastavica PRINT_MATRIX nadzoruje, ali se izpisuje matrika.
 
-SHOW_DETAILED_MAP = False  # Show a detailed image of discovered maze thus far
-SHOW_FINAL_GRID = False  # Show a black & white map of walls discovered thus far
-SHOW_ASTAR_DEBUG_GRID = False  # Show the debug grid of the A* pathfinding algorithm
-SHOW_POINT_CLOUD_WITH_GRID = False  # Show the point cloud with a grid
+SHOW_DETAILED_MAP = False # Zastavica SHOW_DETAILED_MAP nadzoruje, ali se prikazuje podroben zemljevid.
 
-PRINT_ROBOT_POSITION_OFFSET = False  # At the start of execution, print the robot position and offset
-PRINT_REGISTERED_START_POS = False  # At the start of execution, print the registered start position
+SHOW_ASTAR_DEBUG_GRID = False # Zastavica SHOW_ASTAR_DEBUG_GRID nadzoruje, ali se prikazuje A* iskalna mreža.
+SHOW_POINT_CLOUD_WITH_GRID = False # Zastavica SHOW_POINT_CLOUD_WITH_GRID nadzoruje, ali se prikazuje oblak točk z mrežo.
 
-PRINT_MAP_AT_END = True  # Print the map matrix when program finishes
+PRINT_ROBOT_POSITION_OFFSET = False # Zastavica PRINT_ROBOT_POSITION_OFFSET nadzoruje, ali se izpisuje odmik položaja robota.
+PRINT_REGISTERED_START_POS = False # Zastavica PRINT_REGISTERED_START_POS nadzoruje, ali se izpisuje registrirana začetna pozicija.
 
-DO_SLOW_DOWN = False
-SLOW_DOWN_S = 0.032
+PRINT_MAP_AT_END = True # Zastavica PRINT_MAP_AT_END nadzoruje, ali se izpiše zemljevid na koncu programa.
 
-DO_WAIT_KEY = False
+DO_SLOW_DOWN = False # Zastavica DO_SLOW_DOWN nadzoruje, ali se program izvaja v počasnem načinu.
+SLOW_DOWN_S = 0.032 # Zastavica SLOW_DOWN_S nadzoruje, kako počasi se program izvaja.
+
+DO_WAIT_KEY = False # Zastavica DO_WAIT_KEY nadzoruje, ali se program ustavi in čaka na pritisk tipke.
