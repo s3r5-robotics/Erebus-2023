@@ -1,7 +1,8 @@
 import math
 
-import cv2 as cv
 import numpy as np
+import cv2 as cv
+
 from data_structures.compound_pixel_grid import CompoundExpandablePixelGrid
 
 
@@ -15,28 +16,23 @@ class FixtureMapper:
 
         # Solid disk with the radius of the fixture detection zone
         self.fixture_detection_zone_template = np.zeros((template_diameter, template_diameter), dtype=np.int8)
-        self.fixture_detection_zone_template = cv.circle(self.fixture_detection_zone_template,
-                                                         (template_radious, template_radious), template_radious, 1, -1)
+        self.fixture_detection_zone_template = cv.circle(self.fixture_detection_zone_template, (template_radious, template_radious), template_radious, 1, -1)
 
         # Empty circle with the radius of the fixture detection zone
         self.fixture_distance_margin_template = np.zeros((template_diameter, template_diameter), dtype=np.int8)
-        self.fixture_distance_margin_template = cv.circle(self.fixture_distance_margin_template,
-                                                          (template_radious, template_radious), template_radious, -50,
-                                                          -1)
-        self.fixture_distance_margin_template = cv.circle(self.fixture_distance_margin_template,
-                                                          (template_radious, template_radious), template_radious, 1, 1)
-
+        self.fixture_distance_margin_template = cv.circle(self.fixture_distance_margin_template, (template_radious, template_radious), template_radious, -50, -1)
+        self.fixture_distance_margin_template = cv.circle(self.fixture_distance_margin_template, (template_radious, template_radious), template_radious, 1, 1)
+        
         self.detected_from_radius = round(0.02 * self.grid.resolution)
-
+    
     def generate_detection_zone(self):
         occupied_as_int = self.grid.arrays["occupied"].astype(np.int8)
 
-        # self.grid.arrays["fixture_detection_zone"] = cv.filter2D(occupied_as_int, -1, self.fixture_detection_zone_template)> 0
+        #self.grid.arrays["fixture_detection_zone"] = cv.filter2D(occupied_as_int, -1, self.fixture_detection_zone_template)> 0
 
-        self.grid.arrays["fixture_distance_margin"] = cv.filter2D(occupied_as_int, -1,
-                                                                  self.fixture_distance_margin_template) > 0
+        self.grid.arrays["fixture_distance_margin"] = cv.filter2D(occupied_as_int, -1, self.fixture_distance_margin_template) > 0
 
-        # cv.imshow("detection_template", self.fixture_detection_zone_template)
+        #cv.imshow("detection_template", self.fixture_detection_zone_template)
 
     def clean_up_fixtures(self):
         self.grid.arrays["victims"][self.grid.arrays["occupied"]] = False

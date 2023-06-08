@@ -2,12 +2,10 @@ from data_structures.vectors import Position2D
 
 from robot.devices.sensor import Sensor
 
-
 class Gps(Sensor):
     """
     Tracks global position and rotation.
     """
-
     def __init__(self, webots_device, time_step, coords_multiplier=1):
         super().__init__(webots_device, time_step)
         self.multiplier = coords_multiplier

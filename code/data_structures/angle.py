@@ -1,11 +1,9 @@
 import math
 from copy import copy
 
-
 class Angle:
     RADIANS = 0
     DEGREES = 1
-
     def __init__(self, value, unit=RADIANS):
         if unit == self.RADIANS:
             self.__radians = float(value)
@@ -19,11 +17,11 @@ class Angle:
     @radians.getter
     def radians(self):
         return float(self.__radians)
-
+    
     @property
     def degrees(self):
         return float(self.__radians * 180 / math.pi)
-
+    
     @degrees.setter
     def degrees(self, value):
         self.__radians = value * math.pi / 180
@@ -33,7 +31,7 @@ class Angle:
 
         if self.__radians < 0:
             self.__radians += 2 + math.pi
-
+    
     def get_absolute_distance_to(self, angle):
         angle = copy(angle)
         angle.normalize()
@@ -44,7 +42,7 @@ class Angle:
         counterclockwise_distance = (math.pi * 2 + min_ang) - max_ang
 
         return Angle(min(clockwise_distance, counterclockwise_distance))
-
+    
     def get_distance_to(self, angle):
         val = self.get_absolute_distance_to(angle)
 
@@ -54,77 +52,79 @@ class Angle:
             return val
         else:
             return val * -1
-
+            
+        
+    
     def __str__(self):
         return str(self.degrees)
-
+    
     def __repr__(self):
         return str(self.degrees)
-
+    
     def __add__(self, other):
         if isinstance(other, Angle):
             return Angle(self.radians + other.radians)
         return Angle(self.radians + other)
-
+    
     def __radd__(self, other):
         return self.__add__(other)
-
+    
     def __sub__(self, other):
         if isinstance(other, Angle):
             return Angle(self.radians - other.radians)
         return Angle(self.radians - other)
-
+    
     def __rsub__(self, other):
         return self.__sub__(other)
-
+    
     def __mul__(self, other):
         if isinstance(other, Angle):
             return Angle(self.radians * other.radians)
         return Angle(self.radians * other)
-
+    
     def __rmul__(self, other):
         return self.__mul__(other)
-
+    
     def __truediv__(self, other):
         if isinstance(other, Angle):
             return Angle(self.radians / other.radians)
         return Angle(self.radians / other)
-
+    
     def __rtruediv__(self, other):
         return self.__truediv__(other)
-
+    
     def __floordiv__(self, other):
         if isinstance(other, Angle):
             return Angle(self.radians // other.radians)
         return Angle(self.radians // other)
-
+    
     def __rfloordiv__(self, other):
         return self.__floordiv__(other)
-
+    
     def __mod__(self, other):
         if isinstance(other, Angle):
             return Angle(self.radians % other.radians)
         return Angle(self.radians % other)
-
+    
     def __rmod__(self, other):
         return self.__mod__(other)
-
+    
     def __divmod__(self, other):
         if isinstance(other, Angle):
             return (Angle(self.radians // other.radians), Angle(self.radians % other.radians))
         return (Angle(self.radians // other), Angle(self.radians % other))
-
+    
     def __rdivmod__(self, other):
         return self.__divmod__(other)
-
+    
     def __pow__(self, other):
         if isinstance(other, Angle):
             return Angle(self.radians ** other.radians)
         return Angle(self.radians ** other)
-
+    
     def __rpow__(self, other):
         return self.__pow__(other)
-
+    
     def __neg__(self):
         return Angle(-self.radians)
 
@@ -172,6 +172,7 @@ class Angle:
 
     def __complex__(self):
         return complex(self.radians)
-
+    
     def __round__(self, ndigits=None):
         return Angle(round(self.__radians, ndigits))
+    

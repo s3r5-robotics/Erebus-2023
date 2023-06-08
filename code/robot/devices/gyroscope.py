@@ -6,7 +6,6 @@ class Gyroscope(Sensor):
     """
     Tracks global rotation.
     """
-
     def __init__(self, webots_device, index, time_step):
         super().__init__(webots_device, time_step)
         self.index = index
@@ -31,6 +30,6 @@ class Gyroscope(Sensor):
 
     def get_orientation(self):
         return self.orientation
-
+    
     def set_orientation(self, angle):
         self.orientation = angle

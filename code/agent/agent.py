@@ -1,24 +1,25 @@
-from agent.agent_interface import AgentInterface, SubagentInterface
-from agent.subagents.follow_walls.follow_walls_subagent import FollowWallsAgent
-from agent.subagents.go_to_non_discovered.go_to_non_discovered_subagent import GoToNonDiscoveredAgent
-from agent.subagents.return_to_start_subagent import ReturnToStartAgent
+from collections import namedtuple
 from data_structures.vectors import Position2D
-from flow_control.state_machine import StateMachine
+
+from agent.agent_interface import AgentInterface, SubAgentInterface
 from mapping.mapper import Mapper
 
+from agent.sub_agents.follow_walls.follow_walls_sub_agent import FollowWallsAgent
+from agent.sub_agents.go_to_non_discovered.go_to_non_discovered_sub_agent import GoToNonDiscoveredAgent
+from agent.sub_agents.return_to_start.return_to_start_sub_agent import ReturnToStartAgent
 
-class SubagentPriorityCombiner(SubagentInterface):
-    """
-    Tries different strategies until one returns a position.
-    """
+from flow_control.state_machine import StateMachine
 
+
+class AgentPriorityCombiner(SubAgentInterface):
+    """Tries different startegies succesively until one returns a position."""
     def __init__(self, agents: list) -> None:
         self.__agent_list = agents
         self.__current_agent_index = 0
         self.__previous_agent_index = 0
 
     def update(self, force_calculation=False) -> None:
-        agent: SubagentInterface
+        agent: SubAgentInterface
         for index, agent in enumerate(self.__agent_list):
             agent.update(force_calculation=self.__agent_changed() or force_calculation)
             if agent.target_position_exists():
@@ -26,28 +27,27 @@ class SubagentPriorityCombiner(SubagentInterface):
                 self.__current_agent_index = index
                 break
 
+    
     def get_target_position(self) -> Position2D:
         return self.__agent_list[self.__current_agent_index].get_target_position()
-
+    
     def target_position_exists(self) -> bool:
         return self.__agent_list[self.__current_agent_index].target_position_exists()
-
+    
     def __agent_changed(self) -> bool:
         return self.__previous_agent_index != self.__current_agent_index
-
 
 class Agent(AgentInterface):
     def __init__(self, mapper: Mapper) -> None:
         self.__mapper = mapper
 
-        self.__navigation_agent = SubagentPriorityCombiner([FollowWallsAgent(self.__mapper),
-                                                            GoToNonDiscoveredAgent(self.__mapper)])
-
+        self.__navigation_agent = AgentPriorityCombiner([FollowWallsAgent(self.__mapper), 
+                                                         GoToNonDiscoveredAgent(self.__mapper)])
+        
         self.__return_to_start_agent = ReturnToStartAgent(self.__mapper)
 
         self.__stage_machine = StateMachine("explore", self.__set_force_calculation)
-        self.__stage_machine.create_state(name="explore", function=self.__stage_explore,
-                                          possible_changes={"return_to_start"})
+        self.__stage_machine.create_state(name="explore", function=self.__stage_explore, possible_changes={"return_to_start"})
         self.__stage_machine.create_state(name="return_to_start", function=self.__stage_return_to_start)
 
         self.do_force_calculation = False
@@ -60,18 +60,17 @@ class Agent(AgentInterface):
 
     def get_target_position(self) -> Position2D:
         return self.__target_position
-
+    
     def do_end(self) -> bool:
         return self.__stage_machine.state == "return_to_start" and \
-            self.__mapper.robot_position.get_distance_to(
-                self.__mapper.start_position) < self.end_reached_distance_threshold
+               self.__mapper.robot_position.get_distance_to(self.__mapper.start_position) < self.end_reached_distance_threshold
+    
 
     def __stage_explore(self, change_state_function):
         self.__navigation_agent.update(force_calculation=self.do_force_calculation)
         self.do_force_calculation = False
 
-        if not self.__navigation_agent.target_position_exists():
-            # If there's no target position, we've explored the whole map, thus we should return to start
+        if not self.__navigation_agent.target_position_exists() or self.__little_time_left():
             change_state_function("return_to_start")
 
         else:
@@ -83,6 +82,11 @@ class Agent(AgentInterface):
 
         if self.__return_to_start_agent.target_position_exists():
             self.__target_position = self.__return_to_start_agent.get_target_position()
-
+        
+    def __little_time_left(self) -> bool:
+        return False
+    
     def __set_force_calculation(self):
         self.do_force_calculation = True
+
+    

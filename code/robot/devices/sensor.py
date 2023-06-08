@@ -1,5 +1,4 @@
-from abc import ABC
-
+from abc import ABC, abstractmethod
 
 class Sensor(ABC):
     def __init__(self, webots_device, time_step):
@@ -9,7 +8,6 @@ class Sensor(ABC):
 
     def update(self):
         pass
-
 
 class TimedSensor(Sensor):
     def __init__(self, webots_device, time_step, step_counter):

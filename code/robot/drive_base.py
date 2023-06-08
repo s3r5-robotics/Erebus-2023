@@ -1,16 +1,15 @@
-from enum import Enum
-
-from data_structures.angle import Angle
-from data_structures.vectors import Position2D
 from utilities import mapVals
-
+from enum import Enum
+from data_structures.angle import Angle
+from data_structures.vectors import Position2D, Vector2D
+import math
+from flags import SHOW_DEBUG
 
 class Criteria(Enum):
     LEFT = 1
     RIGHT = 2
     CLOSEST = 3
     FARTHEST = 4
-
 
 class DriveBase:
     def __init__(self, left_wheel, right_wheel, max_wheel_velocity) -> None:
@@ -21,43 +20,44 @@ class DriveBase:
         self.slow_rotation_manager = RotationManager(self.left_wheel, self.right_wheel)
         self.slow_rotation_manager.max_velocity = 0.4
         self.slow_rotation_manager.max_velocity_cap = 0.4
-        # self.movement_manager = MovementToCoordinatesManager(self.left_wheel, self.right_wheel)
+        #self.movement_manager = MovementToCoordinatesManager(self.left_wheel, self.right_wheel)
         self.movement_manager = SmoothMovementToCoordinatesManager(self.left_wheel, self.right_wheel)
 
     # Moves the wheels at the specified Velocity
     def move_wheels(self, left_ratio, right_ratio):
         self.left_wheel.move(left_ratio)
         self.right_wheel.move(right_ratio)
-
-    def rotate_to_angle(self, angle: Angle, criteria: Criteria.CLOSEST) -> bool:
+    
+    def rotate_to_angle(self, angle:Angle, criteria:Criteria.CLOSEST) -> bool:
         self.rotation_manager.rotate_to_angle(angle, criteria)
         return self.rotation_manager.finished_rotating
-
-    def rotate_slowly_to_angle(self, angle: Angle, criteria: Criteria.CLOSEST) -> bool:
+    
+    def rotate_slowly_to_angle(self, angle:Angle, criteria:Criteria.CLOSEST) -> bool:
         self.slow_rotation_manager.rotate_to_angle(angle, criteria)
         return self.slow_rotation_manager.finished_rotating
-
-    def move_to_position(self, position: Position2D) -> bool:
+    
+    def move_to_position(self, position:Position2D) -> bool:
         self.movement_manager.move_to_position(position)
         return self.movement_manager.finished_moving
-
+    
     @property
     def position(self) -> Position2D:
         return self.movement_manager.current_position
-
+    
     @position.setter
-    def position(self, value: Position2D):
+    def position(self, value:Position2D):
         self.movement_manager.current_position = value
 
     @property
     def orientation(self) -> Angle:
         return self.rotation_manager.current_angle
-
+    
     @orientation.setter
-    def orientation(self, value: Angle):
+    def orientation(self, value:Angle):
         self.movement_manager.current_angle = value
         self.rotation_manager.current_angle = value
         self.slow_rotation_manager.current_angle = value
+
 
     def get_wheel_direction(self):
         if self.right_wheel.velocity + self.left_wheel.velocity == 0:
@@ -68,7 +68,7 @@ class DriveBase:
 class RotationManager:
     def __init__(self, left_wheel, right_wheel) -> None:
         self.Directions = Enum("Directions", ["LEFT", "RIGHT"])
-
+        
         self.right_wheel = right_wheel
         self.left_wheel = left_wheel
 
@@ -109,15 +109,16 @@ class RotationManager:
         velocity = min(velocity, self.max_velocity_cap)
         velocity = max(velocity, self.min_velocity_cap)
 
-        direction = self.__get_direction(target_angle, criteria)
 
+        direction = self.__get_direction(target_angle, criteria)
+        
         if direction == self.Directions.RIGHT:
             self.left_wheel.move(velocity * -1)
             self.right_wheel.move(velocity)
         elif direction == self.Directions.LEFT:
             self.left_wheel.move(velocity)
             self.right_wheel.move(velocity * -1)
-
+    
     def is_at_angle(self, angle) -> bool:
         return self.current_angle.get_absolute_distance_to(angle) < self.accuracy
 
@@ -137,10 +138,8 @@ class RotationManager:
             else:
                 return self.Directions.RIGHT
 
-        elif criteria == Criteria.LEFT:
-            return self.Directions.LEFT
-        elif criteria == Criteria.RIGHT:
-            return self.Directions.RIGHT
+        elif criteria == Criteria.LEFT: return self.Directions.LEFT
+        elif criteria == Criteria.RIGHT: return self.Directions.RIGHT
 
 
 class MovementToCoordinatesManager:
@@ -151,7 +150,7 @@ class MovementToCoordinatesManager:
         self.right_wheel = right_wheel
         self.rotation_manager = RotationManager(self.left_wheel, self.right_wheel)
 
-        # self.error_margin = 0.0005
+        #self.error_margin = 0.0005
         self.error_margin = 0.001
         self.desceleration_start = 0.5 * 0.12
 
@@ -166,19 +165,24 @@ class MovementToCoordinatesManager:
     @property
     def current_angle(self) -> Angle:
         return self.rotation_manager.current_angle
-
+    
     @current_angle.setter
     def current_angle(self, value):
         self.rotation_manager.current_angle = value
 
-    def move_to_position(self, target_position: Position2D):
+    
+    def move_to_position(self, target_position:Position2D):
 
         # print("Target Pos: ", targetPos)
         # print("Used global Pos: ", self.position)
 
         dist = abs(self.current_position.get_distance_to(target_position))
 
+        if SHOW_DEBUG: print("Dist: "+ str(dist))
+
         if dist < self.error_margin:
+            # self.robot.move(0,0)
+            if SHOW_DEBUG: print("FinisehedMove")
             self.finished_moving = True
         else:
             self.finished_moving = False
@@ -195,7 +199,7 @@ class MovementToCoordinatesManager:
 
 
             else:
-
+                
                 self.rotation_manager.rotate_to_angle(ang)
 
 
@@ -223,10 +227,14 @@ class SmoothMovementToCoordinatesManager:
 
         self.strong_rotation_start = Angle(45, Angle.DEGREES)
 
-    def move_to_position(self, target_position: Position2D):
+    def move_to_position(self, target_position:Position2D):
         dist = abs(self.current_position.get_distance_to(target_position))
 
+        if SHOW_DEBUG: print("Dist: "+ str(dist))
+
         if dist < self.error_margin:
+            # self.robot.move(0,0)
+            if SHOW_DEBUG: print("FinisehedMove")
             self.finished_moving = True
 
 
@@ -237,7 +245,7 @@ class SmoothMovementToCoordinatesManager:
             angle_diff = self.current_angle - angle_to_target
             absolute_angle_diff = self.current_angle.get_absolute_distance_to(angle_to_target)
 
-            # print("diff:", absolute_angle_diff)
+            #print("diff:", absolute_angle_diff)
             if absolute_angle_diff < self.angle_error_margin:
                 self.right_wheel.move(self.velocity)
                 self.left_wheel.move(self.velocity)
@@ -263,3 +271,7 @@ class SmoothMovementToCoordinatesManager:
                 else:
                     self.right_wheel.move(speed * distance_speed)
                     self.left_wheel.move(speed)
+                
+                
+    
+
