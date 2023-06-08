@@ -1,3 +1,4 @@
+import flags
 from controller import Robot as WebotsRobot
 from data_structures.angle import Angle
 from data_structures.vectors import Position2D
@@ -11,8 +12,6 @@ from robot.devices.lidar import Lidar
 from robot.devices.wheel import Wheel
 from robot.drive_base import DriveBase, Criteria
 from robot.pose_manager import PoseManager
-
-import flags
 
 
 class Robot:

@@ -1,9 +1,9 @@
 from copy import deepcopy
+from typing import Optional
 
 import cv2 as cv
 import flags
 import numpy as np
-from typing import Optional
 from data_structures.angle import Angle
 from data_structures.compound_pixel_grid import CompoundExpandablePixelGrid
 from data_structures.tile_color_grid import TileColorExpandableGrid

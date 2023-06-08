@@ -6,7 +6,6 @@ from data_structures.vectors import Position2D
 from flow_control.state_machine import StateMachine
 from mapping.mapper import Mapper
 from robot.robot import Robot
-import flags
 
 
 class SubagentPriorityCombiner(SubagentInterface):
