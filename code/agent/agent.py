@@ -18,6 +18,7 @@ class SubagentPriorityCombiner(SubagentInterface):
         self.__agent_list = agents
         self.__current_agent_index = 0
         self.__previous_agent_index = 0
+        self.__return_to_start_timeout = 7 * 60
 
     def update(self, force_calculation=False) -> None:
         agent: SubagentInterface
@@ -65,19 +66,15 @@ class Agent(AgentInterface):
         return self.__target_position
 
     def do_end(self) -> bool:
-        return_to_start = self.__stage_machine.state == "return_to_start" and \
+        return self.__stage_machine.state == "return_to_start" and \
             self.__mapper.robot_position.get_distance_to(
                 self.__mapper.start_position) < self.end_reached_distance_threshold
-        no_time_remaining = flags.DO_EARLY_QUIT and self.__robot.comunicator.remaining_time < 5
-
-        return return_to_start or no_time_remaining
 
     def __stage_explore(self, change_state_function):
         self.__navigation_agent.update(force_calculation=self.do_force_calculation)
         self.do_force_calculation = False
 
-        if not self.__navigation_agent.target_position_exists():
-            # If there's no target position, we've explored the whole map, thus we should return to start
+        if not self.__navigation_agent.target_position_exists() or self.__little_time_left():
             change_state_function("return_to_start")
 
         else:
@@ -89,6 +86,9 @@ class Agent(AgentInterface):
 
         if self.__return_to_start_agent.target_position_exists():
             self.__target_position = self.__return_to_start_agent.get_target_position()
+
+    def __little_time_left(self) -> bool:
+        return self.__mapper.time > self.__return_to_start_timeout
 
     def __set_force_calculation(self):
         self.do_force_calculation = True

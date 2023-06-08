@@ -3,6 +3,7 @@ from copy import deepcopy
 import cv2 as cv
 import flags
 import numpy as np
+from typing import Optional
 from data_structures.angle import Angle
 from data_structures.compound_pixel_grid import CompoundExpandablePixelGrid
 from data_structures.tile_color_grid import TileColorExpandableGrid
@@ -60,15 +61,21 @@ class Mapper:
 
         self.fixture_detector = FixtureDetector(self.pixel_grid)
 
+        self.time = 0
+
     def update(self, in_bounds_point_cloud: list = None,
                out_of_bounds_point_cloud: list = None,
                lidar_detections: list = None,
                camera_images: list = None,
                robot_position: Position2D = None,
-               robot_orientation: Angle = None):
+               robot_orientation: Angle = None,
+               time: Optional[int] = None):
 
         if robot_position is None or robot_orientation is None:
             return
+
+        if time is not None:
+            self.time = time
 
         self.robot_position = robot_position
         self.robot_orientation = robot_orientation

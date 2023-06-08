@@ -91,11 +91,8 @@ class Executor:
                                self.robot.get_lidar_detections(),
                                self.robot.get_camera_images(),
                                self.robot.position,
-                               self.robot.orientation)
-        else:
-            # Only position and rotation
-            self.mapper.update(robot_position=self.robot.position,
-                               robot_orientation=self.robot.orientation)
+                               self.robot.orientation,
+                               self.robot.time)
 
     # STATES
     def state_init(self, change_state_function):
