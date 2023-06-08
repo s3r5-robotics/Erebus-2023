@@ -1,5 +1,6 @@
 import math
 import os
+from typing import Tuple
 
 import cv2 as cv
 import numpy as np
@@ -10,12 +11,12 @@ image_dir = os.path.join(script_dir, "images")
 
 
 # Shrani sliko v mapo z določenim imenom.
-def save_image(image, filename):
+def save_image(image, filename: str) -> None:
     cv.imwrite(os.path.join(image_dir, filename), image)
 
 
 # Normalizira kot v radianih na interval [0, 2*pi].
-def normalizeRads(rad):
+def normalizeRads(rad: float) -> float:
     rad %= 2 * math.pi
     if rad < 0:
         rad += 2 + math.pi
@@ -23,37 +24,37 @@ def normalizeRads(rad):
 
 
 # Pretvori kot v stopinje v radiane.
-def degsToRads(deg):
+def degsToRads(deg: float) -> float:
     return deg * math.pi / 180
 
 
 # Pretvori kot v radiane v stopinje.
-def radsToDegs(rad):
+def radsToDegs(rad: float) -> float:
     return rad * 180 / math.pi
 
 
 # Preslika vrednost iz enega intervala v drugega.
-def mapVals(val, in_min, in_max, out_min, out_max):
+def mapVals(val: float, in_min: float, in_max: float, out_min: float, out_max: float) -> float:
     return (val - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
 
 # Izračuna koordinate na podlagi kota v radianih in razdalje.
-def getCoordsFromRads(rad, distance):
+def getCoordsFromRads(rad: float, distance: float) -> Tuple[float, float]:
     y = float(distance * math.cos(rad))
     x = float(distance * math.sin(rad))
-    return (x, y)
+    return x, y
 
 
 # Izračuna koordinate na podlagi kota v stopinjah in razdalje.
-def getCoordsFromDegs(deg, distance):
+def getCoordsFromDegs(deg: float, distance: float) -> Tuple[float, float]:
     rad = degsToRads(deg)
     y = float(distance * math.cos(rad))
     x = float(distance * math.sin(rad))
-    return (x, y)
+    return x, y
 
 
 # Vrne produkt dveh seznamov.
-def multiplyLists(list1, list2):
+def multiplyLists(list1: list[float], list2: list[float]) -> list[float]:
     finalList = []
     for item1, item2 in zip(list1, list2):
         finalList.append(item1 * item2)
@@ -61,7 +62,7 @@ def multiplyLists(list1, list2):
 
 
 # Vrne vsoto dveh seznamov.
-def sumLists(list1, list2):
+def sumLists(list1: list[float], list2: list[float]) -> list[float]:
     finalList = []
     for item1, item2 in zip(list1, list2):
         finalList.append(item1 + item2)
@@ -69,7 +70,7 @@ def sumLists(list1, list2):
 
 
 # Vrne razliko dveh seznamov.
-def substractLists(list1, list2):
+def substractLists(list1: list[float], list2: list[float]) -> list[float]:
     finalList = []
     for item1, item2 in zip(list1, list2):
         finalList.append(item1 - item2)
@@ -77,7 +78,7 @@ def substractLists(list1, list2):
 
 
 # Vrne kvocient dveh seznamov.
-def divideLists(list1, list2):
+def divideLists(list1: list[float], list2: list[float]) -> list[float]:
     finalList = []
     for item1, item2 in zip(list1, list2):
         finalList.append(item1 / item2)
