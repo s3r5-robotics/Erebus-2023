@@ -175,14 +175,13 @@ class Executor:
 
     def state_report_fixture(self, change_state_function):
         self.sequencer.start_sequence()
-        self.seq_print("entered_report_fixture")
         self.seq_move_wheels(0, 0)
 
         if self.letter_to_report is not None:
             self.report_orientation.normalize()
             self.seq_rotate_to_angle(self.report_orientation.degrees)
             self.seq_move_wheels(0.6, 0.6)
-            self.seq_delay_seconds(0.4)
+            self.seq_delay_seconds(0.2)
             self.seq_move_wheels(0, 0)
             self.seq_delay_seconds(2)
 
@@ -199,9 +198,7 @@ class Executor:
 
     def calibrate_position_offsets(self):
         """Calculates offsets in the robot position, in case it doesn't start perfectly centerd."""
-        print("robot_position:", self.robot.position)
         self.robot.position_offsets = self.robot.position % (self.mapper.quarter_tile_size * 2)
-        print("positionOffsets: ", self.robot.position_offsets)
         
 
     def seq_calibrate_robot_rotation(self):

@@ -111,7 +111,6 @@ class Mapper:
     
     def register_start(self, robot_position):
         self.start_position = deepcopy(robot_position)
-        print("registered start position:", self.start_position)
 
     
     # Grids
