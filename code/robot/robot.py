@@ -2,15 +2,17 @@ from controller import Robot as WebotsRobot
 from data_structures.angle import Angle
 from data_structures.vectors import Position2D
 from flow_control.step_counter import StepCounter
+# Devices
 from robot.devices.camera import Camera
 from robot.devices.comunicator import Comunicator
 from robot.devices.gps import Gps
 from robot.devices.gyroscope import Gyroscope
 from robot.devices.lidar import Lidar
-# Devices
 from robot.devices.wheel import Wheel
 from robot.drive_base import DriveBase, Criteria
 from robot.pose_manager import PoseManager
+
+import flags
 
 
 class Robot:
@@ -90,6 +92,9 @@ class Robot:
         self.right_camera.update(self.orientation)
         self.left_camera.update(self.orientation)
         self.center_camera.update(self.orientation)
+
+        if flags.DO_UPDATE_COMUNICATOR:
+            self.comunicator.update()
 
     def do_loop(self):
         """Advances the simulation by one step and returns True if the simulation is running."""

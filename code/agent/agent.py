@@ -5,6 +5,8 @@ from agent.subagents.return_to_start_subagent import ReturnToStartAgent
 from data_structures.vectors import Position2D
 from flow_control.state_machine import StateMachine
 from mapping.mapper import Mapper
+from robot.robot import Robot
+import flags
 
 
 class SubagentPriorityCombiner(SubagentInterface):
@@ -37,8 +39,9 @@ class SubagentPriorityCombiner(SubagentInterface):
 
 
 class Agent(AgentInterface):
-    def __init__(self, mapper: Mapper) -> None:
+    def __init__(self, mapper: Mapper, robot: Robot) -> None:
         self.__mapper = mapper
+        self.__robot = robot
 
         self.__navigation_agent = SubagentPriorityCombiner([FollowWallsAgent(self.__mapper),
                                                             GoToNonDiscoveredAgent(self.__mapper)])
@@ -62,9 +65,12 @@ class Agent(AgentInterface):
         return self.__target_position
 
     def do_end(self) -> bool:
-        return self.__stage_machine.state == "return_to_start" and \
+        return_to_start = self.__stage_machine.state == "return_to_start" and \
             self.__mapper.robot_position.get_distance_to(
                 self.__mapper.start_position) < self.end_reached_distance_threshold
+        no_time_remaining = flags.DO_EARLY_QUIT and self.__robot.comunicator.remaining_time < 5
+
+        return return_to_start or no_time_remaining
 
     def __stage_explore(self, change_state_function):
         self.__navigation_agent.update(force_calculation=self.do_force_calculation)
