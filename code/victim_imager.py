@@ -34,8 +34,8 @@ class ColorFilter:
 color_filters = {
     "black": ColorFilter(lower_hsv=(0, 0, 0), upper_hsv=(0, 0, 10)),
     "white": ColorFilter(lower_hsv=(0, 0, 207), upper_hsv=(0, 0, 207)),
-    "yellow": ColorFilter(lower_hsv=(25, 157, 82), upper_hsv=(30, 255, 255)),
-    "red": ColorFilter(lower_hsv=(160, 170, 127), upper_hsv=(170, 255, 255))
+    "yellow": ColorFilter(lower_hsv=(25, 140, 82), upper_hsv=(40, 255, 255)),
+    "red": ColorFilter(lower_hsv=(160, 150, 127), upper_hsv=(180, 255, 255))
 }
 
 min_fixture_height = 15
@@ -85,50 +85,50 @@ def find_fixtures(image) -> list:
     return filter_fixtures(final_victims)
 
 
-def get_unknown_color_clusters(image_path, known_colors_dict):
-    # Load the image
-    image = cv2.imread(image_path)
-
-    # Initialize a mask for all known colors
-    mask_known = np.zeros(image.shape[:2], dtype=np.uint8)
-
-    # Loop over the known colors and add to the mask
-    for color_name, (lower, upper) in known_colors_dict.items():
-        lower_known = np.array(lower)
-        upper_known = np.array(upper)
-        mask_color = cv2.inRange(image, lower_known, upper_known)
-        mask_known = cv2.bitwise_or(mask_known, mask_color)
-
-    # Invert the mask to get a mask of the unknown colors
-    mask_unknown = cv2.bitwise_not(mask_known)
-
-    # Bitwise-AND mask and original image to get an image of the unknown colors
-    unknown_colors_image = cv2.bitwise_and(image, image, mask=mask_unknown)
-
-    # Convert the image of unknown colors to grayscale
-    unknown_colors_gray = cv2.cvtColor(unknown_colors_image, cv2.COLOR_BGR2GRAY)
-    cv2.imshow("unknown_colors_gray", unknown_colors_gray)
-    cv2.waitKey(0)
-
-    # Threshold the grayscale image to get a binary image
-    _, binary_image = cv2.threshold(unknown_colors_gray, 1, 255, cv2.THRESH_BINARY)
-
-    # Find contours in the binary image
-    contours, _ = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    # Compute the area (or size) of each contour (or cluster)
-    cluster_sizes = [cv2.contourArea(c) for c in contours]
-
-    return cluster_sizes
-
-
-image_path = 'path_to_your_image.jpg'
-known_colors_dict = {
-    'wall_bright': ([194, 37, 45], [189, 59, 73]),
-    'wall_dark': ([189, 17, 11], [189, 55, 38]),
-    'floor_bright': ([0, 0, 83], [5, 7, 22]),
-    'floor_dark': ([0, 0, 28], [0, 8, 10])
-}
+# def get_unknown_color_clusters(image_path, known_colors_dict):
+#     # Load the image
+#     image = cv2.imread(image_path)
+#
+#     # Initialize a mask for all known colors
+#     mask_known = np.zeros(image.shape[:2], dtype=np.uint8)
+#
+#     # Loop over the known colors and add to the mask
+#     for color_name, (lower, upper) in known_colors_dict.items():
+#         lower_known = np.array(lower)
+#         upper_known = np.array(upper)
+#         mask_color = cv2.inRange(image, lower_known, upper_known)
+#         mask_known = cv2.bitwise_or(mask_known, mask_color)
+#
+#     # Invert the mask to get a mask of the unknown colors
+#     mask_unknown = cv2.bitwise_not(mask_known)
+#
+#     # Bitwise-AND mask and original image to get an image of the unknown colors
+#     unknown_colors_image = cv2.bitwise_and(image, image, mask=mask_unknown)
+#
+#     # Convert the image of unknown colors to grayscale
+#     unknown_colors_gray = cv2.cvtColor(unknown_colors_image, cv2.COLOR_BGR2GRAY)
+#     cv2.imshow("unknown_colors_gray", unknown_colors_gray)
+#     cv2.waitKey(0)
+#
+#     # Threshold the grayscale image to get a binary image
+#     _, binary_image = cv2.threshold(unknown_colors_gray, 1, 255, cv2.THRESH_BINARY)
+#
+#     # Find contours in the binary image
+#     contours, _ = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+#
+#     # Compute the area (or size) of each contour (or cluster)
+#     cluster_sizes = [cv2.contourArea(c) for c in contours]
+#
+#     return cluster_sizes
+#
+#
+# image_path = 'path_to_your_image.jpg'
+# known_colors_dict = {
+#     'wall_bright': ([194, 37, 45], [189, 59, 73]),
+#     'wall_dark': ([189, 17, 11], [189, 55, 38]),
+#     'floor_bright': ([0, 0, 83], [5, 7, 22]),
+#     'floor_dark': ([0, 0, 28], [0, 8, 10])
+# }
 
 
 n = 0
@@ -141,10 +141,6 @@ while robot.step(timestep) != -1:
     image_front = camera_front.getImage()
     image_right = camera_right.getImage()
     image_left = camera_left.getImage()
-
-    hsv_img = cv2.cvtColor(image_front, cv2.COLOR_BGR2HSV)
-    cv2.imshow("HSV", hsv_img)
-    cv2.waitKey(1)
 
     # Every {x} time steps, randomly set wheel speeds
     if n % 100 == 0:
