@@ -16,10 +16,10 @@ PRINT_REGISTERED_START_POS = False # Zastavica PRINT_REGISTERED_START_POS nadzor
 
 PRINT_MAP_AT_END = True # Zastavica PRINT_MAP_AT_END nadzoruje, ali se izpiše zemljevid na koncu programa.
 
-DO_UPDATE_COMUNICATOR = False
+DO_UPDATE_COMUNICATOR = True
 
 DO_SLOW_DOWN = False # Zastavica DO_SLOW_DOWN nadzoruje, ali se program izvaja v počasnem načinu.
 SLOW_DOWN_S = 0.032 # Zastavica SLOW_DOWN_S nadzoruje, kako počasi se program izvaja.
-DO_EARLY_QUIT = False
+DO_EARLY_QUIT = True
 
 DO_WAIT_KEY = False # Zastavica DO_WAIT_KEY nadzoruje, ali se program ustavi in čaka na pritisk tipke.

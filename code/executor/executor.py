@@ -142,11 +142,13 @@ class Executor:
             self.state_machine.change_state("end")
 
         cam_images = self.robot.get_camera_images()
+        import cv2 as cv
         if self.victim_reporting_enabled and cam_images is not None and not self.mapper.has_detected_victim_from_position():
             for cam_image in cam_images:
+                # TODO: Better fixture detection
                 fixtures = self.fixture_detector.find_fixtures(cam_image.image)
                 if len(fixtures):
-                    self.letter_to_report = self.fixture_detector.classify_fixture(fixtures[0])
+                    self.letter_to_report = self.fixture_detector.classify_fixture(fixtures[0])  # TODO: AI implementation
                     self.report_orientation = cam_image.data.horizontal_orientation
                     change_state_function("report_fixture")
                     self.sequencer.reset_sequence()  # Resets the sequence
