@@ -32,8 +32,8 @@ class ColorFilter:
 
 
 color_filters = {
-    "black": ColorFilter(lower_hsv=(0, 0, 0), upper_hsv=(0, 0, 10)),
-    "white": ColorFilter(lower_hsv=(0, 0, 207), upper_hsv=(0, 0, 207)),
+    "black": ColorFilter(lower_hsv=(0, 0, 0), upper_hsv=(0, 0, 25)),
+    "white": ColorFilter(lower_hsv=(0, 0, 200), upper_hsv=(0, 0, 220)),
     "yellow": ColorFilter(lower_hsv=(25, 140, 82), upper_hsv=(40, 255, 255)),
     "red": ColorFilter(lower_hsv=(160, 150, 127), upper_hsv=(180, 255, 255))
 }
@@ -132,7 +132,7 @@ def find_fixtures(image) -> list:
 
 
 n = 0
-image_path = "C:/Programming/RoboCup_Erebus/FixtureDataset/F/"
+image_path = "C:/Programming/RoboCup_Erebus/FixtureDataset/P/"
 
 import random
 
@@ -143,7 +143,7 @@ while robot.step(timestep) != -1:
     image_left = camera_left.getImage()
 
     # Every {x} time steps, randomly set wheel speeds
-    if n % 100 == 0:
+    if n % 70 == 0:
         wheel_left.setVelocity(random.uniform(-6.28, 6.28))
         wheel_right.setVelocity(random.uniform(-6.28, 6.28))
 
@@ -151,6 +151,6 @@ while robot.step(timestep) != -1:
         numpy_image = np.array(np.frombuffer(img, np.uint8).reshape((40, 64, 4)))
         victims = find_fixtures(numpy_image)
         if len(victims):
-            print("Found!", end=" ")
+            print(n)
             cv2.imwrite(f"{image_path}{n}-{random.randint(10000000, 99999999)}.png", numpy_image)
     n += 1
