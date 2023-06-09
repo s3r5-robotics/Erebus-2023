@@ -17,7 +17,7 @@ from robot.robot import Robot
 
 class Executor:
     def __init__(self, mapper: Mapper, robot: Robot) -> None:
-        self.agent = Agent(mapper, robot)
+        self.agent = Agent(mapper)
         self.mapper = mapper  # Maps everything
         self.robot = robot  # Low level movement and sensing
 

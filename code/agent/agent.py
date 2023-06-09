@@ -17,7 +17,6 @@ class SubagentPriorityCombiner(SubagentInterface):
         self.__agent_list = agents
         self.__current_agent_index = 0
         self.__previous_agent_index = 0
-        self.__return_to_start_timeout = 7 * 60
 
     def update(self, force_calculation=False) -> None:
         agent: SubagentInterface
@@ -39,9 +38,8 @@ class SubagentPriorityCombiner(SubagentInterface):
 
 
 class Agent(AgentInterface):
-    def __init__(self, mapper: Mapper, robot: Robot) -> None:
+    def __init__(self, mapper: Mapper) -> None:
         self.__mapper = mapper
-        self.__robot = robot
 
         self.__navigation_agent = SubagentPriorityCombiner([FollowWallsAgent(self.__mapper),
                                                             GoToNonDiscoveredAgent(self.__mapper)])
@@ -55,6 +53,8 @@ class Agent(AgentInterface):
 
         self.do_force_calculation = False
         self.end_reached_distance_threshold = 0.04
+
+        self.__return_to_start_timeout = 7 * 60
 
         self.__target_position = None
 
