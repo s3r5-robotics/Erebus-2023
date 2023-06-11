@@ -4,8 +4,8 @@ from pathlib import Path
 
 import cv2 as cv
 import numpy as np
-from PIL import Image
 
+import controller
 from controller import Robot, Motor, Camera
 from image_plotter import ImagePlotter
 
@@ -73,12 +73,11 @@ def filter_fixtures(victims) -> list:
     return final_victims
 
 
-def find_fixtures(image: Image, camera: int) -> list:
+def find_fixtures(image: np.ndarray, camera: int) -> list:
     """
     Finds fixtures in the image.
     Returns a list of dictionaries containing fixture positions and images.
     """
-    image = np.rot90(image, k=3)
     binary_images = []
     for fn, f in color_filters.items():
         img = f.filter(image)
@@ -111,69 +110,37 @@ def find_fixtures(image: Image, camera: int) -> list:
     return filter_fixtures(final_victims)
 
 
-# def get_unknown_color_clusters(image_path, known_colors_dict):
-#     # Load the image
-#     image = cv2.imread(image_path)
-#
-#     # Initialize a mask for all known colors
-#     mask_known = np.zeros(image.shape[:2], dtype=np.uint8)
-#
-#     # Loop over the known colors and add to the mask
-#     for color_name, (lower, upper) in known_colors_dict.items():
-#         lower_known = np.array(lower)
-#         upper_known = np.array(upper)
-#         mask_color = cv2.inRange(image, lower_known, upper_known)
-#         mask_known = cv2.bitwise_or(mask_known, mask_color)
-#
-#     # Invert the mask to get a mask of the unknown colors
-#     mask_unknown = cv2.bitwise_not(mask_known)
-#
-#     # Bitwise-AND mask and original image to get an image of the unknown colors
-#     unknown_colors_image = cv2.bitwise_and(image, image, mask=mask_unknown)
-#
-#     # Convert the image of unknown colors to grayscale
-#     unknown_colors_gray = cv2.cvtColor(unknown_colors_image, cv2.COLOR_BGR2GRAY)
-#     cv2.imshow("unknown_colors_gray", unknown_colors_gray)
-#     cv2.waitKey(0)
-#
-#     # Threshold the grayscale image to get a binary image
-#     _, binary_image = cv2.threshold(unknown_colors_gray, 1, 255, cv2.THRESH_BINARY)
-#
-#     # Find contours in the binary image
-#     contours, _ = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-#
-#     # Compute the area (or size) of each contour (or cluster)
-#     cluster_sizes = [cv2.contourArea(c) for c in contours]
-#
-#     return cluster_sizes
-#
-#
-# image_path = 'path_to_your_image.jpg'
-# known_colors_dict = {
-#     'wall_bright': ([194, 37, 45], [189, 59, 73]),
-#     'wall_dark': ([189, 17, 11], [189, 55, 38]),
-#     'floor_bright': ([0, 0, 83], [5, 7, 22]),
-#     'floor_dark': ([0, 0, 28], [0, 8, 10])
-# }
-
-
 images_dir = "C:/Programming/RoboCup_Erebus/FixtureDataset/C"
 debug_images_dir = r"C:\Programming\RoboCup_Erebus\Erebus-2023\VictimDetection\images"
 
 debug_images_dir = Path(debug_images_dir, Path(robot.world_path).stem)
 debug_images_dir.mkdir(parents=True, exist_ok=True)
 
+
+def camera_image(camera: controller.Camera, rotate: int = None) -> np.ndarray:
+    # The image is coded as a sequence of four bytes representing the blue, green, red and alpha levels of a pixel.
+    # Pixels are stored in horizontal lines ranging from the top left hand side of the image down to bottom right hand
+    # side, resulting in 64 rows x 40 columns.
+    # Get the image from the camera and convert bytes to Width x Height x BGRA numpy array, then
+    # remove the unused alpha channel from each pixel to get WxHxBGR (40, 64, 3) numpy array.
+    arr = np.delete(np.frombuffer(camera.getImage(), np.uint8).reshape((40, 64, 4)), 3, axis=2)
+    # Swap blue and red channels to get RGB
+    arr = np.flip(arr, axis=2)
+    # Rotate image if needed
+    if rotate:
+        arr = np.rot90(arr, k=rotate // 90)
+    return arr  # .copy() Copy to avoid "ValueError: ndarray is not C-contiguous in cython"
+
+
 step_counter = 0
 while robot.step(timestep) != -1:
     step_counter += 1
-    # Get the images from the cameras
-    image_left = camera_left.getImage()
-    image_front = camera_front.getImage()
-    image_right = camera_right.getImage()
-    images = (image_left, image_front, image_right)
+    # Get the images from the cameras and convert bytes to Width x Height x BRGA numpy array,
+    # then remove the alpha channel from each pixel to get WxHxBRG (40, 64, 3) numpy arrays.
+    images = tuple(camera_image(cam, rot) for cam, rot in ((camera_left, 90), (camera_front, 270), (camera_right, 270)))
 
     plotter.clear()
-    plotter.add(images, mode="BRGA", rotations=[90, -90, -90])
+    plotter.add(images)
 
     # Every {x} time steps, randomly set wheel speeds
     if step_counter % 70 == 0:
@@ -181,12 +148,12 @@ while robot.step(timestep) != -1:
         wheel_right.setVelocity(random.uniform(-6.28, 6.28))
 
     for i, img in enumerate(images):
-        numpy_image = np.array(np.frombuffer(img, np.uint8).reshape((40, 64, 4)))
-        victims = find_fixtures(numpy_image, i)
+        victims = find_fixtures(img, i)
         if len(victims):
             print(step_counter, "victim")
-            cv.imwrite(f"{images_dir}/{step_counter}-{time.time()}.png", numpy_image)
+            cv.imwrite(f"{images_dir}/{step_counter}-{time.time()}.png", img)
 
     if step_counter % 10 == 0:
         plotter.save(debug_images_dir.joinpath(f"{step_counter}.png"))
         print(step_counter, "image")
+        break

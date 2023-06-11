@@ -4,38 +4,8 @@ from typing import Optional, Literal, Union, Sequence, Iterable, Callable
 import numpy as np
 from PIL import Image
 
-
-# def plot(og_images: list[bytes], mod_images: list[bytes], size_wh=(64, 40)):
-#     """
-#     Plots the images in a grid.
-#     """
-#
-#     def convert(bgra: bytes) -> bytearray:
-#         """
-#         Converts the image from BGRA to RGBA.
-#         """
-#         bgra = bytearray(bgra)
-#         for pxi in range(0, len(bgra), 4):
-#             bgra[pxi], bgra[pxi + 2] = bgra[pxi + 2], bgra[pxi]
-#         return bgra
-#
-#     # Convert the images from bytes to PIL images
-#     og_images: list[Image] = [Image.frombytes('RGBA', size_wh, convert(img)) for img in og_images]
-#     mod_images: list[Image] = [Image.frombytes('RGBA', size_wh, convert(img)) for img in mod_images]
-#
-#     rows = math.ceil(len(mod_images) / len(og_images)) + 1
-#     x_margin = 5
-#     y_margin = 2
-#
-#     new_im = Image.new('RGBA', (len(og_images) * (size_wh[0] + y_margin) + y_margin,
-#                                 rows * (size_wh[1] + x_margin) + x_margin))  # Create the final image grid
-#     for i, im in enumerate(og_images + mod_images):
-#         row = i // len(og_images)
-#         col = i % len(og_images)
-#
-#         new_im.paste(im, (y_margin + col * (size_wh[0] + y_margin), x_margin + row * (size_wh[1] + x_margin)))
-#
-#     new_im.save(r"C:\Programming\RoboCup_Erebus\Erebus-2023\VictimDetection\test.png")
+ImageData = Union[np.ndarray, bytes, bytearray]
+Rotations = Literal[0, 90, 180, 270]
 
 
 class ImagePlotter:
@@ -56,8 +26,8 @@ class ImagePlotter:
             bgra[pxi], bgra[pxi + 2] = bgra[pxi + 2], bgra[pxi]
         return bgra
 
-    def add(self, *images: Union[bytes, Iterable[bytes]], mode: Literal["BRGA", "RGB", "L", "P"],
-            rotations: Union[None, Literal[-90, 0, 90, 180], Sequence[Literal[-90, 0, 90, 180]]] = None,
+    def add(self, *images: Union[ImageData, Iterable[ImageData]], mode: Literal["BRGA", "RGB", "L", "P"] = "RGB",
+            rotations: Union[None, Rotations, Sequence[Rotations]] = None,
             column: int = None) -> list[Image]:
         """
         Add images to the row(s) or column of the image grid
@@ -91,9 +61,13 @@ class ImagePlotter:
             else:
                 size = self.width, self.height
 
-            img = Image.frombytes(mode, size, conversion_function(img))
+            if isinstance(img, np.ndarray):
+                img = Image.fromarray(img, mode)
+            else:
+                img = Image.frombytes(mode, size, conversion_function(img))
+
             if rotation:
-                img = img.rotate(rotation)
+                img = img.rotate(rotation, expand=True)
 
             if column is None:
                 self.images[i].append(img)
