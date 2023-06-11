@@ -1,23 +1,31 @@
-import cv2
+import random
+import time
+
 import cv2 as cv
 import numpy as np
-from controller import Robot
+from PIL import Image
+
+from controller import Robot, Motor, Camera
+from image_plotter import ImagePlotter
+
 
 robot = Robot()
 timestep = int(robot.getBasicTimeStep())
 
-wheel_left = robot.getDevice("wheel1 motor")
-wheel_right = robot.getDevice("wheel2 motor")
+wheel_left: Motor = robot.getDevice("wheel1 motor")
+wheel_right: Motor = robot.getDevice("wheel2 motor")
 wheel_left.setPosition(float('inf'))
 wheel_right.setPosition(float('inf'))
 
-camera_front = robot.getDevice("camera1")
-camera_right = robot.getDevice("camera2")
-camera_left = robot.getDevice("camera3")
+camera_front: Camera = robot.getDevice("camera1")
+camera_right: Camera = robot.getDevice("camera2")
+camera_left: Camera = robot.getDevice("camera3")
 
 camera_front.enable(timestep)
 camera_right.enable(timestep)
 camera_left.enable(timestep)
+
+plotter = ImagePlotter(width=64, height=40, images_per_row=3, rotate_images=True)
 
 
 class ColorFilter:
@@ -59,12 +67,12 @@ def filter_fixtures(victims) -> list:
     return final_victims
 
 
-def find_fixtures(image) -> list:
-    image = np.rot90(image, k=3)
+def find_fixtures(image) -> tuple[list[Image], list]:
     """
     Finds fixtures in the image.
     Returns a list of dictionaries containing fixture positions and images.
     """
+    image = np.rot90(image, k=3)
     binary_images = []
     for f in color_filters.values():
         binary_images.append(f.filter(image))
@@ -82,7 +90,7 @@ def find_fixtures(image) -> list:
         final_victims.append({"image": image[y:y + h, x:x + w], "position": (x, y)})
 
     # print("unfiltered", len(final_victims))
-    return filter_fixtures(final_victims)
+    return binary_images, filter_fixtures(final_victims)
 
 
 # def get_unknown_color_clusters(image_path, known_colors_dict):
@@ -131,26 +139,37 @@ def find_fixtures(image) -> list:
 # }
 
 
-n = 0
-image_path = "C:/Programming/RoboCup_Erebus/FixtureDataset/P/"
+images_dir = "C:/Programming/RoboCup_Erebus/FixtureDataset/C"
 
-import random
+step_counter = 0
 
 while robot.step(timestep) != -1:
+    step_counter += 1
     # Get the images from the cameras
+    image_left = camera_left.getImage()
     image_front = camera_front.getImage()
     image_right = camera_right.getImage()
-    image_left = camera_left.getImage()
+
+    plotter.clear()
+    plotter.add_bgra(image_left, image_front, image_right)
 
     # Every {x} time steps, randomly set wheel speeds
-    if n % 70 == 0:
+    if step_counter % 70 == 0:
         wheel_left.setVelocity(random.uniform(-6.28, 6.28))
         wheel_right.setVelocity(random.uniform(-6.28, 6.28))
 
-    for img in [image_front, image_right, image_left]:
+    filtered_images: list[list[Image]] = [[], [], []]
+
+    for i, img in enumerate([image_left, image_front, image_right]):
         numpy_image = np.array(np.frombuffer(img, np.uint8).reshape((40, 64, 4)))
-        victims = find_fixtures(numpy_image)
+        images, victims = find_fixtures(numpy_image)
+        filtered_images[i] = images
         if len(victims):
-            print(n)
-            cv2.imwrite(f"{image_path}{n}-{random.randint(10000000, 99999999)}.png", numpy_image)
-    n += 1
+            print(step_counter)
+            cv.imwrite(f"{images_dir}/{step_counter}-{time.time()}.png", numpy_image)
+
+    for left, front, right in zip(*filtered_images):
+        plotter.add_rgb(left, front, right)
+
+    if step_counter % 50 == 0:
+        plotter.save(rf"C:\Programming\RoboCup_Erebus\Erebus-2023\VictimDetection\images\{step_counter}.png")
