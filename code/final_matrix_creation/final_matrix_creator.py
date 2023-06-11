@@ -1,8 +1,9 @@
 import copy
 
 import cv2 as cv
-import flags
 import numpy as np
+
+import flags
 from data_structures.compound_pixel_grid import CompoundExpandablePixelGrid
 
 
@@ -154,6 +155,11 @@ class FloorMatrixCreator:
             "7":  # Connection2-3
                 {
                     "range": ((0, 182, 49), (0, 204, 232)),
+                    "threshold": 0.2},
+
+            "9":  # Connection1-4
+                {
+                    "range": ((59, 210, 159), (61, 228, 226)),
                     "threshold": 0.2},
         }
 
