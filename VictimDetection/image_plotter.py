@@ -46,7 +46,7 @@ class ImagePlotter:
         if not isinstance(images[0], (bytes, bytearray, np.ndarray)):
             images = images[0]  # type: Iterable[bytes]
 
-        generated_images = []
+        generated_images: list[Image] = []
         for i, img in enumerate(images):
             if rotations is None:
                 rotation = 0

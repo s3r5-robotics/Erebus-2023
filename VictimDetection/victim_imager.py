@@ -1,9 +1,11 @@
 import random
 import time
+from os import PathLike
 from pathlib import Path
 
 import cv2 as cv
 import numpy as np
+from numpy import ndarray
 
 import controller
 from controller import Robot, Motor, Camera
@@ -56,7 +58,10 @@ min_fixture_height = 15
 min_fixture_width = 15
 
 
-def sum_images(images):
+def sum_images(images) -> bytes:
+    """
+    Combine the binary images into one.
+    """
     final_img = images[0]
     for index, image in enumerate(images):
         final_img += image
@@ -65,6 +70,9 @@ def sum_images(images):
 
 
 def filter_fixtures(victims) -> list:
+    """
+    Filters out fixtures that are too small - far away.
+    """
     final_victims = []
     for vic in victims:
         if vic["image"].shape[0] > min_fixture_height and vic["image"].shape[1] > min_fixture_width:
@@ -78,7 +86,9 @@ def find_fixtures(image: np.ndarray, camera: int) -> list:
     Finds fixtures in the image.
     Returns a list of dictionaries containing fixture positions and images.
     """
-    binary_images = []
+    binary_images: list[bytes] = []
+
+    # Apply each color filter to the image
     for fn, f in color_filters.items():
         img = f.filter(image)
         binary_images.append(img)
@@ -88,8 +98,8 @@ def find_fixtures(image: np.ndarray, camera: int) -> list:
         pixel0, pixel1 = color_filter_palette[fn]
         img.putpalette(128 * pixel0 + 128 * pixel1)
 
-    binary_image = sum_images(binary_images)
-    rect_image = np.zeros_like(binary_image)
+    binary_image: bytes = sum_images(binary_images)
+    rect_image: ndarray = np.zeros_like(binary_image)
 
     contours, _ = cv.findContours(binary_image, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     for c0 in contours:
@@ -110,33 +120,31 @@ def find_fixtures(image: np.ndarray, camera: int) -> list:
     return filter_fixtures(final_victims)
 
 
-images_dir = "C:/Programming/RoboCup_Erebus/FixtureDataset/C"
-debug_images_dir = r"C:\Programming\RoboCup_Erebus\Erebus-2023\VictimDetection\images"
+images_dir = Path("C:/Programming/RoboCup_Erebus/FixtureDataset/C")  # Where the hazard images will be stored
+debug_images_dir = Path(r"C:\Programming\RoboCup_Erebus\Erebus-2023\VictimDetection\images")
 
-debug_images_dir = Path(debug_images_dir, Path(robot.world_path).stem)
+debug_images_dir = debug_images_dir.joinpath(Path(robot.world_path).stem)
 debug_images_dir.mkdir(parents=True, exist_ok=True)
 
 
 def camera_image(camera: controller.Camera, rotate: int = None) -> np.ndarray:
-    # The image is coded as a sequence of four bytes representing the blue, green, red and alpha levels of a pixel.
-    # Pixels are stored in horizontal lines ranging from the top left hand side of the image down to bottom right hand
-    # side, resulting in 64 rows x 40 columns.
-    # Get the image from the camera and convert bytes to Width x Height x BGRA numpy array, then
-    # remove the unused alpha channel from each pixel to get WxHxBGR (40, 64, 3) numpy array.
+    """
+    The image is coded as a sequence of four bytes representing the `blue, green, red and alpha` levels of a pixel.
+    Get the image from the camera and convert bytes to Width x Height x BGRA numpy array, then
+    remove the unused alpha channel from each pixel to get WxHxBGR (40, 64, 3) numpy array.
+    """
     arr = np.delete(np.frombuffer(camera.getImage(), np.uint8).reshape((40, 64, 4)), 3, axis=2)
-    # Swap blue and red channels to get RGB
-    arr = np.flip(arr, axis=2)
-    # Rotate image if needed
-    if rotate:
+    arr = np.flip(arr, axis=2)  # Swap blue and red channels to get RGB from BGR
+    if rotate:  # Rotate image if needed
         arr = np.rot90(arr, k=rotate // 90)
-    return arr  # .copy() Copy to avoid "ValueError: ndarray is not C-contiguous in cython"
+    return arr  # .copy()  # Copy to avoid "ValueError: ndarray is not C-contiguous in cython"
 
 
 step_counter = 0
-while robot.step(timestep) != -1:
+while robot.step(timestep) != -1:  # While the simulation is running
     step_counter += 1
-    # Get the images from the cameras and convert bytes to Width x Height x BRGA numpy array,
-    # then remove the alpha channel from each pixel to get WxHxBRG (40, 64, 3) numpy arrays.
+    # Get the images from the cameras and convert bytes to `Width x Height x BRGA` numpy array,
+    # then remove the alpha channel from each pixel to get `WxHxBRG (40, 64, 3)` numpy arrays.
     images = tuple(camera_image(cam, rot) for cam, rot in ((camera_left, 90), (camera_front, 270), (camera_right, 270)))
 
     plotter.clear()
@@ -148,7 +156,7 @@ while robot.step(timestep) != -1:
         wheel_right.setVelocity(random.uniform(-6.28, 6.28))
 
     for i, img in enumerate(images):
-        victims = find_fixtures(img, i)
+        victims = find_fixtures(img, i)  # Find all fixtures in the image
         if len(victims):
             print(step_counter, "victim")
             cv.imwrite(f"{images_dir}/{step_counter}-{time.time()}.png", img)
