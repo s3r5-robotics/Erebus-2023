@@ -51,6 +51,7 @@ def end_run():
     return False
 
 
+# Create states and possible states that it can change to
 states += State.for_function(init, drive, turn)
 states += State.for_function(drive, turn, end_run)
 states += State.for_function(turn, drive, end_run)
