@@ -14,20 +14,17 @@ from image_plotter import ImagePlotter
 robot = Robot()
 timestep = int(robot.getBasicTimeStep())
 
-wheel_left: Motor = robot.getDevice("wheel1 motor")
-wheel_right: Motor = robot.getDevice("wheel2 motor")
+wheel_left: Motor = robot.getDevice("wheel_left motor")
+wheel_right: Motor = robot.getDevice("wheel_right motor")
 wheel_left.setPosition(float('inf'))
 wheel_right.setPosition(float('inf'))
 
-camera_front: Camera = robot.getDevice("camera1")
-camera_right: Camera = robot.getDevice("camera2")
-camera_left: Camera = robot.getDevice("camera3")
-
-camera_front.enable(timestep)
-camera_right.enable(timestep)
+camera_left: Camera = robot.getDevice("camera_left")
+camera_right: Camera = robot.getDevice("camera_right")
 camera_left.enable(timestep)
+camera_right.enable(timestep)
 
-plotter = ImagePlotter(width=40, height=64, columns=3)
+plotter = ImagePlotter(width=64, height=40, columns=2)
 
 
 class ColorFilter:
@@ -145,15 +142,17 @@ while robot.step(timestep) != -1:  # While the simulation is running
     step_counter += 1
     # Get the images from the cameras and convert bytes to `Width x Height x BRGA` numpy array,
     # then remove the alpha channel from each pixel to get `WxHxBRG (40, 64, 3)` numpy arrays.
-    images = tuple(camera_image(cam, rot) for cam, rot in ((camera_left, 90), (camera_front, 270), (camera_right, 270)))
+    images = tuple(camera_image(cam, rot) for cam, rot in ((camera_left, 0), (camera_right, 0)))
 
     plotter.clear()
     plotter.add(images)
 
     # Every {x} time steps, randomly set wheel speeds
-    if step_counter % 70 == 0:
-        wheel_left.setVelocity(random.uniform(-6.28, 6.28))
-        wheel_right.setVelocity(random.uniform(-6.28, 6.28))
+    # if step_counter % 70 == 0:
+    #     wheel_left.setVelocity(random.uniform(-6.28, 6.28))
+    #     wheel_right.setVelocity(random.uniform(-6.28, 6.28))
+    wheel_left.setVelocity(0)
+    wheel_right.setVelocity(0)
 
     for i, img in enumerate(images):
         victims = find_fixtures(img, i)  # Find all fixtures in the image

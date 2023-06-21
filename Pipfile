@@ -6,5 +6,7 @@ name = "pypi"
 [packages]
 psutil = "*"
 websockets = "*"
+opencv-python = "*"
+numpy = "*"
 
 [dev-packages]
