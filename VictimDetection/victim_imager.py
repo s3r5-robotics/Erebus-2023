@@ -2,6 +2,7 @@ import random
 import time
 from os import PathLike
 from pathlib import Path
+from typing import Literal
 
 import cv2 as cv
 import numpy as np
@@ -28,22 +29,33 @@ plotter = ImagePlotter(width=64, height=40, columns=2)
 
 
 class ColorFilter:
-    def __init__(self, lower_hsv, upper_hsv):
-        self.lower = np.array(lower_hsv)
-        self.upper = np.array(upper_hsv)
+    def __init__(self, lower: tuple[int, int, int], upper: tuple[int, int, int]):
+        self.lower = np.array(lower)
+        self.upper = np.array(upper)
+        # self.lower = np.array(lower_hsv)
+        # self.upper = np.array(upper_hsv)
 
     def filter(self, img):
-        hsv_image = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+        hsv_image = cv.cvtColor(img, cv.COLOR_BGR2RGB)
         mask = cv.inRange(hsv_image, self.lower, self.upper)
         return mask
 
 
+# RGB color lower and upper bounds
 color_filters = {
-    "black": ColorFilter(lower_hsv=(0, 0, 0), upper_hsv=(0, 0, 25)),
-    "white": ColorFilter(lower_hsv=(0, 0, 200), upper_hsv=(0, 0, 220)),
-    "yellow": ColorFilter(lower_hsv=(25, 140, 82), upper_hsv=(40, 255, 255)),
-    "red": ColorFilter(lower_hsv=(160, 150, 127), upper_hsv=(180, 255, 255))
+    "black": ColorFilter(lower=(0, 0, 0), upper=(20, 20, 20)),
+    "white": ColorFilter(lower=(200, 200, 200), upper=(255, 255, 255)),
+    "yellow": ColorFilter(lower=(255, 145, 0), upper=(204, 255, 0)),
+    "red": ColorFilter(lower=(196, 0, 0), upper=(255, 68, 0))
 }
+
+# color_filters = {
+#     "black": ColorFilter(lower_hsv=(0, 0, 0), upper_hsv=(10, 10, 25)),
+#     "white": ColorFilter(lower_hsv=(0, 0, 20), upper_hsv=(5, 5, 255)),
+#     "yellow": ColorFilter(lower_hsv=(25, 140, 20), upper_hsv=(40, 255, 255)),
+#     "red": ColorFilter(lower_hsv=(160, 150, 20), upper_hsv=(180, 255, 255))
+# }
+
 color_filter_palette = {  # Color for pixel value <=128, color for pixel value >128
     "black": ([255, 255, 255], [0, 0, 0]),
     "white": ([0, 0, 0], [255, 255, 255]),
