@@ -110,16 +110,10 @@ def find_fixtures(image: np.ndarray, camera: int) -> list:
     binary_image: bytes = sum_images(binary_images)
     rect_image: ndarray = np.zeros_like(binary_image)
 
-    contours, _ = cv.findContours(binary_image, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-    for c0 in contours:
-        x, y, w, h = cv.boundingRect(c0)
-        cv.rectangle(binary_image, (x, y), (x + w, y + h), (225, 255, 255), -1)
-        cv.rectangle(rect_image, (x, y), (x + w, y + h), (128, 128, 128), 1)
-    contours, _ = cv.findContours(binary_image, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv.findContours(binary_image, cv.RETR_TREE, cv.CHAIN_APPROX_TC89_L1)
     final_victims = []
     for c in contours:
         x, y, w, h = cv.boundingRect(c)
-        cv.rectangle(rect_image, (x, y), (x + w, y + h), (255, 255, 255), 1)
         final_victims.append({"image": image[y:y + h, x:x + w], "position": (x, y)})
 
     plotter.add(binary_image, mode="L", column=camera)
