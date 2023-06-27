@@ -11,6 +11,8 @@ from movement import Drivetrain
 
 
 class Robot(controller.Robot):
+    # Robot dimensions in millimeters (https://cyberbotics.com/doc/guide/epuck#e-puck-model)
+    DIAMETER = 71
 
     # noinspection PyTypeChecker
     def __init__(self, time_step: Optional[int] = None) -> None:
