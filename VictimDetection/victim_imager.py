@@ -43,10 +43,10 @@ class ColorFilter:
 
 # RGB color lower and upper bounds
 color_filters = {
-    "black": ColorFilter(lower=(0, 0, 0), upper=(20, 20, 20)),
-    "white": ColorFilter(lower=(200, 200, 200), upper=(255, 255, 255)),
-    "yellow": ColorFilter(lower=(255, 145, 0), upper=(204, 255, 0)),
-    "red": ColorFilter(lower=(196, 0, 0), upper=(255, 68, 0))
+    "black": ColorFilter(lower=(0, 0, 0), upper=(70, 70, 70)),
+    "white": ColorFilter(lower=(80, 80, 80), upper=(255, 255, 255)),
+    "yellow": ColorFilter(lower=(204, 126, 16), upper=(200, 255, 0)),
+    "red": ColorFilter(lower=(107, 37, 37), upper=(204, 113, 16))
 }
 
 # color_filters = {
@@ -123,14 +123,7 @@ def find_fixtures(image: np.ndarray, camera: int) -> list:
     return filter_fixtures(final_victims)
 
 
-images_dir = Path("C:/Programming/RoboCup_Erebus/FixtureDataset/C")  # Where the hazard images will be stored
-debug_images_dir = Path(r"C:\Programming\RoboCup_Erebus\Erebus-2023\VictimDetection\images")
-
-debug_images_dir = debug_images_dir.joinpath(Path(robot.world_path).stem)
-debug_images_dir.mkdir(parents=True, exist_ok=True)
-
-
-def camera_image(camera: controller.Camera, rotate: int = None) -> np.ndarray:
+def camera_image(camera: Camera, rotate: int = None) -> np.ndarray:
     """
     The image is coded as a sequence of four bytes representing the `blue, green, red and alpha` levels of a pixel.
     Get the image from the camera and convert bytes to Width x Height x BGRA numpy array, then
@@ -143,30 +136,49 @@ def camera_image(camera: controller.Camera, rotate: int = None) -> np.ndarray:
     return arr  # .copy()  # Copy to avoid "ValueError: ndarray is not C-contiguous in cython"
 
 
-step_counter = 0
-while robot.step(timestep) != -1:  # While the simulation is running
-    step_counter += 1
-    # Get the images from the cameras and convert bytes to `Width x Height x BRGA` numpy array,
-    # then remove the alpha channel from each pixel to get `WxHxBRG (40, 64, 3)` numpy arrays.
-    images = tuple(camera_image(cam, rot) for cam, rot in ((camera_left, 0), (camera_right, 0)))
+def main():
+    # Where the hazard images will be stored. Change the last letter based on the hazard type.
+    images_dir = Path(r"C:\Programming\RoboCup_Erebus\FixtureDataset\C")
 
-    plotter.clear()
-    plotter.add(images)
+    # Debug images are stored in the folder with the world name
+    debug_images_dir = Path(r"C:\Programming\RoboCup_Erebus\Erebus-2023\VictimDetection\images")
+    debug_images_dir = debug_images_dir.joinpath(Path(robot.world_path).stem)
+    debug_images_dir.mkdir(parents=True, exist_ok=True)
 
-    # Every {x} time steps, randomly set wheel speeds
-    # if step_counter % 70 == 0:
-    #     wheel_left.setVelocity(random.uniform(-6.28, 6.28))
-    #     wheel_right.setVelocity(random.uniform(-6.28, 6.28))
-    wheel_left.setVelocity(0)
-    wheel_right.setVelocity(0)
+    # List of cameras and their rotation (0 = horizontal)
+    cameras_rotations: list[tuple[Camera, int]] = [(camera_left, 0),
+                                                   (camera_right, 0)]
 
-    for i, img in enumerate(images):
-        victims = find_fixtures(img, i)  # Find all fixtures in the image
-        if len(victims):
-            print(step_counter, "victim")
-            cv.imwrite(f"{images_dir}/{step_counter}-{time.time()}.png", img)
+    step_counter = 0
+    while robot.step(timestep) != -1:  # While the simulation is running
+        step_counter += 1
+        # Get the images from the cameras and convert bytes to `Width x Height x BRGA` numpy array,
+        # then remove the alpha channel from each pixel to get `WxHxBRG (64, 40, 3)` numpy arrays.
+        images = tuple(camera_image(cam, rot) for cam, rot in cameras_rotations)
 
-    if step_counter % 10 == 0:
-        plotter.save(debug_images_dir.joinpath(f"{step_counter}.png"))
-        print(step_counter, "image")
-        break
+        plotter.clear()
+        plotter.add(images)
+
+        # Every {x} time steps, randomly set wheel speeds
+        # if step_counter % 70 == 0:
+        #     wheel_left.setVelocity(random.uniform(-6.28, 6.28))
+        #     wheel_right.setVelocity(random.uniform(-6.28, 6.28))
+        wheel_left.setVelocity(0)
+        wheel_right.setVelocity(0)
+
+        # Save camera image if victim is detected
+        for i, img in enumerate(images):
+            victims = find_fixtures(img, i)  # Find all fixtures in the image
+            if len(victims):
+                print(step_counter, "victim")
+                cv.imwrite(f"{images_dir}/{step_counter}-{time.time()}.png", img)
+
+        # Generate and save a debug image separated into color filters
+        if step_counter % 10 == 0:
+            plotter.save(debug_images_dir.joinpath(f"{step_counter}.png"))
+            print(step_counter, "generated debug image")
+            break
+
+
+if __name__ == "__main__":
+    main()
