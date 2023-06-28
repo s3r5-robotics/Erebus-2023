@@ -1,14 +1,14 @@
 import random
+import random
 import time
-from os import PathLike
 from pathlib import Path
-from typing import Literal
+from typing import Union
 
 import cv2 as cv
 import numpy as np
+from PIL import Image
 from numpy import ndarray
 
-import controller
 from controller import Robot, Motor, Camera
 from image_plotter import ImagePlotter
 
@@ -36,8 +36,8 @@ class ColorFilter:
         # self.upper = np.array(upper_hsv)
 
     def filter(self, img):
-        hsv_image = cv.cvtColor(img, cv.COLOR_BGR2RGB)
-        mask = cv.inRange(hsv_image, self.lower, self.upper)
+        # hsv_image = cv.cvtColor(img, cv.COLOR_BGR2RGB)
+        mask = cv.inRange(img, self.lower, self.upper)
         return mask
 
 
@@ -175,10 +175,69 @@ def main():
 
         # Generate and save a debug image separated into color filters
         if step_counter % 10 == 0:
-            plotter.save(debug_images_dir.joinpath(f"{step_counter}.png"))
-            print(step_counter, "generated debug image")
+            im_path = debug_images_dir.joinpath(f"{step_counter}.png")
+            plotter.save(im_path)
+            print(step_counter, "generated debug image:", im_path)
             break
 
 
+def detect_color(image: ndarray, img_height: int = 40, cropped_img_height: int = 4):
+    """
+    Vertically crop the camera's image down to the center 4 pixels.
+    Check if the cropped image contains any pixels that are not the color of walls or other obstacles.
+
+    :return: List of foreign colors detected.
+    """
+    im_seed = random.randint(000, 999)  # The name of the images
+
+    save_img(image, f"{im_seed}-original")
+    # Crop the image to the center `cropped_img_height` pixels
+    image = image[img_height // 2 - (cropped_img_height // 2):img_height // 2 + (cropped_img_height // 2), :]
+    save_img(image, f"{im_seed}-cropped")
+
+    _color_filters = {
+        "black": ColorFilter(lower=(0, 0, 0), upper=(70, 70, 70)),
+        "white": ColorFilter(lower=(80, 80, 80), upper=(255, 255, 255)),
+        "yellow": ColorFilter(lower=(204, 126, 16), upper=(200, 255, 0)),
+        "red": ColorFilter(lower=(107, 37, 37), upper=(204, 113, 16))
+    }
+    for filter_name, filter in _color_filters.items():
+        mask = filter.filter(image)
+        if cv.countNonZero(mask) > 0:
+            print(f"Detected {filter_name}!")
+            save_img(mask, f"{im_seed}-mask", mode="L")
+            return True
+
+
+def save_img(image: Union[Image, ndarray], name: str, mode: str = "RGB", image_dir: Path = None) -> None:
+    """
+    Save an image to `{image_dir}/{world_name}/{name}.png`.
+
+    :param image: The image to save. Can be a PIL image or a numpy array.
+    :param name: The name of the image (without the extension).
+    :param mode: The mode to save the image in. Defaults to `RGB`.
+    :param image_dir: The directory to save the image to. If `None`, the default directory is used:
+    `/images`
+    """
+    if not image_dir:
+        # If `image_dir` was not specified, use the default directory.
+        image_dir = Path(Path.cwd() / "images")
+    image_dir = image_dir.joinpath(Path(robot.world_path).stem)
+    image_dir.mkdir(parents=True, exist_ok=True)
+
+    # If the image is a numpy array, convert it to a PIL image
+    if isinstance(image, np.ndarray):
+        image = Image.fromarray(image, mode)
+
+    im_path = image_dir.joinpath(f"{name}.png")
+    image.save(im_path)
+    print(f"Saved {name}:", im_path)
+
+
 if __name__ == "__main__":
-    main()
+    # main()
+
+    while robot.step(timestep) != -1:
+        images = camera_image(camera_right, 0)
+        detect_color(images)
+        break
