@@ -16,15 +16,17 @@ def init() -> bool:
 
 
 def drive():
+    dl, df, dr = robot.distances
+
     if not robot.drive.rotated:
         # Robot is still rotating
         return True
 
-    if robot.distance_f.mm > MIN_DIST:
+    if df > MIN_DIST:
         # Robot can get stuck in some narrow corridors. It can happen that robot is not centered to the tile, but
         # if the corridor is wide enough, at least one of the distance sensors must have a distance greater than
         # minimal distance. If both are less, this is not a normal path.
-        if robot.distance_l.mm < MIN_DIST and robot.distance_r.mm < MIN_DIST:
+        if dl < MIN_DIST and dr < MIN_DIST:
             states.change_state("turn")
         else:
             robot.drive.velocity = 1
@@ -36,9 +38,10 @@ def drive():
 
 
 def turn():
-    if robot.distance_l.mm > TILE_SIZE:
+    dl, df, dr = robot.distances
+    if dl > TILE_SIZE:
         robot.drive.rotation += Angle(deg=90)
-    elif robot.distance_r.mm > TILE_SIZE:
+    elif dr > TILE_SIZE:
         robot.drive.rotation -= Angle(deg=90)
     else:
         robot.drive.rotation += Angle(deg=180)
