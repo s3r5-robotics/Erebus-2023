@@ -184,9 +184,9 @@ def main():
 def detect_color(image: ndarray, img_height: int = 40, cropped_img_height: int = 4):
     """
     Vertically crop the camera's image down to the center 4 pixels.
-    Check if the cropped image contains any pixels that are not the color of walls or other obstacles.
+    Check if the cropped image contains any colors from the color filters.
 
-    :return: List of foreign colors detected.
+    :return: List of colors detected.
     """
     im_seed = random.randint(000, 999)  # The name of the images
 
@@ -196,17 +196,22 @@ def detect_color(image: ndarray, img_height: int = 40, cropped_img_height: int =
     save_img(image, f"{im_seed}-cropped")
 
     _color_filters = {
-        "black": ColorFilter(lower=(0, 0, 0), upper=(70, 70, 70)),
-        "white": ColorFilter(lower=(80, 80, 80), upper=(255, 255, 255)),
-        "yellow": ColorFilter(lower=(204, 126, 16), upper=(200, 255, 0)),
-        "red": ColorFilter(lower=(107, 37, 37), upper=(204, 113, 16))
+        "black": ColorFilter(lower=(0, 0, 0), upper=(30, 30, 30)),
+        "white": ColorFilter(lower=(200, 200, 200), upper=(255, 255, 255)),
+        "yellow": ColorFilter(lower=(155, 105, 0), upper=(200, 185, 90)),
+        "red": ColorFilter(lower=(105, 0, 35), upper=(205, 175, 180))
     }
+    detected_colors: list[str] = []
+    final_mask = np.zeros(image.shape[:2], dtype=np.uint8)
     for filter_name, filter in _color_filters.items():
         mask = filter.filter(image)
         if cv.countNonZero(mask) > 0:
             print(f"Detected {filter_name}!")
-            save_img(mask, f"{im_seed}-mask", mode="L")
-            return True
+            save_img(mask, f"{im_seed}-mask_{filter_name}", mode="L")
+            detected_colors.append(filter_name)
+            final_mask = cv.bitwise_or(final_mask, mask)
+    save_img(final_mask, f"{im_seed}-finalMask", mode="L")
+    return detected_colors
 
 
 def save_img(image: Union[Image, ndarray], name: str, mode: str = "RGB", image_dir: Path = None) -> None:
@@ -236,8 +241,13 @@ def save_img(image: Union[Image, ndarray], name: str, mode: str = "RGB", image_d
 
 if __name__ == "__main__":
     # main()
-
+    stepcounter = 0
     while robot.step(timestep) != -1:
+        stepcounter += 1
+        wheel_left.setVelocity(0)
+        wheel_right.setVelocity(0)
+        if stepcounter < 25:
+            continue
         images = camera_image(camera_right, 0)
-        detect_color(images)
+        print(detect_color(images))
         break
