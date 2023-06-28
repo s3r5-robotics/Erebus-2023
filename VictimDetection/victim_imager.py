@@ -195,11 +195,12 @@ def detect_color(image: ndarray, img_height: int = 40, cropped_img_height: int =
     image = image[img_height // 2 - (cropped_img_height // 2):img_height // 2 + (cropped_img_height // 2), :]
     save_img(image, f"{im_seed}-cropped")
 
+    # Most important colors to avoid are:  Lit wall (rgb(59, 123, 134)), Shadow wall (rgb(18, 30, 32))
     _color_filters = {
         "black": ColorFilter(lower=(0, 0, 0), upper=(30, 30, 30)),
-        "white": ColorFilter(lower=(200, 200, 200), upper=(255, 255, 255)),
+        "white": ColorFilter(lower=(150, 150, 150), upper=(255, 255, 255)),
         "yellow": ColorFilter(lower=(155, 105, 0), upper=(200, 185, 90)),
-        "red": ColorFilter(lower=(105, 0, 35), upper=(205, 175, 180))
+        "red": ColorFilter(lower=(105, 0, 35), upper=(205, 175, 170))
     }
     detected_colors: list[str] = []
     final_mask = np.zeros(image.shape[:2], dtype=np.uint8)
