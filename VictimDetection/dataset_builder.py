@@ -58,7 +58,7 @@ def camera_image(camera: Camera, rotate: int = None) -> np.ndarray:
 
 
 def detect_color(image: ndarray, img_size: tuple[int, int] = (64, 40), cropped_img_size: tuple[int, int] = (44, 4),
-                 min_mask_size: int = 30,
+                 min_mask_size: int = 40, max_mask_size: int = 40,
                  step_counter: int = None) -> list[str]:
     """
     Vertically crop the camera's image down to the center `cropped_img_height` pixels.
@@ -68,9 +68,12 @@ def detect_color(image: ndarray, img_size: tuple[int, int] = (64, 40), cropped_i
     :param img_size: The size of the original image
     :param cropped_img_size: The size of the resulting image after cropping
     :param min_mask_size: The minimum number of masked pixels.
+    :param max_mask_size: `cropped_img_size[0] * cropped_img_size[1] - max_mask_size`.
     :param step_counter: Used as the name of the saved image. If `None`, a random int value is used.
     :return: A list of the detected colors' names.
     """
+    if not max_mask_size:
+        max_mask_size = cropped_img_size[0] * cropped_img_size[1]
 
     # Crop the image to the center `cropped_img_width[0]` pixels
     image = image[:, img_size[0] // 2 - (cropped_img_size[0] // 2):img_size[0] // 2 + (cropped_img_size[0] // 2)]
@@ -82,7 +85,7 @@ def detect_color(image: ndarray, img_size: tuple[int, int] = (64, 40), cropped_i
         mask = f.filter(image)
         mask_size = cv.countNonZero(mask)
         # Check if the mask is larger than the minimum size and smaller than the entire image
-        if (mask_size > min_mask_size) and not (mask_size == cropped_img_size[0] * cropped_img_size[1]):
+        if max_mask_size >= mask_size >= min_mask_size:
             detected_colors.append(f_name)
             # save_img(mask, step_counter, mode="L")
     return detected_colors
