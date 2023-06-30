@@ -1,3 +1,5 @@
+from PIL import Image
+
 import debug
 from fixtures import FixtureClassifier, FixtureDetector
 from flow.state_machine import StateMachine, State
@@ -64,10 +66,12 @@ states += State.for_function(drive, turn, end_run)
 states += State.for_function(turn, drive, end_run)
 states += State.for_function(end_run)
 
-while robot.step():
-    if debug.ANY:
-        print(f"{robot.step_counter}", end="    ")
+step_counter: int = 0
 
+while robot.step():
+    if debug.STEP:
+        print(f"{robot.step_counter}", end="    ")
+    step_counter += 1
 
     robot()
 
@@ -75,7 +79,7 @@ while robot.step():
         dl, df, dr = robot.distances
         print(f"L|F|R  {dl:.3f} | {df:.3f} | {dr:.3f}", end="    ")
 
-    if robot.step_counter % HAZ_DETECTION_INTERVAL == 0:
+    if step_counter % HAZ_DETECTION_INTERVAL == 0:
         for camera in [robot.camera_l, robot.camera_r]:
             image = fixture_detector.get_image(camera)
             detected = fixture_detector.detect_color(image)
@@ -86,7 +90,8 @@ while robot.step():
                 # TODO: navigate closer to the fixture
 
                 fixture: str = fixture_classifier.classify_fixture(image)
-                print("Fixture:", fixture)
+                if debug.FIXTURE_DETECTION:
+                    print("Classified fixture:", fixture)
 
     robot()
 
@@ -94,5 +99,5 @@ while robot.step():
         print("State machine complete")
         break
 
-    if debug.ANY:
-        print(flush=True)
+    # if debug.ANY:
+    #     print(flush=True)

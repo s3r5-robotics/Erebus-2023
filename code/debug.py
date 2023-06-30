@@ -12,6 +12,7 @@ CAMERA: bool = False
 DISTANCE: bool = False
 MOVEMENT: bool = False
 STATES: bool = True
+STEP: bool = False
 LIDAR: bool = False
 FIXTURE_DETECTION: bool = True
 

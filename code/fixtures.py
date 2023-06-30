@@ -7,6 +7,7 @@ import keras
 import numpy as np
 import tensorflow as tf
 import numpy.typing as npt
+from PIL import Image
 
 from controller import Camera
 
@@ -89,7 +90,7 @@ class FixtureDetector:
 
 class FixtureClassifier:
     MODEL_DATA = {
-        "rev-1": "../test_f-hp.keras"
+        "rev-1": "../test_fr-hp.keras"
     }
 
     def __init__(self, model: str):
@@ -98,7 +99,10 @@ class FixtureClassifier:
     def classify_fixture(self, fixture: npt.ArrayLike) -> str:
         img_array = tf.expand_dims(fixture, 0)
         predictions = self.model.predict(img_array)
-        predictions_sorted = sorted(map(lambda p, c: (c, p), predictions[0], 3), key=lambda t: -t[1])
+        predictions_sorted = sorted(map(lambda p, c: (c, p), predictions[0], self.CLASSES), key=lambda t: -t[1])
         prediction: tuple[str, float] = predictions_sorted[0]
+        print(predictions_sorted)
 
         return prediction[0]
+
+
