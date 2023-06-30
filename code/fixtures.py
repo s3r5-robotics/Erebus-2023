@@ -3,12 +3,12 @@ from pathlib import Path
 from typing import Union
 
 import cv2 as cv
+import keras
 import numpy as np
-from PIL import Image
-from numpy import ndarray
+import tensorflow as tf
+import numpy.typing as npt
 
 from controller import Camera
-from main import robot
 
 
 class ColorFilter:
@@ -31,8 +31,8 @@ class FixtureDetector:
     }
 
     @staticmethod
-    def camera_image(camera: Camera, rotate: int = None,
-                     im_dimensions: tuple[int, int, int] = (40, 64, 4)) -> np.ndarray:
+    def get_image(camera: Camera, rotate: int = None,
+                  im_dimensions: tuple[int, int, int] = (40, 64, 4)) -> np.ndarray:
         """
         Take the `camera`'s image, return it as a numpy array as an RGB image of given size.
 
@@ -52,7 +52,7 @@ class FixtureDetector:
         return arr  # .copy()  # Copy to avoid "ValueError: ndarray is not C-contiguous in cython"
 
     @staticmethod
-    def detect_color(image: ndarray, img_size: tuple[int, int] = (64, 40),
+    def detect_color(image: npt.ArrayLike, img_size: tuple[int, int] = (64, 40),
                      cropped_img_size: tuple[int, int] = (54, 4),
                      min_mask_size: int = 25, max_mask_size: int = 40,
                      step_counter: int = None) -> list[str]:
@@ -86,56 +86,19 @@ class FixtureDetector:
                 # save_img(mask, step_counter, mode="L")
         return detected_colors
 
-    @staticmethod
-    def save_img(image: Union[Image, ndarray], name: Union[str, int] = None, mode: str = "RGB",
-                 image_dir: Path = None) -> None:
-        """
-        Save an image to `{image_dir}/{world_name}/{name}.png`.
 
-        :param image: The image to save. Can be a PIL image or a numpy array.
-        :param name: The name of the image (without the extension). If `None`, a random int value is used.
-        :param mode: The mode to save the image in. Defaults to `RGB`.
-        :param image_dir: The directory to save the image to. If `None`, the default directory is used:
-        `/images`
-        """
-        if not name:
-            name = random.randint(0, 9999)  # Prevent images from overriding each other
+class FixtureClassifier:
+    MODEL_DATA = {
+        "rev-1": "../test_f-hp.keras"
+    }
 
-        if not image_dir:
-            # If `image_dir` was not specified, use the default directory.
-            image_dir = Path(Path.cwd() / "images")
-            image_dir = image_dir.joinpath(Path(robot.world_path).stem)
-            image_dir.mkdir(parents=True, exist_ok=True)
+    def __init__(self, model: str):
+        self.model = keras.models.load_model(self.MODEL_DATA[model])
 
-        # If the image is a numpy array, convert it to a PIL image
-        if isinstance(image, np.ndarray):
-            image = Image.fromarray(image, mode)
+    def classify_fixture(self, fixture: npt.ArrayLike) -> str:
+        img_array = tf.expand_dims(fixture, 0)
+        predictions = self.model.predict(img_array)
+        predictions_sorted = sorted(map(lambda p, c: (c, p), predictions[0], 3), key=lambda t: -t[1])
+        prediction: tuple[str, float] = predictions_sorted[0]
 
-        im_path = image_dir.joinpath(f"{name}.png")
-        image.save(im_path)
-        print(f"Saved {name}:", im_path)
-
-
-    # def main():
-    #     step_counter: int = 0
-    #     image_dir = Path(Path.cwd() / "images")
-    #     image_dir = image_dir.joinpath(Path(robot.world_path).stem)
-    #     image_dir.mkdir(parents=True, exist_ok=True)
-    #     print("Saving images to:", image_dir)
-    #
-    #     while robot.step(timestep) != -1:
-    #         step_counter += 1
-    #
-    #         # Every {x} time steps, randomly set wheel speeds
-    #         if step_counter % 60 == 0:
-    #             wheel_left.setVelocity(random.uniform(-6.28, 6.28))
-    #             wheel_right.setVelocity(random.uniform(-6.28, 6.28))
-    #
-    #         interval: int = 1  # The interval at which the robot should check for hazards
-    #         # Every {x} time steps, check if there are
-    #         if step_counter % interval == 0:
-    #             for camera in [camera_left, camera_right]:
-    #                 image = camera_image(camera)
-    #                 # detected = detect_color(image)
-    #                 if True:  # if len(detected):
-    #                     FixtureDetector.save_img(image, f"{step_counter}-{time.time()}")
+        return prediction[0]

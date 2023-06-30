@@ -1,13 +1,17 @@
 import debug
+from fixtures import FixtureClassifier, FixtureDetector
 from flow.state_machine import StateMachine, State
 from robot import Robot
 from utils import Angle
 
 robot = Robot()
+fixture_detector = FixtureDetector()
 states = StateMachine("init")
+fixture_classifier = FixtureClassifier("rev-1")
 
 TILE_SIZE = 120  # mm
 MIN_DIST = 1.2 * (TILE_SIZE / 2 - 37)  # 37 is the offset of the distance sensor from the center of the robot
+HAZ_DETECTION_INTERVAL: int = 10  # The interval at which the robot should check the cameras' images for hazards
 
 
 def init() -> bool:
@@ -64,11 +68,25 @@ while robot.step():
     if debug.ANY:
         print(f"{robot.step_counter}", end="    ")
 
+
     robot()
 
     if debug.DISTANCE:
         dl, df, dr = robot.distances
         print(f"L|F|R  {dl:.3f} | {df:.3f} | {dr:.3f}", end="    ")
+
+    if robot.step_counter % HAZ_DETECTION_INTERVAL == 0:
+        for camera in [robot.camera_l, robot.camera_r]:
+            image = fixture_detector.get_image(camera)
+            detected = fixture_detector.detect_color(image)
+            if len(detected):
+                if debug.FIXTURE_DETECTION:
+                    print(f"Detected fixture color: {detected}")
+
+                # TODO: navigate closer to the fixture
+
+                fixture: str = fixture_classifier.classify_fixture(image)
+                print("Fixture:", fixture)
 
     robot()
 

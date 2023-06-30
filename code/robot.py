@@ -1,4 +1,3 @@
-import math
 import typing
 import warnings
 from types import NoneType

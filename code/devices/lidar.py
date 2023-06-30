@@ -1,7 +1,7 @@
 import math
 
 from data_structures.vectors import Vector2D, Angle
-from devices import Sensor, DeviceType
+from devices.devices import Sensor, DeviceType
 from utils import InstanceSubclass, divide_into_chunks, cords_from_rads, deg_to_rad
 import controller.sensor
 import struct
