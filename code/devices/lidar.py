@@ -6,6 +6,7 @@ from devices.devices import Sensor, DeviceType
 from utils import InstanceSubclass, divide_into_chunks, cords_from_rads, deg_to_rad
 import controller.sensor
 import struct
+from flow.timing_alignment import TimingAlignment
 
 
 class Lidar(InstanceSubclass, Sensor, controller.Lidar):
@@ -21,6 +22,8 @@ class Lidar(InstanceSubclass, Sensor, controller.Lidar):
             use_single_layer: Optional[int] = None
     ):
         Sensor.__init__(self, time_step)  # Enable the sensor
+
+        self.timing = TimingAlignment(6)
 
         self.x = 0
         self.y = 0
@@ -76,7 +79,7 @@ class Lidar(InstanceSubclass, Sensor, controller.Lidar):
         self.orientation = angle
 
     def update(self):
-        # super().update()  # Increase the step counter
+        self.timing.increase()
 
         # Only update every n time-steps
         if self.timing.check:

@@ -1,24 +1,22 @@
 from copy import deepcopy
+from typing import Optional
 
 import numpy as np
 
 from data_structures.vectors import Position2D
 from data_structures.angle import Angle
 
-from data_structures.compound_pixel_grid import CompoundExpandablePixelGrid
-from data_structures.tile_color_grid import TileColorExpandableGrid
+from mapping.mixed_grid import MixedGrid
 
-from mapping.wall_mapper import WallMapper
-from mapping.occupied_mapping import OccupiedMapper
+from mapping.filter_array import ArrayFilterer
 
-from mapping.array_filtering import ArrayFilterer
-
-from mapping.robot_mapper import RobotMapper
-from mapping.fixture_mapper import FixtureMapper
+from mapping.wall_mapping import WallMapper
+from mapping.untraversable_mapping import UntraversableMapper
+from mapping.fixture_mapping import FixtureMapper
 
 
 class Mapper:
-    def __init__(self, tile_size, robot_diameter):
+    def __init__(self, tile_size: int, robot_diameter: float):
         self.tile_size = tile_size
         self.quarter_tile_size = tile_size / 2
         self.robot_diameter = robot_diameter
@@ -32,26 +30,16 @@ class Mapper:
 
         # Data structures
         pixels_per_tile = 10
-        self.pixel_grid = CompoundExpandablePixelGrid(initial_shape=np.array([1, 1]),
-                                                      pixel_per_m=pixels_per_tile / self.quarter_tile_size,
-                                                      robot_radius_m=(self.robot_diameter / 2) - 0.008)
-
-        self.tile_color_grid = TileColorExpandableGrid(initial_shape=np.array((1, 1)),
-                                                       tile_size=self.tile_size)
+        self.pixel_grid = MixedGrid(initial_shape=np.array([1, 1]),
+                                    pixel_per_m=pixels_per_tile / self.quarter_tile_size)
 
         # Data processors
         self.wall_mapper = WallMapper(self.pixel_grid, robot_diameter)
-
-        self.occupied_mapper = OccupiedMapper(self.pixel_grid)
-
-        self.filterer = ArrayFilterer()
-
-        self.robot_mapper = RobotMapper(pixel_grid=self.pixel_grid,
-                                        robot_diameter=self.robot_diameter,
-                                        pixels_per_m=pixels_per_tile / self.quarter_tile_size)
-
+        self.untraversable_mapper = UntraversableMapper(self.pixel_grid)
         self.fixture_mapper = FixtureMapper(pixel_grid=self.pixel_grid,
                                             tile_size=self.tile_size)
+
+        self.filterer = ArrayFilterer()
 
         self.time = 0
 
@@ -62,7 +50,7 @@ class Mapper:
             robot_position: Position2D = None,
             robot_previous_position: Position2D = None,
             robot_orientation: Angle = None,
-            time=None
+            time: Optional[int] = None
     ):
         if time is not None:
             self.time = time
@@ -80,14 +68,10 @@ class Mapper:
         if in_bounds_point_cloud is not None and out_of_bounds_point_cloud is not None:
             self.wall_mapper.load_point_cloud(in_bounds_point_cloud, out_of_bounds_point_cloud, robot_position)
 
-        self.robot_mapper.map_traversed_by_robot(self.robot_grid_index)
-        self.robot_mapper.map_seen_by_camera(self.robot_grid_index, self.robot_orientation)
-        self.robot_mapper.map_discovered_by_robot(self.robot_grid_index, self.robot_orientation)
-
         self.fixture_mapper.generate_detection_zone()
         self.fixture_mapper.clean_up_fixtures()
 
-        self.occupied_mapper.map_occupied()
+        self.untraversable_mapper.map_occupied()
 
         self.filterer.remove_isolated_points(self.pixel_grid)
 
@@ -95,10 +79,12 @@ class Mapper:
         self.start_position = deepcopy(robot_position)
         print("registered start position:", self.start_position)
 
+    @property
     def has_detected_victim_from_position(self):
         robot_array_index = self.pixel_grid.grid_index_to_array_index(self.robot_grid_index)
         return self.pixel_grid.arrays["robot_detected_fixture_from"][robot_array_index[0], robot_array_index[1]]
 
+    @property
     def is_close_to_swamp(self):
         if self.robot_grid_index is None:
             return False
