@@ -78,9 +78,9 @@ class Lidar(InstanceSubclass, Sensor, controller.Lidar):
     def update(self):
         # super().update()  # Increase the step counter
 
-        # Do every n steps
-        # if self.step_counter.check():
-        self.__update_point_clouds()
+        # Only update every n time-steps
+        if self.timing.check:
+            self.__update_point_clouds()
 
     def __update_point_clouds(self):
         """
