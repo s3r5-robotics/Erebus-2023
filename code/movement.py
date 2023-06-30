@@ -1,7 +1,7 @@
 from typing import Optional
 
 import debug
-from devices import GPS, InertialUnit, Motor
+from devices.devices import GPS, InertialUnit, Motor
 from utils import Angle
 
 

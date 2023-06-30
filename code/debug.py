@@ -8,10 +8,11 @@
 >>>     print(robot.getPosition())
 """
 
-CAMERA: bool = True
-DISTANCE: bool = True
-MOVEMENT: bool = True
+CAMERA: bool = False
+DISTANCE: bool = False
+MOVEMENT: bool = False
 STATES: bool = True
 LIDAR: bool = False
+FIXTURE_DETECTION: bool = True
 
-ANY = CAMERA or DISTANCE or MOVEMENT or STATES or LIDAR
+ANY = CAMERA or DISTANCE or MOVEMENT or STATES or LIDAR or FIXTURE_DETECTION

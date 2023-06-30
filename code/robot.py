@@ -5,7 +5,9 @@ from typing import Optional, Type, Tuple
 
 import controller
 import debug
-from devices import DeviceType, Camera, ColorSensor, Emitter, GPS, InertialUnit, LED, Lidar, Motor, Receiver
+from devices.devices import DeviceType, Camera, ColorSensor, Emitter, GPS, InertialUnit, LED, Motor, Receiver, \
+    DistanceSensor
+from devices.lidar import Lidar
 from movement import Drivetrain
 
 
@@ -25,6 +27,9 @@ class Robot(controller.Robot):
         self.camera_l = self._get_device("camera_left", Camera)
         self.camera_r = self._get_device("camera_right", Camera)
         self.color_sensor = self._get_device("colour_sensor", ColorSensor)
+        self.distance_l = self._get_device("distance_sensor_left", Optional[DistanceSensor])
+        self.distance_f = self._get_device("distance_sensor_front", Optional[DistanceSensor])
+        self.distance_r = self._get_device("distance_sensor_right", Optional[DistanceSensor])
         # Lidar has vertical field of view of 0.2 rad (11.5 degrees), separated into 4 layers:
         # - Layer 0 is tilted upwards by 0.1 rad (5.7 degrees), causing it to see over the walls,
         #   reporting 'inf' as distance almost all the time.
@@ -33,7 +38,7 @@ class Robot(controller.Robot):
         # - Layer 2 is tilted downwards by 1.9 degrees and is generally the most/only useful one.
         # - Layer 3 is tilted downwards by 0.1 rad, causing it to see the floor and report some distances
         #   even when there is no obstacle until the other end of the maze.
-        self.lidar = Lidar(self._get_device("lidar", controller.Lidar), self.time_step, use_single_layer=2)
+        self.lidar = Lidar(self._get_device("lidar", controller.Lidar), self.time_step, use_single_layer=None)
         # Wheels
         motor_l = Motor(self._get_device("wheel_left motor", controller.Motor),
                         self._get_device("wheel_left sensor", controller.PositionSensor),
@@ -107,24 +112,14 @@ class Robot(controller.Robot):
 
     @property
     def distances(self) -> Tuple[float, float, float]:
-        """Get the current left, front, right distance readings (mm) from the lidar sensor"""
-        pc = self.lidar.point_cloud
-        # Extract one point from each relevant side of the robot (front, right, back, left)
-        points = range(0, len(pc), int(len(pc) / 4))
+        """Get the current left, front, right distance readings (mm) the 3 onboard distance sensors"""
+        sensors: list[DistanceSensor] = [self.distance_l, self.distance_f, self.distance_r]
+        readings: Tuple[float, float, float] = tuple(map(lambda ds: ds.mm, sensors))
 
-        if not debug.LIDAR:
-            pc = tuple(pc[i] for i in points)
+        if debug.DISTANCE:
+            print(f"L {readings[0]} | F {readings[1]} | R {readings[2]}")
 
-        dist = tuple(round(1000 * d if d < math.inf else 100000) for d in pc)
-
-        if debug.LIDAR:
-            for i, d in enumerate(dist):
-                print(f"{i:3d}  {d:6d} mm")
-
-            # Not that all points are printed, extract relevant
-            dist = tuple(dist[i] for i in points)
-
-        return dist[3], dist[0], dist[1]
+        return readings
 
     def __call__(self) -> bool:
         """
@@ -132,6 +127,6 @@ class Robot(controller.Robot):
 
         :return: True if the simulation should continue, False if Webots is about to terminate the controller.
         """
+        self.lidar.update()
         self.drive()
-        self.lidar(self.time)
         return True

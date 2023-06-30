@@ -1,6 +1,6 @@
 import random
 from pathlib import Path
-from typing import Union
+from typing import Union, Tuple
 
 import cv2 as cv
 import keras

@@ -1,4 +1,5 @@
 import math
+from typing import Optional
 
 from data_structures.vectors import Vector2D, Angle
 from devices.devices import Sensor, DeviceType
@@ -12,22 +13,28 @@ class Lidar(InstanceSubclass, Sensor, controller.Lidar):
     WbLidarPoint = struct.Struct("fffif")  # float x, float y, float z, int layer_id, float time
     """https://cyberbotics.com/doc/reference/lidar?tab-language=c#wblidarpoint"""
 
-    def __init__(self, device: DeviceType, time_step: int, layers_used=range(4)):
-        Sensor.__init__(self, time_step, device)  # Enable the sensor
+    def __init__(
+            self,
+            _: DeviceType,
+            time_step: int,
+            layers_used: list[int] = range(4),
+            use_single_layer: Optional[int] = None
+    ):
+        Sensor.__init__(self, time_step)  # Enable the sensor
 
         self.x = 0
         self.y = 0
         self.z = 0
         self.orientation = Angle(0)
 
-        self.horizontal_fov = self.getFov()
+        self._horizontal_fov = self.getFov()
         self._vertical_fov = self.getVerticalFov()
 
         self._horizontal_resolution = self.getHorizontalResolution()
-        self.vertical_resolution = self.getNumberOfLayers()
+        self._vertical_resolution = self.getNumberOfLayers()
 
         self.radian_per_detection_horizontally = self._vertical_fov / self._horizontal_resolution
-        self.radian_per_layer_vertically = self.vertical_fov / self.vertical_resolution
+        self.radian_per_layer_vertically = self._vertical_fov / self._vertical_resolution
 
         self.rotation_offset = 0
 
@@ -41,24 +48,27 @@ class Lidar(InstanceSubclass, Sensor, controller.Lidar):
         self.distance_bias = 0.005  # 0.06 * 0.12
 
         self.layers_used = layers_used
+        self.use_single_layer = use_single_layer
 
         self.__point_cloud = None
         self.__out_of_bounds_point_cloud = None
         self.__distance_detections = None
 
-    # Returns the in-bounds point cloud
-    def get_point_cloud(self):
+    @property
+    def point_cloud(self):
         # if self.step_counter.check():
         return self.__point_cloud
 
-    def get_out_of_bounds_point_cloud(self):
+    @property
+    def out_of_bounds_point_cloud(self):
         """
         Returns a point cloud with all the out-of-bounds detections as points with a fixed distance
         """
         # if self.step_counter.check():
         return self.__out_of_bounds_point_cloud
 
-    def get_detections(self):
+    @property
+    def detections(self):
         # if self.step_counter.check():
         return self.__distance_detections
 
