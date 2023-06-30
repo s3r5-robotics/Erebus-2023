@@ -251,3 +251,19 @@ def static_vars(**kwargs):
         return func
 
     return wrapper
+
+
+def divide_into_chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
+
+def cords_from_rads(rad, distance):
+    y = float(distance * math.cos(rad))
+    x = float(distance * math.sin(rad))
+    return (x, y)
+
+
+def deg_to_rad(deg):
+    return deg * math.pi / 180

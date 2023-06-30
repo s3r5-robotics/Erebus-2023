@@ -1,4 +1,5 @@
 import random
+import time
 from pathlib import Path
 from typing import Union
 
@@ -57,8 +58,8 @@ def camera_image(camera: Camera, rotate: int = None) -> np.ndarray:
     return arr  # .copy()  # Copy to avoid "ValueError: ndarray is not C-contiguous in cython"
 
 
-def detect_color(image: ndarray, img_size: tuple[int, int] = (64, 40), cropped_img_size: tuple[int, int] = (44, 4),
-                 min_mask_size: int = 40, max_mask_size: int = 40,
+def detect_color(image: ndarray, img_size: tuple[int, int] = (64, 40), cropped_img_size: tuple[int, int] = (54, 4),
+                 min_mask_size: int = 25, max_mask_size: int = 40,
                  step_counter: int = None) -> list[str]:
     """
     Vertically crop the camera's image down to the center `cropped_img_height` pixels.
@@ -131,17 +132,18 @@ def main():
         step_counter += 1
 
         # Every {x} time steps, randomly set wheel speeds
-        if step_counter % 70 == 0:
+        if step_counter % 60 == 0:
             wheel_left.setVelocity(random.uniform(-6.28, 6.28))
             wheel_right.setVelocity(random.uniform(-6.28, 6.28))
 
+        interval: int = 1  # The interval at which the robot should check for hazards
         # Every {x} time steps, check if there are
-        if step_counter % 5 == 0:
+        if step_counter % interval == 0:
             for camera in [camera_left, camera_right]:
                 image = camera_image(camera)
-                detected = detect_color(image)
-                if len(detected):
-                    save_img(image, f"{step_counter}")
+                # detected = detect_color(image)
+                if True:  # if len(detected):
+                    save_img(image, f"{step_counter}-{time.time()}")
 
 
 if __name__ == "__main__":

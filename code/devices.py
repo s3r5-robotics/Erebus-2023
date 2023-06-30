@@ -20,15 +20,16 @@ from utils import InstanceSubclass, Angle, Point
 class Device:
     """Base class for all devices"""
 
-    def __init__(self, time_step: int) -> None:
+    def __init__(self, time_step: int, device: controller.device.Device) -> None:
         self.time_step = time_step
+        self.device = device
 
 
 class Sensor(Device, controller.sensor.Sensor):
     """Base class for all sensors"""
 
-    def __init__(self, time_step: int) -> None:
-        Device.__init__(self, time_step)
+    def __init__(self, time_step: int, device: controller.device.Device) -> None:
+        Device.__init__(self, time_step, device)
         self.enable(time_step)
 
 
