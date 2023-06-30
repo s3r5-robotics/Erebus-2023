@@ -175,6 +175,10 @@ class Angle(float):
         """Get this angle in degrees"""
         return math.degrees(self)
 
+    @property
+    def radians(self) -> float:
+        return self
+
     def rotation_to(self, other: float) -> 'Angle':
         """
         Get the shortest rotation to other angle (maximum 180 degrees)

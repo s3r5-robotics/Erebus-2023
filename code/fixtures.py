@@ -89,6 +89,7 @@ class FixtureDetector:
 
 
 class FixtureClassifier:
+    CLASSES = ['0', 'C', 'F', 'H', 'O', 'P', 'S', 'U']
     MODEL_DATA = {
         "rev-1": "../test_fr-hp.keras"
     }
