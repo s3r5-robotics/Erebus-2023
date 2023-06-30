@@ -9,6 +9,7 @@ import tensorflow as tf
 import numpy.typing as npt
 from PIL import Image
 
+import debug
 from controller import Camera
 
 
@@ -102,7 +103,9 @@ class FixtureClassifier:
         predictions = self.model.predict(img_array)
         predictions_sorted = sorted(map(lambda p, c: (c, p), predictions[0], self.CLASSES), key=lambda t: -t[1])
         prediction: tuple[str, float] = predictions_sorted[0]
-        print(predictions_sorted)
+
+        if debug.FIXTURE_FITTING:
+            print(predictions_sorted)
 
         return prediction[0]
 

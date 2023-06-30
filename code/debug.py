@@ -8,12 +8,27 @@
 >>>     print(robot.getPosition())
 """
 
-CAMERA: bool = False
 DISTANCE: bool = False
-MOVEMENT: bool = False
-STATES: bool = True
-STEP: bool = False
-LIDAR: bool = False
-FIXTURE_DETECTION: bool = True
+""">> {distance left} | {distance front} | {distance right}"""
 
-ANY = CAMERA or DISTANCE or MOVEMENT or STATES or LIDAR or FIXTURE_DETECTION
+MOVEMENT: bool = False
+""">> {x axis} | {y axis}
+>> {yaw} | {pitch} | {roll}
+>> {current velocity} | {target velocity} | {movement angle"""
+
+STATES: bool = True
+"""Whenever the state changes"""
+
+STEP: bool = False
+"""Current step number"""
+
+FIXTURE_DETECTION: bool = True
+"""Print the detected color"""
+
+FIXTURE_CLASIFICATION: bool = True
+"""Print the classified fixture"""
+
+FIXTURE_FITTING: bool = False
+"""Print the chance of each fixture for the detected image"""
+
+ANY = DISTANCE or MOVEMENT or STATES or FIXTURE_DETECTION

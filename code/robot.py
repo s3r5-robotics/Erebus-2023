@@ -115,10 +115,6 @@ class Robot(controller.Robot):
         """Get the current left, front, right distance readings (mm) the 3 onboard distance sensors"""
         sensors: list[DistanceSensor] = [self.distance_l, self.distance_f, self.distance_r]
         readings: Tuple[float, float, float] = tuple(map(lambda ds: ds.mm, sensors))
-
-        if debug.DISTANCE:
-            print(f"L {readings[0]} | F {readings[1]} | R {readings[2]}")
-
         return readings
 
     def __call__(self) -> bool:

@@ -90,7 +90,7 @@ while robot.step():
                 # TODO: navigate closer to the fixture
 
                 fixture: str = fixture_classifier.classify_fixture(image)
-                if debug.FIXTURE_DETECTION:
+                if debug.FIXTURE_CLASIFICATION:
                     print("Classified fixture:", fixture)
 
     robot()
