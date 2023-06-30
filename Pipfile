@@ -8,5 +8,6 @@ psutil = "*"
 websockets = "*"
 opencv-python = "*"
 numpy = "*"
+Pillow = "*"
 
 [dev-packages]
