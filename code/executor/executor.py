@@ -38,7 +38,7 @@ class Executor:
         self.sequencer = Sequencer(reset_function=self.delay_manager.reset_delay)  # Allows for asynchronous programming
 
         self.fixture_detector = FixtureDetector()
-        self.fixture_classifier = FixtureClassifier("rev-2")
+        self.fixture_classifier = FixtureClassifier("rev-3")
 
         self.final_matrix_creator = FinalMatrixCreator(mapper.tile_size, mapper.pixel_grid.resolution)
 
@@ -145,7 +145,8 @@ class Executor:
                 image = cam_image.image
                 detected_colours = self.fixture_detector.detect_color(image)
                 if len(detected_colours):
-                    self.letter_to_report = self.fixture_classifier.classify_fixture(image)
+                    letter_to_report = self.fixture_classifier.classify_fixture(self.fixture_classifier.prepare_image(image))
+                    self.letter_to_report = letter_to_report if letter_to_report != "0" else None
                     self.report_orientation = cam_image.data.horizontal_orientation
                     change_state_function("report_fixture")
                     self.sequencer.reset_sequence()  # Resets the sequence

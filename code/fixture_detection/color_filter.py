@@ -8,5 +8,6 @@ class ColorFilter:
         self.upper = np.array(upper)
 
     def filter(self, img):
+        img = img[:, :, :3]
         mask = cv.inRange(img, self.lower, self.upper)
         return mask

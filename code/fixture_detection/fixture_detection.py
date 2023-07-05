@@ -1,24 +1,17 @@
-import copy
-from typing import List
+import random
+from pathlib import Path
 
 import cv2 as cv
 import numpy as np
-import skimage
-from numpy import ndarray
+import numpy.typing as npt
+from PIL import Image
 
-from color_filter import ColorFilter
-from data_structures.angle import Angle
-from data_structures.compound_pixel_grid import CompoundExpandablePixelGrid
-from data_structures.vectors import Position2D, Vector2D
-from robot.devices.camera import CameraImage
+from fixture_detection.color_filter import ColorFilter
 
 
 class FixtureDetector:
-    def __init__(self, pixel_grid: CompoundExpandablePixelGrid) -> None:
-        self.pixel_grid = pixel_grid
-
+    def __init__(self) -> None:
         # Color filtering
-        self.colors = ("black", "white", "yellow", "red")
         self.color_filters = {
             "black": ColorFilter(lower=(0, 0, 0), upper=(30, 30, 30)),
             "white": ColorFilter(lower=(150, 150, 150), upper=(255, 255, 255)),
@@ -26,87 +19,7 @@ class FixtureDetector:
             "red": ColorFilter(lower=(105, 0, 35), upper=(205, 175, 170))
         }
 
-        self.max_detection_distance = 0.12 * 5
-
-    def get_fixture_positions_and_angles(self, robot_position: Position2D, camera_image: CameraImage) -> list:
-        positions_in_image = self.get_fixture_positions_in_image(np.flip(camera_image.image, axis=1))
-
-        # debug = self.pixel_grid.get_colored_grid()
-
-        fixture_positions = []
-        fixture_angles = []
-        for position in positions_in_image:
-            relative_horizontal_angle = Angle(
-                position[1] * (camera_image.data.horizontal_fov.radians / camera_image.data.width))
-
-            fixture_horizontal_angle = (
-                                               relative_horizontal_angle - camera_image.data.horizontal_fov / 2) + camera_image.data.horizontal_orientation
-
-            fixture_horizontal_angle.normalize()
-
-            camera_vector = Vector2D(camera_image.data.horizontal_orientation, camera_image.data.distance_from_center)
-            camera_pos = camera_vector.to_position()
-            camera_pos += robot_position
-
-            detection_vector = Vector2D(fixture_horizontal_angle, self.max_detection_distance)
-            detection_pos = detection_vector.to_position()
-
-            detection_pos += camera_pos
-
-            camera_array_index = self.pixel_grid.coordinates_to_array_index(camera_pos)
-            detection_array_index = self.pixel_grid.coordinates_to_array_index(detection_pos)
-
-            line_xx, line_yy = skimage.draw.line(camera_array_index[0], camera_array_index[1], detection_array_index[0],
-                                                 detection_array_index[1])
-
-            index = 0
-            for x, y in zip(line_xx, line_yy):
-                if x >= 0 and y >= 0 and x < self.pixel_grid.array_shape[0] and y < self.pixel_grid.array_shape[1]:
-                    # debug[x, y] = (0, 255, 0)
-                    back_index = index - 2
-                    back_index = max(back_index, 0)
-                    if self.pixel_grid.arrays["walls"][x, y]:
-                        x1 = line_xx[back_index]
-                        y1 = line_yy[back_index]
-                        fixture_positions.append(self.pixel_grid.array_index_to_coordinates(np.array([x1, y1])))
-                        fixture_angles.append(copy.deepcopy(fixture_horizontal_angle))
-                        break
-                index += 1
-
-        # cv.imshow("fixture_detection_debug", debug)
-
-        return fixture_positions, fixture_angles
-
-    def get_fixture_positions_in_image(self, image: np.ndarray) -> List[Position2D]:
-        image_sum = np.zeros(image.shape[:2], dtype=np.bool_)
-        for filter in self.color_filters.values():
-            image_sum += filter.filter(image) > 0
-
-        image_sum = image_sum.astype(np.uint8) * 255
-
-        contours, _ = cv.findContours(image_sum, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-
-        final_victims = []
-        for c in contours:
-            x, y, w, h = cv.boundingRect(c)
-            final_victims.append(Position2D((x + x + w) / 2, (y + y + h) / 2))
-
-        return final_victims
-
-    def map_fixtures(self, camera_images, robot_position):
-        for i in camera_images:
-            positions, angles = self.get_fixture_positions_and_angles(robot_position, i)
-            for pos, angle in zip(positions, angles):
-                index = self.pixel_grid.coordinates_to_array_index(pos)
-                self.pixel_grid.arrays["victims"][index[0], index[1]] = True
-                self.pixel_grid.arrays["victim_angles"][index[0], index[1]] = angle.radians
-
-    def mark_reported_fixture(self, robot_position, fixture_position):
-        fixture_array_index = self.pixel_grid.coordinates_to_array_index(fixture_position)
-        rr, cc = skimage.draw.disk(fixture_array_index, 4)
-        self.pixel_grid.arrays["fixture_detection"][rr, cc] = True
-
-    def detect_color(self, image: ndarray, img_size: tuple[int, int] = (64, 40),
+    def detect_color(self, image: npt.ArrayLike, img_size: tuple[int, int] = (64, 40),
                      cropped_img_size: tuple[int, int] = (44, 4),
                      min_mask_size: int = 25, max_mask_size: int = 40) -> list[str]:
         """
@@ -123,6 +36,10 @@ class FixtureDetector:
         if not max_mask_size:
             max_mask_size = cropped_img_size[0] * cropped_img_size[1]
 
+        image = cv.cvtColor(image, cv.COLOR_BGRA2RGBA)
+        og_image = image
+
+
         # Crop the image to the center `cropped_img_width[0]` pixels
         image = image[:, img_size[0] // 2 - (cropped_img_size[0] // 2):img_size[0] // 2 + (cropped_img_size[0] // 2)]
         # Crop the image to the center `cropped_img_height[1]` pixels
@@ -136,4 +53,35 @@ class FixtureDetector:
             if max_mask_size >= mask_size >= min_mask_size:
                 detected_colors.append(f_name)
                 # save_img(mask, step_counter, mode="L")
+
+        if len(detected_colors) > 0:
+            name = random.randint(0, 9999)  # Prevent images from overriding each other
+            FixtureDetector.save_img(og_image, f"{name}_ogImage", mode="RGBA")
+            FixtureDetector.save_img(mask, f"{name}_mask", mode="L")
         return detected_colors
+
+    @staticmethod
+    def save_img(image, name=None, mode: str = None,
+                 image_dir=None) -> None:
+        """
+        Save an image to `{image_dir}/{world_name}/{name}.png`.
+
+        :param image: The image to save. Can be a PIL image or a numpy array.
+        :param name: The name of the image (without the extension). If `None`, a random int value is used.
+        :param mode: The mode to save the image in. Defaults to `RGB`.
+        :param image_dir: The directory to save the image to. If `None`, the default directory is used:
+        `/images`
+        """
+
+        if not image_dir:
+            # If `image_dir` was not specified, use the default directory.
+            image_dir = Path(Path.cwd() / "images")
+            image_dir.mkdir(parents=True, exist_ok=True)
+
+        # If the image is a numpy array, convert it to a PIL image
+        if isinstance(image, np.ndarray):
+            image = Image.fromarray(image, mode)
+
+        im_path = image_dir.joinpath(f"{name}.png")
+        image.save(im_path)
+        print(f"Saved {name}:", im_path)

@@ -8,7 +8,7 @@ from data_structures.angle import Angle
 from data_structures.compound_pixel_grid import CompoundExpandablePixelGrid
 from data_structures.tile_color_grid import TileColorExpandableGrid
 from data_structures.vectors import Position2D
-from fixture_detection.fixture_detection import FixtureDetector
+from mapping.fixture_detection import FixtureDetector
 from debug import DO_WAIT_KEY
 from mapping.array_filtering import ArrayFilterer
 from mapping.data_extractor import PointCloudExtarctor, FloorColorExtractor

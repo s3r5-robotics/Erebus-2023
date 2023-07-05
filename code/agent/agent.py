@@ -59,7 +59,7 @@ class Agent(AgentInterface):
         self.__target_position = None
 
     def update(self) -> None:
-        self.__stage_machine.run()
+        self.__stage_machine()
 
     def get_target_position(self) -> Position2D:
         return self.__target_position

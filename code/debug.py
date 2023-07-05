@@ -27,3 +27,4 @@ SLOW_DOWN_S = 0.032  # Zastavica SLOW_DOWN_S nadzoruje, kako počasi se program 
 DO_WAIT_KEY = False  # Zastavica DO_WAIT_KEY nadzoruje, ali se program ustavi in čaka na pritisk tipke.
 
 FIXTURE_FITTING = False  # Zastavica FIXTURE_FITTING nadzoruje ali se izpisejo vse zaznane zrtve.
+PREDICTIONS = True
