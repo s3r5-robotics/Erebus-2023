@@ -55,7 +55,7 @@ class FixtureDetector:
 
     @staticmethod
     def detect_color(image: npt.ArrayLike, img_size: tuple[int, int] = (64, 40),
-                     cropped_img_size: tuple[int, int] = (54, 4),
+                     cropped_img_size: tuple[int, int] = (44, 4),
                      min_mask_size: int = 25, max_mask_size: int = 40,
                      step_counter: int = None) -> list[str]:
         """
@@ -92,7 +92,8 @@ class FixtureDetector:
 class FixtureClassifier:
     CLASSES = ['0', 'C', 'F', 'H', 'O', 'P', 'S', 'U']
     MODEL_DATA = {
-        "rev-1": "../test_fr-hp.keras"
+        "rev-1": "../test_fr-hp.keras",
+        "rev-2": "../test_frt-hp.keras"
     }
 
     def __init__(self, model: str):
