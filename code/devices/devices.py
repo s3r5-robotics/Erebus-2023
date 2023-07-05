@@ -1,6 +1,6 @@
 import inspect
 import math
-import struct
+import copy
 import sys
 import typing
 from typing import Tuple
@@ -47,8 +47,23 @@ https://stackoverflow.com/questions/68650071/type-annotations-for-base-and-inher
 # region Sensors
 
 class Gyro(InstanceSubclass, Sensor, controller.Gyro):
+    # The second (1i in an array) element represents the y-axis.
+    INDEX = 1
+    """https://cyberbotics.com/doc/reference/gyro?tab-language=python#wb_gyro_get_values"""
+
     def __init__(self, _: controller.Gyro, time_step: int):
         Sensor.__init__(self, time_step)
+
+        self.orientation = Angle(0)
+        self.angular_velocity = Angle(0)
+        self.previous_angular_velocity = Angle(0)
+
+    def __call__(self):
+        time_elapsed = self.time_step / 1000
+        sensor_y_value = self.getValues()[self.INDEX]
+        self.previous_angular_velocity = copy.copy(self.angular_velocity)
+        self.angular_velocity = Angle(sensor_y_value * time_elapsed)
+        self.orientation = Angle(self.orientation + self.angular_velocity)
 
 
 class InertialUnit(InstanceSubclass, Sensor, controller.InertialUnit):

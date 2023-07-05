@@ -6,7 +6,7 @@ from typing import Optional, Type, Tuple
 import controller
 import debug
 from devices.devices import DeviceType, Camera, ColorSensor, Emitter, GPS, InertialUnit, LED, Motor, Receiver, \
-    DistanceSensor
+    DistanceSensor, Gyro
 from mapping.mapper import Mapper
 from devices.lidar import Lidar
 from movement import Drivetrain
@@ -27,6 +27,7 @@ class Robot(controller.Robot):
         # Sensors
         self.imu = self._get_device("inertial_unit", InertialUnit)
         self.gps = self._get_device("gps", GPS)
+        self.gyro = self._get_device("gyro", Gyro)
         self.camera_l = self._get_device("camera_left", Camera)
         self.camera_r = self._get_device("camera_right", Camera)
         self.color_sensor = self._get_device("colour_sensor", ColorSensor)
@@ -107,7 +108,6 @@ class Robot(controller.Robot):
             in_bounds_point_cloud=self.lidar.point_cloud,
             out_of_bounds_point_cloud=self.lidar.out_of_bounds_point_cloud,
             robot_position=self.gps.position.position2d,
-            robot_previous_position=None,
             robot_orientation=None
         )
 
