@@ -54,16 +54,18 @@ class Gyro(InstanceSubclass, Sensor, controller.Gyro):
     def __init__(self, _: controller.Gyro, time_step: int):
         Sensor.__init__(self, time_step)
 
-        self.orientation = Angle(0)
-        self.angular_velocity = Angle(0)
-        self.previous_angular_velocity = Angle(0)
+        self._orientation = Angle(0)
+        self._angular_velocity = Angle(0)
 
     def __call__(self):
         time_elapsed = self.time_step / 1000
         sensor_y_value = self.getValues()[self.INDEX]
-        self.previous_angular_velocity = copy.copy(self.angular_velocity)
-        self.angular_velocity = Angle(sensor_y_value * time_elapsed)
-        self.orientation = Angle(self.orientation + self.angular_velocity)
+        self._angular_velocity = Angle(sensor_y_value * time_elapsed)
+        self._orientation = Angle(self._orientation + self._angular_velocity)
+
+    @property
+    def orientation(self):
+        return self._orientation
 
 
 class InertialUnit(InstanceSubclass, Sensor, controller.InertialUnit):

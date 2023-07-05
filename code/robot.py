@@ -108,7 +108,7 @@ class Robot(controller.Robot):
             in_bounds_point_cloud=self.lidar.point_cloud,
             out_of_bounds_point_cloud=self.lidar.out_of_bounds_point_cloud,
             robot_position=self.gps.position.position2d,
-            robot_orientation=None
+            robot_orientation=self.gyro.orientation
         )
 
     def step(self, _=None) -> bool:

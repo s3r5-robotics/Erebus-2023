@@ -4,7 +4,8 @@ from typing import Optional
 import numpy as np
 
 from data_structures.vectors import Position2D
-from data_structures.angle import Angle
+from data_structures.angle import Angle as AAngle
+from utils import Angle
 
 from mapping.mixed_grid import MixedGrid
 
@@ -57,7 +58,7 @@ class Mapper:
             return
 
         self.robot_position = robot_position
-        self.robot_orientation = robot_orientation
+        self.robot_orientation = AAngle(robot_orientation)
 
         self.robot_grid_index = self.pixel_grid.coordinates_to_grid_index(self.robot_position)
 
