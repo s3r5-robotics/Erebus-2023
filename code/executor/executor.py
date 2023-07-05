@@ -5,7 +5,8 @@ from agent.agent import Agent
 from data_structures.angle import Angle
 from executor.stuck_detector import StuckDetector
 from final_matrix_creation.final_matrix_creator import FinalMatrixCreator
-from fixture_detection.fixture_clasification import FixtureClasiffier
+from fixture_detection.fixture_detection import FixtureDetector
+from fixture_detection.fixture_clasification import FixtureClassifier
 from debug import DO_SLOW_DOWN, SLOW_DOWN_S
 from flow_control.delay import DelayManager
 from flow_control.sequencer import Sequencer
@@ -36,7 +37,8 @@ class Executor:
 
         self.sequencer = Sequencer(reset_function=self.delay_manager.reset_delay)  # Allows for asynchronous programming
 
-        self.fixture_detector = FixtureClasiffier()
+        self.fixture_detector = FixtureDetector()
+        self.fixture_classifier = FixtureClassifier("rev-2")
 
         self.final_matrix_creator = FinalMatrixCreator(mapper.tile_size, mapper.pixel_grid.resolution)
 
@@ -56,11 +58,11 @@ class Executor:
         self.letter_to_report = None
         self.report_orientation = Angle(0)
 
-    def run(self):
+    def __call__(self):
         """Advances the simulation, updates all components and executes the state machine."""
 
         while self.robot.do_loop():
-            self.robot.update()  # Updates robot position and rotation, sensor positions and values, etc.
+            self.robot()  # Updates robot position and rotation, sensor positions and values, etc.
 
             self.delay_manager.update(self.robot.time)
             self.stuck_detector.update(self.robot.position,
@@ -68,8 +70,7 @@ class Executor:
                                        self.robot.drive_base.get_wheel_direction())
 
             self.do_mapping()
-
-            self.state_machine.run()
+            self.state_machine()
 
             if DO_SLOW_DOWN:
                 time.sleep(SLOW_DOWN_S)
@@ -77,7 +78,6 @@ class Executor:
             if debug.PRINT_MATRIX:
                 print(self.final_matrix_creator.pixel_grid_to_final_grid(self.mapper.pixel_grid,
                                                                          self.mapper.start_position))
-
             if debug.PRINT_STATE:
                 print("state:", self.state_machine.state)
 
@@ -139,12 +139,13 @@ class Executor:
         if self.agent.do_end():
             self.state_machine.change_state("end")
 
-        cam_images = self.robot.get_camera_images()
+        cam_images = self.robot.get_fixture_camera_images()
         if self.victim_reporting_enabled and cam_images is not None and not self.mapper.has_detected_victim_from_position():
             for cam_image in cam_images:
-                fixtures = self.fixture_detector.find_fixtures(cam_image.image)
-                if len(fixtures):
-                    self.letter_to_report = self.fixture_detector.classify_fixture(fixtures[0])
+                image = cam_image.image
+                detected_colours = self.fixture_detector.detect_color(image)
+                if len(detected_colours):
+                    self.letter_to_report = self.fixture_classifier.classify_fixture(image)
                     self.report_orientation = cam_image.data.horizontal_orientation
                     change_state_function("report_fixture")
                     self.sequencer.reset_sequence()  # Resets the sequence

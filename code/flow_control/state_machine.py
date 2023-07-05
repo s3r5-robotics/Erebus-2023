@@ -44,5 +44,5 @@ class StateMachine:
         """Checks if the state corresponds the specified value."""
         return self.state == state
 
-    def run(self):
+    def __call__(self):
         return self.current_function(self.change_state)

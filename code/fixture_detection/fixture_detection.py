@@ -4,10 +4,12 @@ from typing import List
 import cv2 as cv
 import numpy as np
 import skimage
+from numpy import ndarray
+
+from color_filter import ColorFilter
 from data_structures.angle import Angle
 from data_structures.compound_pixel_grid import CompoundExpandablePixelGrid
 from data_structures.vectors import Position2D, Vector2D
-from fixture_detection.color_filter import ColorFilter
 from robot.devices.camera import CameraImage
 
 
@@ -18,10 +20,10 @@ class FixtureDetector:
         # Color filtering
         self.colors = ("black", "white", "yellow", "red")
         self.color_filters = {
-            "black": ColorFilter(lower_hsv=(0, 0, 0), upper_hsv=(0, 0, 0)),
-            "white": ColorFilter(lower_hsv=(0, 0, 207), upper_hsv=(0, 0, 207)),
-            "yellow": ColorFilter(lower_hsv=(25, 157, 82), upper_hsv=(30, 255, 255)),
-            "red": ColorFilter(lower_hsv=(160, 170, 127), upper_hsv=(170, 255, 255))
+            "black": ColorFilter(lower=(0, 0, 0), upper=(30, 30, 30)),
+            "white": ColorFilter(lower=(150, 150, 150), upper=(255, 255, 255)),
+            "yellow": ColorFilter(lower=(155, 105, 0), upper=(200, 185, 90)),
+            "red": ColorFilter(lower=(105, 0, 35), upper=(205, 175, 170))
         }
 
         self.max_detection_distance = 0.12 * 5
@@ -103,3 +105,35 @@ class FixtureDetector:
         fixture_array_index = self.pixel_grid.coordinates_to_array_index(fixture_position)
         rr, cc = skimage.draw.disk(fixture_array_index, 4)
         self.pixel_grid.arrays["fixture_detection"][rr, cc] = True
+
+    def detect_color(self, image: ndarray, img_size: tuple[int, int] = (64, 40),
+                     cropped_img_size: tuple[int, int] = (44, 4),
+                     min_mask_size: int = 25, max_mask_size: int = 40) -> list[str]:
+        """
+        Vertically crop the camera's image down to the center `cropped_img_height` pixels.
+        Check if the cropped image contains any colors from the color filters.
+
+        :param image: The full image from the camera.
+        :param img_size: The size of the original image
+        :param cropped_img_size: The size of the resulting image after cropping
+        :param min_mask_size: The minimum number of masked pixels.
+        :param max_mask_size: `cropped_img_size[0] * cropped_img_size[1] - max_mask_size`.
+        :return: A list of the detected colors' names.
+        """
+        if not max_mask_size:
+            max_mask_size = cropped_img_size[0] * cropped_img_size[1]
+
+        # Crop the image to the center `cropped_img_width[0]` pixels
+        image = image[:, img_size[0] // 2 - (cropped_img_size[0] // 2):img_size[0] // 2 + (cropped_img_size[0] // 2)]
+        # Crop the image to the center `cropped_img_height[1]` pixels
+        image = image[img_size[1] // 2 - (cropped_img_size[1] // 2):img_size[1] // 2 + (cropped_img_size[1] // 2), :]
+
+        detected_colors: list[str] = []
+        for f_name, f in self.color_filters.items():
+            mask = f.filter(image)
+            mask_size = cv.countNonZero(mask)
+            # Check if the mask is larger than the minimum size and smaller than the entire image
+            if max_mask_size >= mask_size >= min_mask_size:
+                detected_colors.append(f_name)
+                # save_img(mask, step_counter, mode="L")
+        return detected_colors

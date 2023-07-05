@@ -70,7 +70,7 @@ class Robot:
                                     right_wheel=Wheel(self.robot.getDevice("wheel2 motor"), max_wheel_speed),
                                     max_wheel_velocity=max_wheel_speed)
 
-    def update(self):
+    def __call__(self):
         """Must run every TimeStep"""
         # Update current time
         self.time = self.robot.getTime()
@@ -140,10 +140,18 @@ class Robot:
 
     def get_mapping_camera_images(self):
         """
-        Wrapper for all cameras used in mappping
+        Wrapper for all cameras used in mapping
         """
         if self.center_camera.step_counter.check():
             return [self.center_camera.get_image()]
+
+    def get_fixture_camera_images(self):
+        """
+        Wrapper for all cameras used in fixture detection and classification
+        """
+        if self.center_camera.step_counter.check():
+            return [self.right_camera.get_image(),
+                    self.left_camera.get_image()]
 
     def get_last_camera_images(self):
         return [self.right_camera.get_last_image(),
