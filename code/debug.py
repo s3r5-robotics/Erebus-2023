@@ -9,10 +9,13 @@ PRINT_MATRIX = False  # Zastavica PRINT_MATRIX nadzoruje, ali se izpisuje matrik
 SHOW_DETAILED_MAP = False  # Zastavica SHOW_DETAILED_MAP nadzoruje, ali se prikazuje podroben zemljevid.
 SHOW_FINAL_GRID = False
 SHOW_ASTAR_DEBUG_GRID = False  # Zastavica SHOW_ASTAR_DEBUG_GRID nadzoruje, ali se prikazuje A* iskalna mreža.
-SHOW_POINT_CLOUD_WITH_GRID = False  # Zastavica SHOW_POINT_CLOUD_WITH_GRID nadzoruje, ali se prikazuje oblak točk z mrežo.
+SHOW_POINT_CLOUD_WITH_GRID = False  # Zastavica SHOW_POINT_CLOUD_WITH_GRID nadzoruje, ali se prikazuje oblak točk z
+# mrežo.
 
-PRINT_ROBOT_POSITION_OFFSET = False  # Zastavica PRINT_ROBOT_POSITION_OFFSET nadzoruje, ali se izpisuje odmik položaja robota.
-PRINT_REGISTERED_START_POS = False  # Zastavica PRINT_REGISTERED_START_POS nadzoruje, ali se izpisuje registrirana začetna pozicija.
+PRINT_ROBOT_POSITION_OFFSET = False  # Zastavica PRINT_ROBOT_POSITION_OFFSET nadzoruje, ali se izpisuje odmik
+# položaja robota.
+PRINT_REGISTERED_START_POS = False  # Zastavica PRINT_REGISTERED_START_POS nadzoruje, ali se izpisuje registrirana
+# začetna pozicija.
 
 PRINT_MAP_AT_END = True  # Zastavica PRINT_MAP_AT_END nadzoruje, ali se izpiše zemljevid na koncu programa.
 

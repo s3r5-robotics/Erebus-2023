@@ -3,7 +3,7 @@ import copy
 import cv2 as cv
 import numpy as np
 
-import flags
+import debug
 from data_structures.compound_pixel_grid import CompoundExpandablePixelGrid
 
 
@@ -86,7 +86,7 @@ class WallMatrixCreator:
                 row.append(list(val))
             grid.append(row)
 
-        if flags.SHOW_POINT_CLOUD_WITH_GRID:
+        if debug.SHOW_POINT_CLOUD_WITH_GRID:
             cv.imshow("Point Cloud With Grid",
                       cv.resize(bool_array_copy, (0, 0), fx=1, fy=1, interpolation=cv.INTER_AREA))
 
@@ -207,7 +207,7 @@ class FloorMatrixCreator:
                 row.append(color_key)
             grid.append(row)
 
-        if flags.SHOW_DETAILED_MAP:
+        if debug.SHOW_DETAILED_MAP:
             cv.imshow("Detailed Map", array_copy)
 
         return grid
@@ -254,7 +254,7 @@ class FinalMatrixCreator:
 
     def __get_final_text_grid(self, wall_node_array: np.ndarray, floor_type_array: np.ndarray,
                               robot_node: np.ndarray) -> list:
-        if flags.SHOW_FINAL_GRID:
+        if debug.SHOW_FINAL_GRID:
             cv.imshow("final_grid",
                       cv.resize(wall_node_array.astype(np.uint8) * 255, (0, 0), fx=10, fy=10,
                                 interpolation=cv.INTER_AREA))

@@ -127,8 +127,8 @@ class aStarAlgorithm:
             for o in openList:
                 debug_grid[o.position[0], o.position[1]] = [0, 0, 255]
 
-                import flags
-                if flags.SHOW_ASTAR_DEBUG_GRID:
+                import debug
+                if debug.SHOW_ASTAR_DEBUG_GRID:
                     cv.imshow("debug", debug_grid)
                     cv.waitKey(1)
 

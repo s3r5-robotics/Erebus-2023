@@ -1,12 +1,12 @@
 import time
 
-import flags
+import debug
 from agent.agent import Agent
 from data_structures.angle import Angle
 from executor.stuck_detector import StuckDetector
 from final_matrix_creation.final_matrix_creator import FinalMatrixCreator
 from fixture_detection.fixture_clasification import FixtureClasiffier
-from flags import DO_SLOW_DOWN, SLOW_DOWN_S
+from debug import DO_SLOW_DOWN, SLOW_DOWN_S
 from flow_control.delay import DelayManager
 from flow_control.sequencer import Sequencer
 from flow_control.state_machine import StateMachine
@@ -74,25 +74,26 @@ class Executor:
             if DO_SLOW_DOWN:
                 time.sleep(SLOW_DOWN_S)
 
-            if flags.PRINT_MATRIX:
+            if debug.PRINT_MATRIX:
                 print(self.final_matrix_creator.pixel_grid_to_final_grid(self.mapper.pixel_grid,
                                                                          self.mapper.start_position))
 
-            if flags.PRINT_STATE:
+            if debug.PRINT_STATE:
                 print("state:", self.state_machine.state)
 
     def do_mapping(self):
         """Updates the mapper if mapping is enabled."""
 
         if self.mapping_enabled:
-            # Floor and lidar mapping
-            self.mapper.update(self.robot.get_point_cloud(),
-                               self.robot.get_out_of_bounds_point_cloud(),
-                               self.robot.get_lidar_detections(),
-                               self.robot.get_camera_images(),
-                               self.robot.position,
-                               self.robot.orientation,
-                               self.robot.time)
+            self.mapper.update(
+                self.robot.get_point_cloud(),
+                self.robot.get_out_of_bounds_point_cloud(),
+                self.robot.get_lidar_detections(),
+                self.robot.get_mapping_camera_images(),
+                self.robot.position,
+                self.robot.orientation,
+                self.robot.time
+            )
 
     # STATES
     def state_init(self, change_state_function):
@@ -111,8 +112,8 @@ class Executor:
 
         # Starts mapping walls
         if self.sequencer.simple_event():
-            self.mapping_enabled = flags.DO_MAPPING
-            self.victim_reporting_enabled = flags.DO_VICTIM_REPORTING
+            self.mapping_enabled = debug.DO_MAPPING
+            self.victim_reporting_enabled = debug.DO_VICTIM_REPORTING
 
         self.seq_delay_seconds(0.5)
         self.sequencer.complex_event(self.robot.rotate_to_angle, angle=Angle(90, Angle.DEGREES),
@@ -180,7 +181,7 @@ class Executor:
     def calibrate_position_offsets(self):
         """Calculates offsets in the robot position, in case it doesn't start perfectly centered."""
         self.robot.position_offsets = self.robot.position % (self.mapper.quarter_tile_size * 2)
-        if flags.PRINT_ROBOT_POSITION_OFFSET:
+        if debug.PRINT_ROBOT_POSITION_OFFSET:
             print("Robot Position:", self.robot.position)
             print("Position Offsets: ", self.robot.position_offsets)
 

@@ -1,4 +1,4 @@
-import flags
+import debug
 from controller import Robot as WebotsRobot
 from data_structures.angle import Angle
 from data_structures.vectors import Position2D
@@ -58,8 +58,7 @@ class Robot:
                                   time_step=self.time_step * camera_interval,
                                   step_counter=StepCounter(camera_interval),
                                   orientation=Angle(90, Angle.DEGREES),
-                                  distance_from_center=self.camera_distance_from_center,
-                                  rotate180=True)
+                                  distance_from_center=self.camera_distance_from_center)
 
         # Comunicator (Emmiter and reciever)
         self.comunicator = Comunicator(self.robot.getDevice("emitter"), self.robot.getDevice("receiver"),
@@ -92,7 +91,7 @@ class Robot:
         self.left_camera.update(self.orientation)
         self.center_camera.update(self.orientation)
 
-        if flags.DO_UPDATE_COMUNICATOR:
+        if debug.DO_UPDATE_COMUNICATOR:
             self.comunicator.update()
 
     def do_loop(self):
@@ -130,12 +129,21 @@ class Robot:
     def get_lidar_detections(self):
         return self.lidar.get_detections()
 
-    # Wrapper for cameras
     def get_camera_images(self):
+        """
+        Wrapper for all robot cameras
+        """
         if self.center_camera.step_counter.check():
             return [self.right_camera.get_image(),
                     self.center_camera.get_image(),
                     self.left_camera.get_image()]
+
+    def get_mapping_camera_images(self):
+        """
+        Wrapper for all cameras used in mappping
+        """
+        if self.center_camera.step_counter.check():
+            return [self.center_camera.get_image()]
 
     def get_last_camera_images(self):
         return [self.right_camera.get_last_image(),
