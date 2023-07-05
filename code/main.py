@@ -7,9 +7,9 @@ from robot import Robot
 from utils import Angle
 
 robot = Robot()
-fixture_detector = FixtureDetector()
 states = StateMachine("init")
-fixture_classifier = FixtureClassifier("rev-1")
+fixture_detector = FixtureDetector()
+fixture_classifier = FixtureClassifier("rev-2")
 
 TILE_SIZE = 120  # mm
 MIN_DIST = 1.2 * (TILE_SIZE / 2 - 37)  # 37 is the offset of the distance sensor from the center of the robot
@@ -66,20 +66,15 @@ states += State.for_function(drive, turn, end_run)
 states += State.for_function(turn, drive, end_run)
 states += State.for_function(end_run)
 
-step_counter: int = 0
-
 while robot.step():
     if debug.STEP:
         print(f"{robot.step_counter}", end="    ")
-    step_counter += 1
-
-    robot()
 
     if debug.DISTANCE:
         dl, df, dr = robot.distances
         print(f"L|F|R  {dl:.3f} | {df:.3f} | {dr:.3f}", end="    ")
 
-    if step_counter % HAZ_DETECTION_INTERVAL == 0:
+    if robot.step_counter % HAZ_DETECTION_INTERVAL == 0:
         for camera in [robot.camera_l, robot.camera_r]:
             image = fixture_detector.get_image(camera)
             detected = fixture_detector.detect_color(image)
@@ -99,5 +94,5 @@ while robot.step():
         print("State machine complete")
         break
 
-    # if debug.ANY:
-    #     print(flush=True)
+    if debug.ANY:
+        print(flush=True)

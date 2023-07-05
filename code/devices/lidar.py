@@ -65,7 +65,7 @@ class Lidar(InstanceSubclass, Sensor, controller.Lidar):
     @property
     def out_of_bounds_point_cloud(self):
         """
-        Returns a point cloud with all the out-of-bounds detections as points with a fixed distance
+        Returns a point cloud with all the out-of-bounds detections as points with a fixed distance.
         """
         # if self.step_counter.check():
         return self.__out_of_bounds_point_cloud
@@ -78,7 +78,7 @@ class Lidar(InstanceSubclass, Sensor, controller.Lidar):
     def set_orientation(self, angle):
         self.orientation = angle
 
-    def update(self):
+    def __call__(self):
         self.timing.increase()
 
         # Only update every n time-steps

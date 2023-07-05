@@ -2,6 +2,7 @@ import dataclasses
 import math
 from numbers import Number
 from typing import Type, SupportsFloat, TypeVar, Literal, Union, Iterable
+from data_structures.vectors import Position2D
 
 
 class InstanceSubclass:
@@ -229,6 +230,10 @@ class Point:
         """Get the distance to another point"""
         # The same as math.sqrt((self.x - other.x)**2 + (self.y - other.y)**2)
         return math.dist((self.x, self.y), (other.x, other.y))
+
+    @property
+    def position2d(self) -> Position2D:
+        return Position2D(self.x, self.y)
 
 
 def static_vars(**kwargs):

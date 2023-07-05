@@ -7,6 +7,7 @@ import controller
 import debug
 from devices.devices import DeviceType, Camera, ColorSensor, Emitter, GPS, InertialUnit, LED, Motor, Receiver, \
     DistanceSensor
+from mapping.mapper import Mapper
 from devices.lidar import Lidar
 from movement import Drivetrain
 
@@ -14,6 +15,8 @@ from movement import Drivetrain
 class Robot(controller.Robot):
     # Robot dimensions in millimeters (https://cyberbotics.com/doc/guide/epuck#e-puck-model)
     DIAMETER = 71
+    # Tile size in millimeters
+    TILE_SIZE = 120
 
     # noinspection PyTypeChecker
     def __init__(self, time_step: Optional[int] = None) -> None:
@@ -61,6 +64,7 @@ class Robot(controller.Robot):
 
         # Higher level combined devices using peripheral devices retrieved above
         self.drive = Drivetrain(motor_l, motor_r, self.imu, self.gps)
+        self.mapper = Mapper(tile_size=self.TILE_SIZE * .001, robot_diameter=self.DIAMETER * .001)
 
         # States
         self.step_counter = 0
@@ -98,6 +102,15 @@ class Robot(controller.Robot):
             return device
         return cls(device, time_step=self.time_step)
 
+    def _map(self):
+        self.mapper(
+            in_bounds_point_cloud=self.lidar.point_cloud,
+            out_of_bounds_point_cloud=self.lidar.out_of_bounds_point_cloud,
+            robot_position=self.gps.position.position2d,
+            robot_previous_position=None,
+            robot_orientation=None
+        )
+
     def step(self, _=None) -> bool:
         """
         Run one simulation step and increase the step counter
@@ -115,6 +128,7 @@ class Robot(controller.Robot):
         """Get the current left, front, right distance readings (mm) the 3 onboard distance sensors"""
         sensors: list[DistanceSensor] = [self.distance_l, self.distance_f, self.distance_r]
         readings: Tuple[float, float, float] = tuple(map(lambda ds: ds.mm, sensors))
+
         return readings
 
     def __call__(self) -> bool:
@@ -123,6 +137,9 @@ class Robot(controller.Robot):
 
         :return: True if the simulation should continue, False if Webots is about to terminate the controller.
         """
-        self.lidar.update()
+
+        self.lidar()
+        self._map()
         self.drive()
+
         return True

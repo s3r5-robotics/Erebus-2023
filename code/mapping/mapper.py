@@ -43,7 +43,7 @@ class Mapper:
 
         self.time = 0
 
-    def update(
+    def __call__(
             self,
             in_bounds_point_cloud: list = None,
             out_of_bounds_point_cloud: list = None,

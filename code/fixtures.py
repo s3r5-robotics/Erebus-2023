@@ -1,6 +1,6 @@
 import random
 from pathlib import Path
-from typing import Union, Tuple
+from typing import Literal
 
 import cv2 as cv
 import keras
@@ -96,7 +96,7 @@ class FixtureClassifier:
         "rev-2": "../test_frt-hp.keras"
     }
 
-    def __init__(self, model: str):
+    def __init__(self, model: Literal["rev-1", "rev-2"]):
         self.model = keras.models.load_model(self.MODEL_DATA[model])
 
     def classify_fixture(self, fixture: npt.ArrayLike) -> str:
