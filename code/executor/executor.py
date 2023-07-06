@@ -38,7 +38,7 @@ class Executor:
         self.sequencer = Sequencer(reset_function=self.delay_manager.reset_delay)  # Allows for asynchronous programming
 
         self.fixture_detector = FixtureDetector()
-        self.fixture_classifier = FixtureClassifier("rev-3")
+        self.fixture_classifier = FixtureClassifier("rev-4")
 
         self.final_matrix_creator = FinalMatrixCreator(mapper.tile_size, mapper.pixel_grid.resolution)
 

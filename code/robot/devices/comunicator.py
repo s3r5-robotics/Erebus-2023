@@ -33,7 +33,7 @@ class Comunicator(Sensor):
         self.do_get_world_info = False
         exit_mes = struct.pack('c', b'E')
         self.emmiter.send(exit_mes)
-        print("Ended!!!!!")
+        print("Finished")
 
     def send_map(self, np_array):
         # Get shape
