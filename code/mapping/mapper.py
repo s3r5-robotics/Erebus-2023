@@ -33,8 +33,7 @@ class Mapper:
         # Data structures
         pixels_per_tile = 10
         self.pixel_grid = CompoundExpandablePixelGrid(initial_shape=np.array([1, 1]),
-                                                      pixel_per_m=pixels_per_tile / self.quarter_tile_size,
-                                                      robot_radius_m=(self.robot_diameter / 2) - 0.008)
+                                                      pixel_per_m=pixels_per_tile / self.quarter_tile_size)
 
         self.tile_color_grid = TileColorExpandableGrid(initial_shape=np.array((1, 1)),
                                                        tile_size=self.tile_size)

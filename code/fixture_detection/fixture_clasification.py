@@ -14,7 +14,7 @@ class FixtureClassifier:
         "rev-1": "fixture_detection/models/test_fr-hp.keras",
         "rev-2": "fixture_detection/models/test_frt-hp.keras",
         "rev-3": "fixture_detection/models/test_ff-hp.keras",
-        "rev-4": "fixture_detection/models/test_ffff-hp.keras",
+        "rev-4": r"C:\Programming\RoboCup_Erebus\Erebus-2023\code\fixture_detection\models\test_ffff-hp.keras",
     }
 
     def __init__(self, model: Literal["rev-1", "rev-2", "rev-3", "rev-4"]):

@@ -41,7 +41,7 @@ class Robot:
 
         # Cameras
         self.camera_distance_from_center = 0.0310
-        camera_interval = 3
+        camera_interval = 1
         self.center_camera = Camera(webots_device=self.robot.getDevice("camera1"),
                                     time_step=self.time_step * camera_interval,
                                     step_counter=StepCounter(camera_interval),

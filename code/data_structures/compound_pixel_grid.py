@@ -2,7 +2,7 @@ import numpy as np
 
 
 class CompoundExpandablePixelGrid:
-    def __init__(self, initial_shape, pixel_per_m, robot_radius_m):
+    def __init__(self, initial_shape, pixel_per_m):
         self.array_shape = np.array(initial_shape, dtype=int)
         self.offsets = self.array_shape // 2
         self.resolution = pixel_per_m  # resolution of the grid with regards to the coordinate system of the gps / the world
@@ -26,6 +26,7 @@ class CompoundExpandablePixelGrid:
             "floor_color_detection_distance": np.zeros(self.array_shape, np.uint8),
             "average_floor_color": np.zeros((self.array_shape[0], self.array_shape[1], 3), np.uint8),
             "holes": np.zeros(self.array_shape, np.bool_),
+            "swamps": np.zeros(self.array_shape, np.bool_),
             "victims": np.zeros(self.array_shape, np.bool_),
             "victim_angles": np.zeros(self.array_shape, np.float32),
             "fixture_detection": np.zeros(self.array_shape, np.bool_),

@@ -140,7 +140,10 @@ class Executor:
             self.state_machine.change_state("end")
 
         cam_images = self.robot.get_fixture_camera_images()
-        if self.victim_reporting_enabled and cam_images is not None and not self.mapper.has_detected_victim_from_position():
+        if \
+                self.victim_reporting_enabled \
+                and cam_images is not None \
+                and not self.mapper.has_detected_victim_from_position():
             for cam_image in cam_images:
                 image = cam_image.image
                 detected_colours = self.fixture_detector.detect_color(image)
@@ -165,9 +168,9 @@ class Executor:
             self.report_orientation.normalize()
             self.seq_rotate_to_angle(self.report_orientation.degrees)
             self.seq_move_wheels(0.6, 0.6)
-            self.seq_delay_seconds(0.2)
+            self.seq_delay_seconds(0.6)
             self.seq_move_wheels(0, 0)
-            self.seq_delay_seconds(2)
+            self.seq_delay_seconds(3)
 
         if self.sequencer.simple_event():
             if self.letter_to_report is not None:

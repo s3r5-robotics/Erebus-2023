@@ -8,8 +8,8 @@ PRINT_MATRIX = False  # Zastavica PRINT_MATRIX nadzoruje, ali se izpisuje matrik
 
 SHOW_DETAILED_MAP = False  # Zastavica SHOW_DETAILED_MAP nadzoruje, ali se prikazuje podroben zemljevid.
 SHOW_FINAL_GRID = False
-SHOW_ASTAR_DEBUG_GRID = False  # Zastavica SHOW_ASTAR_DEBUG_GRID nadzoruje, ali se prikazuje A* iskalna mreža.
-SHOW_POINT_CLOUD_WITH_GRID = False  # Zastavica SHOW_POINT_CLOUD_WITH_GRID nadzoruje, ali se prikazuje oblak točk z
+SHOW_ASTAR_DEBUG_GRID = True  # Zastavica SHOW_ASTAR_DEBUG_GRID nadzoruje, ali se prikazuje A* iskalna mreža.
+SHOW_POINT_CLOUD_WITH_GRID = True  # Zastavica SHOW_POINT_CLOUD_WITH_GRID nadzoruje, ali se prikazuje oblak točk z
 # mrežo.
 
 PRINT_ROBOT_POSITION_OFFSET = False  # Zastavica PRINT_ROBOT_POSITION_OFFSET nadzoruje, ali se izpisuje odmik
@@ -24,7 +24,7 @@ DO_UPDATE_COMUNICATOR = False
 DO_SLOW_DOWN = False  # Zastavica DO_SLOW_DOWN nadzoruje, ali se program izvaja v počasnem načinu.
 SLOW_DOWN_S = 0.032  # Zastavica SLOW_DOWN_S nadzoruje, kako počasi se program izvaja.
 
-DO_WAIT_KEY = False  # Zastavica DO_WAIT_KEY nadzoruje, ali se program ustavi in čaka na pritisk tipke.
+DO_WAIT_KEY = True  # Zastavica DO_WAIT_KEY nadzoruje, ali se program ustavi in čaka na pritisk tipke.
 
 FIXTURE_FITTING = False  # Zastavica FIXTURE_FITTING nadzoruje ali se izpisejo vse zaznane zrtve.
 PREDICTIONS = True

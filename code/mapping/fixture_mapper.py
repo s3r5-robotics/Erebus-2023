@@ -26,7 +26,7 @@ class FixtureMapper:
         self.fixture_distance_margin_template = cv.circle(self.fixture_distance_margin_template,
                                                           (template_radious, template_radious), template_radious, 1, 1)
 
-        self.detected_from_radius = round(0.02 * self.grid.resolution)
+        self.detected_from_radius = round(0.03 * self.grid.resolution)
 
     def generate_detection_zone(self):
         occupied_as_int = self.grid.arrays["occupied"].astype(np.int8)
